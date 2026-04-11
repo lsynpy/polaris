@@ -1,0 +1,91 @@
+name: Build & Push Docker Image
+
+on:
+  push:
+    branches: [master, release]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    name: Build ARM64 Docker Image
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Aliyun ACR
+        uses: docker/login-action@v3
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.ALIYUN_ACR_USERNAME }}
+          password: ${{ secrets.ALIYUN_ACR_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            registry.cn-hangzhou.aliyuncs.com/cwpypy/polaris:latest
+            registry.cn-hangzhou.aliyuncs.com/cwpypy/polaris:${{ github.sha }}
+          cache-from: type=registry,ref=registry.cn-hangzhou.aliyuncs.com/cwpypy/polaris:buildcache
+          cache-to: type=registry,ref=registry.cn-hangzhou.aliyuncs.com/cwpypy/polaris:buildcache,mode=max
+
+  deploy-to-jdc:
+    name: Deploy to JDC
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.JDC_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H jdc >> ~/.ssh/known_hosts 2>/dev/null || \
+          ssh-keyscan -H 192.168.100.1 >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy on JDC
+        run: |
+          ssh jdc << 'EOF'
+            set -euo pipefail
+
+            IMAGE="registry.cn-hangzhou.aliyuncs.com/cwpypy/polaris:latest"
+            MUSIC_DIR="/mnt/mmcblk0p19/Music"
+            CONFIG_DIR="/mnt/mmcblk0p19/Configs/polaris"
+            CACHE_DIR="/mnt/mmcblk0p19/Caches/polaris"
+            POLARIS_PORT=5050
+
+            echo "Stopping existing container..."
+            docker stop polaris 2>/dev/null || true
+            docker rm polaris 2>/dev/null || true
+
+            echo "Pulling latest image..."
+            docker pull ${IMAGE}
+
+            echo "Starting container..."
+            docker run -d \
+              --name polaris \
+              --restart unless-stopped \
+              -p ${POLARIS_PORT}:${POLARIS_PORT} \
+              -v ${MUSIC_DIR}:/music \
+              -v ${CONFIG_DIR}:/var/lib/polaris \
+              -v ${CACHE_DIR}:/var/cache/polaris \
+              ${IMAGE} \
+              -f \
+              -w /usr/share/polaris/web
+
+            echo "Done!"
+            docker ps --filter "name=polaris"
+          EOF
