@@ -1,21 +1,16 @@
-name: Build & Push Docker Image
+name: Build ARM64 Binary
 
 on:
   push:
     branches: [master, release]
   workflow_dispatch:
 
-env:
-  REGISTRY: registry.cn-hangzhou.aliyuncs.com
-  NAMESPACE: cwpypy
-  IMAGE_NAME: polaris
-
 jobs:
-  build-binary:
+  build-arm64:
     name: Build ARM64 Binary
     runs-on: ubuntu-24.04-arm
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout code
@@ -34,106 +29,16 @@ jobs:
       - name: Build release binary
         run: cargo build --release --bin polaris
 
-      - name: Upload binary
+      - name: Create release tarball
+        run: |
+          mkdir -p release
+          cp target/release/polaris release/
+          cd release
+          tar czf polaris-arm64.tar.gz polaris
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: polaris-aarch64
-          path: target/release/polaris
-          retention-days: 5
-
-  build-and-push:
-    name: Build & Push Docker Image
-    needs: build-binary
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Download ARM64 binary
-        uses: actions/download-artifact@v4
-        with:
-          name: polaris-aarch64
-          path: ./docker-build
-
-      - name: Make binary executable
-        run: chmod +x ./docker-build/polaris
-
-      - name: Download web UI
-        run: |
-          mkdir -p ./docker-build/web
-          cd ./docker-build
-          wget -qO /tmp/web.zip https://github.com/agersant/polaris-web/releases/latest/download/web.zip
-          cd web && unzip -q /tmp/web.zip
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Aliyun ACR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.ALIYUN_ACR_USERNAME }}
-          password: ${{ secrets.ALIYUN_ACR_PASSWORD }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: ./docker-build
-          file: ./Dockerfile.runtime
-          push: true
-          platforms: linux/arm64
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-  deploy-to-jdc:
-    name: Deploy to JDC
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-
-    steps:
-      - name: Deploy on JDC via SSH
-        env:
-          JDC_SSH_KEY: ${{ secrets.JDC_SSH_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$JDC_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H jdc >> ~/.ssh/known_hosts 2>/dev/null || \
-          ssh-keyscan -H 192.168.100.1 >> ~/.ssh/known_hosts 2>/dev/null || true
-
-          ssh -i ~/.ssh/id_ed25519 jdc << 'EOF'
-            set -euo pipefail
-
-            IMAGE="registry.cn-hangzhou.aliyuncs.com/cwpypy/polaris:latest"
-            MUSIC_DIR="/mnt/mmcblk0p19/Music"
-            CONFIG_DIR="/mnt/mmcblk0p19/Configs/polaris"
-            CACHE_DIR="/mnt/mmcblk0p19/Caches/polaris"
-            POLARIS_PORT=5050
-
-            echo "Stopping existing container..."
-            docker stop polaris 2>/dev/null || true
-            docker rm polaris 2>/dev/null || true
-
-            echo "Pulling latest image..."
-            docker pull ${IMAGE}
-
-            echo "Starting container..."
-            docker run -d \
-              --name polaris \
-              --restart unless-stopped \
-              -p ${POLARIS_PORT}:${POLARIS_PORT} \
-              -v ${MUSIC_DIR}:/music \
-              -v ${CONFIG_DIR}:/var/lib/polaris \
-              -v ${CACHE_DIR}:/var/cache/polaris \
-              ${IMAGE} \
-              -f \
-              -w /usr/share/polaris/web
-
-            echo "Done!"
-            docker ps --filter "name=polaris"
-          EOF
+          name: polaris-arm64
+          path: release/polaris-arm64.tar.gz
+          retention-days: 30
