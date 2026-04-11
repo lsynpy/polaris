@@ -104,7 +104,9 @@ ENTRYPOINT ["polaris"]
 CMD ["-f"]
 DOCKERFILE
     
-    docker build -t "${image_name}" "${PROJECT_DIR}/.deploy-tmp"
+    # Build with explicit platform to ensure correct manifest
+    export DOCKER_BUILDKIT=1
+    docker buildx build --platform linux/arm64 --load -t "${image_name}" "${PROJECT_DIR}/.deploy-tmp"
     
     echo "  Image built: ${image_name}"
 }
