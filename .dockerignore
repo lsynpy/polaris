@@ -8,3 +8,6 @@ ContextForAI.md
 .vscode/
 .github/
 docker/
+docker-build/
+Dockerfile.runtime
+*.md
