@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: deploy-to.sh [local|jdc]
-ENV="${1:?Usage: deploy-to.sh [local|jdc]}"
+# Usage: deploy-to.sh [local|<target>]
+ENV="${1:?Usage: deploy-to.sh [local|<target>]}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 

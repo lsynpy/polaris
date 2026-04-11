@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: rollback.sh <version> [local|jdc]
-VERSION="${1:?Usage: rollback.sh <version> [local|jdc]}"
+# Usage: rollback.sh <version> [local|<target>]
+VERSION="${1:?Usage: rollback.sh <version> [local|<target>]}"
 ENV="${2:-local}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -15,9 +15,7 @@ IMAGE_TAG="${IMAGE_NAME}:${VERSION}"
 
 rollback_local() {
     echo "==> Rolling back to ${IMAGE_TAG} [local]..."
-    docker build -t "${IMAGE_TAG}" --target builder - <(echo 'FROM scratch') 2>/dev/null || true
-    echo "  (local rollback requires rebuilding from source at that version)"
-    echo "  Run: cd /Users/kt/code/polaris && git checkout ${VERSION} && deploy/deploy-to.sh local"
+    echo "  Run: cd /path/to/polaris && git checkout ${VERSION} && deploy/deploy-to.sh local"
 }
 
 rollback_remote() {
@@ -34,12 +32,7 @@ rollback_remote() {
         docker stop ${CONTAINER_NAME} 2>/dev/null || true
         docker rm ${CONTAINER_NAME} 2>/dev/null || true
 
-        echo "  Building from source at ${VERSION}..."
-        cd /tmp/polaris
-        git checkout ${VERSION}
-        docker build -t ${IMAGE_TAG} .
-
-        echo "  Starting container..."
+        echo "  Starting container with tag ${IMAGE_TAG}..."
         docker run -d \
             --name ${CONTAINER_NAME} \
             --restart unless-stopped \
