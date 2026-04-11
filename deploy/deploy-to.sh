@@ -29,8 +29,20 @@ download_binary() {
     echo ""
     echo "[1/4] Downloading ARM64 binary from GitHub Release..."
     
-    # Get latest release asset
-    gh release download --repo lsynpy/polaris --pattern 'polaris-arm64.tar.gz' --dir "${tmpdir}" --latest 2>/dev/null
+    # Get latest release tag
+    local latest_tag
+    latest_tag=$(gh release list --repo lsynpy/polaris --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null)
+    
+    if [[ -z "${latest_tag}" ]]; then
+        echo "Error: No releases found"
+        echo "  Make sure the ARM64 build workflow has completed"
+        echo "  See: https://github.com/lsynpy/polaris/releases"
+        rm -rf "${tmpdir}"
+        exit 1
+    fi
+    
+    echo "  Latest release: ${latest_tag}"
+    gh release download "${latest_tag}" --repo lsynpy/polaris --pattern 'polaris-arm64.tar.gz' --dir "${tmpdir}" --clobber 2>/dev/null
     
     if [[ ! -f "${tmpdir}/polaris-arm64.tar.gz" ]]; then
         echo "Error: Failed to download latest release binary"
