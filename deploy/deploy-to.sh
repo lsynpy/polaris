@@ -80,8 +80,18 @@ build_image() {
     # Download web UI
     mkdir -p "${PROJECT_DIR}/.deploy-tmp/web"
     curl -sL -o /tmp/web.zip https://github.com/agersant/polaris-web/releases/latest/download/web.zip
-    (cd "${PROJECT_DIR}/.deploy-tmp/web" && unzip -q /tmp/web.zip)
-    rm -f /tmp/web.zip
+    
+    # The zip may contain a 'web' subdirectory - extract and flatten
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    unzip -q /tmp/web.zip -d "${tmpdir}"
+    # Find actual web files (might be in a 'web' subdir)
+    if [[ -d "${tmpdir}/web" ]]; then
+        cp -r "${tmpdir}/web/"* "${PROJECT_DIR}/.deploy-tmp/web/"
+    else
+        cp -r "${tmpdir}/"* "${PROJECT_DIR}/.deploy-tmp/web/"
+    fi
+    rm -rf "${tmpdir}" /tmp/web.zip
     
     # Create minimal Dockerfile
     cat > "${PROJECT_DIR}/.deploy-tmp/Dockerfile" << 'DOCKERFILE'
