@@ -1,0 +1,18 @@
+[global]
+exclude = [
+    ".git",
+    "node_modules",
+    "target",
+    "LICENSE.md",
+]
+
+disable = ["MD041"]
+extend-enable = ["MD060", "MD063", "MD072", "MD073", "MD074"]
+line_length = 100
+
+[MD007]
+indent = 2
+
+[MD060]
+enabled = true
+style = "aligned-no-space"
