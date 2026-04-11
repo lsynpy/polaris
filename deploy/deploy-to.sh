@@ -71,7 +71,7 @@ build_image() {
     
     # Download web UI
     mkdir -p "${PROJECT_DIR}/.deploy-tmp/web"
-    wget -qO /tmp/web.zip https://github.com/agersant/polaris-web/releases/latest/download/web.zip
+    curl -sL -o /tmp/web.zip https://github.com/agersant/polaris-web/releases/latest/download/web.zip
     (cd "${PROJECT_DIR}/.deploy-tmp/web" && unzip -q /tmp/web.zip)
     rm -f /tmp/web.zip
     
