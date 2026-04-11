@@ -31,7 +31,13 @@ RUN sed -i 's|deb.debian.org|mirrors.ustc.edu.cn|g' /etc/apt/sources.list.d/debi
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .
-RUN cargo build --release --bin polaris
+
+# Use cache mounts for faster builds:
+# - /usr/local/cargo/registry: cached crate downloads
+# - /src/target: cached compilation artifacts (incremental builds)
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/src/target \
+    cargo build --release --bin polaris
 
 FROM node:20-slim AS web-builder
 

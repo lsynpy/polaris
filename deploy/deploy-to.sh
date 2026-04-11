@@ -43,8 +43,12 @@ echo "  Image:  ${IMAGE}"
 build_and_push() {
     echo ""
     echo "[1/3] Building image locally (${BUILD_PLATFORM})..."
-    echo "  Note: First ARM64 build takes 10-15 minutes (Rust compilation)"
+    echo "  Note: First build takes 10-15 minutes, subsequent builds are faster"
+    echo "        (Docker cache preserves Rust compilation artifacts)"
     echo ""
+    
+    # Ensure BuildKit is enabled (required for cache mounts)
+    export DOCKER_BUILDKIT=1
     
     # Start build in background and show progress
     docker buildx build \
@@ -89,8 +93,11 @@ build_and_push() {
 deploy_local() {
     echo ""
     echo "[1/3] Building image: polaris:${ENV}"
-    echo "  Note: First build takes 10-15 minutes (Rust compilation)"
+    echo "  Note: First build takes 10-15 minutes, subsequent builds are faster"
     echo ""
+    
+    # Ensure BuildKit is enabled
+    export DOCKER_BUILDKIT=1
     
     cd "${PROJECT_DIR}"
     docker build --progress=plain -t "polaris:${ENV}" . 2>&1 | tee /tmp/polaris-build.log &
