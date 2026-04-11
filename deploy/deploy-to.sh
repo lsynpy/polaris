@@ -7,12 +7,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 ENV_FILE="${SCRIPT_DIR}/.env.${ENV}"
+REGISTRY_FILE="${SCRIPT_DIR}/.registry.env"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
     echo "Error: ${ENV_FILE} not found"
     exit 1
 fi
 
+if [[ ! -f "${REGISTRY_FILE}" ]]; then
+    echo "Error: ${REGISTRY_FILE} not found"
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+source "${REGISTRY_FILE}"
 # shellcheck source=/dev/null
 source "${ENV_FILE}"
 
@@ -176,7 +184,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Remote deployment (download binary, build image locally, transfer to JDC via SSH)
+# Remote deployment (download binary, build image, push to registry, pull on JDC)
 deploy_remote() {
     if [[ -z "${VPS_HOSTNAME}" ]]; then
         echo "Error: VPS_HOSTNAME not set in ${ENV_FILE}"
@@ -184,49 +192,33 @@ deploy_remote() {
     fi
     
     local image_name="polaris:jdc"
+    local image_tag="${IMAGE}"
     
     download_binary
     build_image "${image_name}"
     cleanup
     
-    # Save image to tar and transfer to VPS
+    # Push to Aliyun ACR
     echo ""
-    echo "[3/4] Transferring image to ${VPS_HOSTNAME}..."
-    docker save "${image_name}" | ssh "${VPS_HOSTNAME}" "docker load"
+    echo "[3/4] Pushing image to Aliyun ACR..."
+    docker tag "${image_name}" "${image_tag}"
+    docker push "${image_tag}"
+    
+    echo "  Pushed: ${image_tag}"
 
-    # Prepare dirs on VPS
+    # Deploy on JDC
     echo ""
     echo "[4/4] Deploying on ${VPS_HOSTNAME}..."
-    ssh "${VPS_HOSTNAME}" "mkdir -p ${CONFIG_DIR} ${CACHE_DIR}"
-
-    # Write config on VPS
-    echo "  Writing config..."
     ssh "${VPS_HOSTNAME}" << REMOTE_EOF
         set -euo pipefail
-        CONFIG_FILE="${CONFIG_DIR}/polaris.toml"
-        if [[ ! -f "\${CONFIG_FILE}" ]]; then
-            cat > "\${CONFIG_FILE}" << EOF2
-album_art_pattern = "(album|cover|folder|front|back|artwork)[.](jpeg|jpg|png)"
-
-[[mount_dirs]]
-source = "${MUSIC_DIR}"
-name = "Music"
-
-[users]
-
-[users.admin]
-admin = true
-initial_password = "admin"
-EOF2
-        fi
-REMOTE_EOF
-
-    # Deploy on VPS
-    ssh "${VPS_HOSTNAME}" << REMOTE_EOF
-        set -euo pipefail
+        
         echo "  Stopping existing container..."
         docker stop polaris 2>/dev/null || true
         docker rm polaris 2>/dev/null || true
+        
+        echo "  Pulling latest image..."
+        docker pull ${image_tag}
+        
         echo "  Starting container..."
         docker run -d \
             --name polaris \
@@ -235,9 +227,10 @@ REMOTE_EOF
             -v ${MUSIC_DIR}:/music \
             -v ${CONFIG_DIR}:/var/lib/polaris \
             -v ${CACHE_DIR}:/var/cache/polaris \
-            ${image_name} \
+            ${image_tag} \
             -f \
             -w /usr/share/polaris/web
+        
         echo "  Done."
         docker ps --filter "name=polaris" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 REMOTE_EOF

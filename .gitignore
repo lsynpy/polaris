@@ -3,6 +3,7 @@
 
 # Build output
 target
+.deploy-tmp
 
 # Test output
 test-output
