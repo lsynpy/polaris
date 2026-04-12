@@ -16,7 +16,7 @@
         </div>
 
         <div v-show="songs?.length" data-pw="saved-playlist-songs" class="flex flex-col min-h-0">
-            <SongList v-model="songs" :compact="preferences.savedPlaylistDisplayMode == 'compact'" invert-stripes />
+            <SongList :model-value="songs" :compact="preferences.savedPlaylistDisplayMode == 'compact'" invert-stripes />
         </div>
 
         <div v-if="songs?.length" />

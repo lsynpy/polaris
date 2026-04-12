@@ -1,31 +1,40 @@
 <template>
-    <div data-pw="song" class="relative grow h-full min-w-0 rounded-sm flex items-center whitespace-nowrap text-xs"
+    <div data-pw="song" class="relative grow min-w-0 rounded-sm flex items-start py-1"
         :class="rowClass">
+        <!-- Album Art -->
         <div v-if="!compact" class="basis-10 h-10 mr-3 shrink-0 flex items-center">
             <AlbumArt :url="artworkURL" />
         </div>
-        <div v-if="isTinyScreen" class="grow basis-0 text-ellipsis" :class="{ 'overflow-hidden': song }">
+        <!-- Title + Artist (2 lines) -->
+        <div v-if="!compact" class="grow basis-0 pr-4 flex flex-col justify-center min-w-0">
+            <div class="truncate" v-if="song">
+                {{ formatTitle(song) }}
+            </div>
+            <div v-else class="space-y-1.5">
+                <div class="bg-black/5 dark:bg-white/5 h-3 rounded-full w-3/4" />
+                <div class="bg-black/5 dark:bg-white/5 h-2.5 rounded-full w-1/2" />
+            </div>
+            <div class="truncate text-[11px] opacity-70" v-if="song">
+                {{ formatArtists(song.artists || []) }}
+            </div>
+        </div>
+        <!-- Compact: single line with title + artist -->
+        <div v-if="compact" class="grow basis-0 text-ellipsis overflow-hidden" :class="{ 'overflow-hidden': song }">
             <span v-if="song" v-text="formatTrackShort(song)" />
             <div v-else class="bg-black/5 dark:bg-white/5 h-3 rounded-full" />
         </div>
-        <div v-if="!isTinyScreen" class="grow basis-0 pr-4 text-ellipsis" :class="{ 'overflow-hidden': song }">
-            <span v-if="song" v-text="formatTrackContext(song)" />
-            <div v-else class="-mr-8 bg-black/5 dark:bg-white/5 h-3 rounded-full" />
-        </div>
-        <div v-if="!isTinyScreen" class="basis-8 shrink-0 text-right mr-1">
-            <span v-if="song && song.track_number"> {{ formatTrackNumber(song) }}.</span>
-        </div>
-        <div v-if="!isTinyScreen" class="grow basis-0 pr-4 overflow-hidden text-ellipsis">
-            <span v-if="song">
-                {{ formatTitle(song) }}
-                <span :class="selected ? '' : 'text-ls-400 dark:text-ds-600'"
-                    v-if="song.artists && song.album_artists && !equals(song.artists, song.album_artists)">
-                    ({{ formatArtists(song.artists) }})
-                </span>
-            </span>
+        <!-- Album -->
+        <div v-if="!compact" class="basis-40 shrink-0 pr-4 truncate self-center">
+            <span v-if="song" v-text="song.album || 'Unknown Album'" />
             <div v-else class="bg-black/5 dark:bg-white/5 h-3 rounded-full" />
         </div>
-        <div class="basis-16 shrink-0 text-right">
+        <!-- Duration -->
+        <div v-if="!compact" class="basis-16 shrink-0 text-right self-center">
+            <span v-if="song">{{ formatTrackDuration(song) }}</span>
+            <div v-else class="bg-black/5 dark:bg-white/5 h-3 rounded-full" />
+        </div>
+        <!-- Compact: duration only -->
+        <div v-if="compact" class="basis-16 shrink-0 text-right">
             <span v-if="song">{{ formatTrackDuration(song) }}</span>
             <div v-else class="bg-black/5 dark:bg-white/5 h-3 rounded-full" />
         </div>
@@ -33,14 +42,12 @@
 </template>
 
 <script setup lang="ts">
-import equals from "array-equal"
 import { computed } from 'vue';
-import { useMediaQuery } from "@vueuse/core";
 
 import { Song } from "@/api/dto";
 import { makeThumbnailURL } from "@/api/endpoints";
 import AlbumArt from '@/components/AlbumArt.vue';
-import { formatArtists, formatDuration, formatTitle, formatTrackNumber } from '@/format';
+import { formatArtists, formatDuration, formatTitle } from '@/format';
 import { useSongsStore } from '@/stores/songs';
 
 const songs = useSongsStore();
@@ -53,8 +60,6 @@ const props = defineProps<{
     focused: boolean,
     isCurrent?: boolean,
 }>();
-
-const isTinyScreen = useMediaQuery("(width < 80rem)");
 
 const song = computed(() => songs.cache.get(props.path));
 
@@ -97,20 +102,6 @@ const rowClass = computed(() => {
     ];
 
 });
-
-function formatTrackContext(song: Song) {
-    let context = "";
-    if (song.album_artists) {
-        context += formatArtists(song.album_artists);
-    } else if (song.artists) {
-        context += formatArtists(song.artists);
-    } else {
-        context += "Unknown Artist";
-    }
-    context += " - ";
-    context += song.album ? song.album : "Unknown Album";
-    return context;
-}
 
 function formatTrackDuration(song: Song) {
     if (!song.duration || isNaN(song.duration)) {

@@ -23,8 +23,8 @@ mod utils;
 pub enum Error {
 	#[error(transparent)]
 	App(#[from] app::Error),
-	#[error("Could not start web services")]
-	ServiceStartup(std::io::Error),
+	#[error("Failed to bind to {0}:\n\n{1}")]
+	ServiceStartup(std::net::SocketAddr, std::io::Error),
 	#[error("Could not parse command line arguments:\n\n{0}")]
 	CliOptions(#[from] options::Error),
 	#[cfg(unix)]
@@ -179,7 +179,7 @@ async fn async_main(cli_options: CLIOptions, paths: paths::Paths) -> Result<(), 
 	// Start server
 	info!("Starting up server");
 	if let Err(e) = server::launch(app).await {
-		return Err(Error::ServiceStartup(e));
+		return Err(Error::ServiceStartup(socket_address, e));
 	}
 
 	// Send readiness notification

@@ -49,7 +49,7 @@ const paths = defineModel<string[]>({ required: true });
 const items = computed(() => paths.value.map(p => ({ key: p })));
 
 
-const itemHeight = computed(() => props.compact ? 32 : 48);
+const itemHeight = computed(() => props.compact ? 32 : 64);
 
 const overscan = 1;
 const { list: virtualItems, containerProps, wrapperProps, scrollTo } = useVirtualList(items, { itemHeight: () => itemHeight.value, overscan });

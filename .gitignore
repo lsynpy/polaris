@@ -23,7 +23,7 @@ polaris.ndb
 polaris.pid
 profile.json
 polaris.toml
-/peaks
+peaks
 thumbnails
 
 # Release process artifacts (usually runs on CI)
