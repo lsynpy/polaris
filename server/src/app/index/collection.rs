@@ -449,18 +449,22 @@ impl Builder {
 			}
 		}
 
+		// Deduplicate artists before counting (same artist may appear in multiple roles)
+		let mut seen_artists = std::collections::HashSet::new();
 		for artist_key in all_artists {
-			let artist = self.get_or_create_artist(artist_key);
-			artist.num_songs += 1;
-			if let Some(album_key) = &album_key {
-				artist.all_albums.insert(album_key.clone());
-			}
-			for genre in &song.genres {
-				*artist
-					.num_songs_by_genre
-					.entry(*genre)
-					.or_default()
-					.borrow_mut() += 1;
+			if seen_artists.insert(artist_key) {
+				let artist = self.get_or_create_artist(artist_key);
+				artist.num_songs += 1;
+				if let Some(album_key) = &album_key {
+					artist.all_albums.insert(album_key.clone());
+				}
+				for genre in &song.genres {
+					*artist
+						.num_songs_by_genre
+						.entry(*genre)
+						.or_default()
+						.borrow_mut() += 1;
+				}
 			}
 		}
 	}
