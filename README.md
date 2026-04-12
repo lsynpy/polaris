@@ -13,12 +13,12 @@ This is a fork of the original [agersant/polaris](https://github.com/agersant/po
 
 ## Project Structure
 
-| Directory | Description |
-|-----------|-------------|
+| Directory | Description                       |
+|-----------|-----------------------------------|
 | `server/` | Rust backend (Cargo project root) |
-| `web/`    | Vue.js frontend web UI |
-| `deploy/` | Deployment scripts |
-| `docs/`   | Documentation |
+| `web/`    | Vue.js frontend web UI            |
+| `deploy/` | Deployment scripts                |
+| `docs/`   | Documentation                     |
 
 ## Build & Run
 
@@ -49,5 +49,9 @@ API docs available at `http://localhost:5050/api-docs/` after starting the serve
 
 ## Deployment
 
-- GitHub Actions builds ARM64 binary natively on `ubuntu-24.04-arm` runner
-- Local `deploy/deploy-to.sh` script builds minimal Docker image and deploys via SSH
+ARM64 binary is built by GitHub Actions on `ubuntu-24.04-arm`. Deploy uses the pre-built release (no local cross-compilation):
+
+```bash
+# Build web, download ARM64 release, build runtime image, push to registry, deploy via SSH
+deploy/deploy-to.sh jdc
+```

@@ -104,18 +104,44 @@ build_web() {
 # Build minimal Docker image (multi-stage: builds binary inside Linux container)
 build_image() {
     local image_name="$1"
-    local platform="${2:-linux/amd64}"
+    local use_runtime="${2:-false}"
 
     echo ""
-    echo "[3/4] Building Docker image (multi-stage build)..."
+    echo "[3/4] Building Docker image..."
 
     # Copy built web UI and server source
     mkdir -p "${PROJECT_DIR}/.deploy-tmp/web"
     cp -r "${PROJECT_DIR}/web/dist/"* "${PROJECT_DIR}/.deploy-tmp/web/"
-    cp -r "${PROJECT_DIR}/server" "${PROJECT_DIR}/.deploy-tmp/server"
 
-    # Create multi-stage Dockerfile
-    cat > "${PROJECT_DIR}/.deploy-tmp/Dockerfile" << 'DOCKERFILE'
+    if [[ "${use_runtime}" == "true" ]]; then
+        # Use pre-built binary (no cross-compilation)
+        mkdir -p "${PROJECT_DIR}/.deploy-tmp/server"
+        cp "${PROJECT_DIR}/.deploy-tmp/polaris" "${PROJECT_DIR}/.deploy-tmp/server/"
+
+        cat > "${PROJECT_DIR}/.deploy-tmp/Dockerfile" << 'DOCKERFILE'
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /usr/share/polaris/web /var/cache/polaris /var/lib/polaris
+
+COPY server/polaris /usr/local/bin/polaris
+COPY web /usr/share/polaris/web
+
+WORKDIR /var/lib/polaris
+
+EXPOSE 5050
+
+ENTRYPOINT ["polaris"]
+CMD ["-f"]
+DOCKERFILE
+    else
+        # Build from source inside container (cross-compilation)
+        cp -r "${PROJECT_DIR}/server" "${PROJECT_DIR}/.deploy-tmp/server"
+
+        cat > "${PROJECT_DIR}/.deploy-tmp/Dockerfile" << 'DOCKERFILE'
 # Stage 1: Build Rust binary
 FROM rust:slim-bookworm AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -148,10 +174,11 @@ EXPOSE 5050
 ENTRYPOINT ["polaris"]
 CMD ["-f"]
 DOCKERFILE
+    fi
 
     # Build with explicit platform
     export DOCKER_BUILDKIT=1
-    docker buildx build --platform "${platform}" --load -t "${image_name}" "${PROJECT_DIR}/.deploy-tmp"
+    docker buildx build --platform linux/arm64 --load -t "${image_name}" "${PROJECT_DIR}/.deploy-tmp"
 
     echo "  Image built: ${image_name}"
 }
@@ -250,7 +277,7 @@ deploy_remote() {
 
     build_web
     download_binary
-    build_image "${image_name}"
+    build_image "${image_name}" true
     cleanup
 
     # Push to Aliyun ACR

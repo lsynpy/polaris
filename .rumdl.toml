@@ -1,10 +1,5 @@
 [global]
-exclude = [
-    ".git",
-    "node_modules",
-    "target",
-    "LICENSE.md",
-]
+exclude = [".git", "node_modules", "target", "LICENSE.md"]
 
 disable = ["MD041"]
 extend-enable = ["MD060", "MD063", "MD072", "MD073", "MD074"]
