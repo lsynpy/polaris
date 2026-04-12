@@ -1,0 +1,8 @@
+.direnv
+dist/
+node_modules/
+automated.config.toml
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/
