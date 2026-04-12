@@ -10,7 +10,7 @@ jobs:
     name: Build ARM64 Binary
     runs-on: ubuntu-24.04-arm
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout code
@@ -42,3 +42,24 @@ jobs:
           name: polaris-arm64
           path: server/target/release/polaris-arm64.tar.gz
           retention-days: 90
+
+      - name: Generate tag
+        id: tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TAG="latest-$(date +%Y%m%d)-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Tag: ${TAG}"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "Latest ARM64 Build - ${{ steps.tag.outputs.tag }}"
+          files: server/target/release/polaris-arm64.tar.gz
+          body: |
+            Auto-generated ARM64 build from commit ${{ github.sha }}.
+            Branch: `${{ github.ref_name }}`
+          draft: false
+          prerelease: true
+          generate_release_notes: true
