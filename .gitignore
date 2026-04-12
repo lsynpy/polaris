@@ -2,11 +2,15 @@
 .direnv
 
 # Build output
-target
+**/target
 .deploy-tmp
 
 # Test output
-test-output
+**/test-output
+
+# Web build output
+web/node_modules
+web/dist
 
 # Local config for quick iteration
 TestConfig.toml
@@ -18,8 +22,9 @@ polaris.log
 polaris.ndb
 polaris.pid
 profile.json
+polaris.toml
 /peaks
-/thumbnails
+thumbnails
 
 # Release process artifacts (usually runs on CI)
 release

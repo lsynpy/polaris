@@ -34,22 +34,37 @@
 ### Source Structure
 
 ```text
-src/
-├── main.rs          # Entry point, CLI parsing, daemon setup, logging
-├── app/             # Core application logic
-│   ├── config.rs    # Configuration management
-│   ├── index.rs     # Music collection indexing
-│   ├── scanner.rs   # File scanning and monitoring
-│   ├── playlist.rs  # Playlist management
-│   ├── auth.rs      # User authentication
-│   ├── ddns.rs      # Dynamic DNS updates
-│   ├── peaks.rs     # Audio waveform extraction
-│   └── thumbnail.rs # Album art thumbnail generation
-├── server/          # HTTP server and API endpoints
-├── ui/              # Optional native Windows UI (feature-gated)
-├── options.rs       # CLI argument parsing
-├── paths.rs         # Path resolution (config, data, cache dirs)
-└── utils.rs         # Utility functions
+server/                 # Rust backend (Rust project root)
+├── Cargo.toml
+├── Cargo.lock
+├── rust-toolchain.toml
+├── .rustfmt.toml
+├── src/
+│   ├── main.rs          # Entry point, CLI parsing, daemon setup, logging
+│   ├── app/             # Core application logic
+│   │   ├── config.rs    # Configuration management
+│   │   ├── index.rs     # Music collection indexing
+│   │   ├── scanner.rs   # File scanning and monitoring
+│   │   ├── playlist.rs  # Playlist management
+│   │   ├── auth.rs      # User authentication
+│   │   ├── ddns.rs      # Dynamic DNS updates
+│   │   ├── peaks.rs     # Audio waveform extraction
+│   │   └── thumbnail.rs # Album art thumbnail generation
+│   ├── server/          # HTTP server and API endpoints
+│   ├── ui/              # Optional native Windows UI (feature-gated)
+│   ├── options.rs       # CLI argument parsing
+│   ├── paths.rs         # Path resolution (config, data, cache dirs)
+│   └── utils.rs         # Utility functions
+├── test-data/           # Test fixtures
+└── test-output/         # Test snapshots
+
+web/                    # Frontend web UI (React + TypeScript)
+├── package.json
+├── src/
+└── ...
+
+deploy/                 # Deployment scripts
+docs/                   # Documentation
 ```
 
 ## Building and Running

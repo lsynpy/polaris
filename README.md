@@ -6,20 +6,48 @@ This is a fork of the original [agersant/polaris](https://github.com/agersant/po
 
 ## Original Project
 
-- **Repository**: [github.com/agersant/polaris](https://github.com/agersant/polaris)
+- **Server**: [github.com/agersant/polaris](https://github.com/agersant/polaris)
+- **Web UI**: [github.com/agersant/polaris-web](https://github.com/agersant/polaris-web)
 - **Demo**: [demo.polaris.stream](https://demo.polaris.stream) (user: `demo_user`, pass: `demo_password`)
 - **License**: MIT
+
+## Project Structure
+
+| Directory | Description |
+|-----------|-------------|
+| `server/` | Rust backend (Cargo project root) |
+| `web/`    | Vue.js frontend web UI |
+| `deploy/` | Deployment scripts |
+| `docs/`   | Documentation |
+
+## Build & Run
+
+### Server (Rust)
+
+```bash
+cd server
+cargo build --release
+cargo run -- -f   # -f = foreground (don't daemonize)
+```
+
+### Web UI (Vue.js)
+
+```bash
+cd web
+npm install       # first time only
+npm run dev       # Vite dev server with hot reload
+```
+
+### Tests
+
+```bash
+cd server && cargo test    # Rust unit tests
+cd web && npm test         # Playwright E2E tests
+```
+
+API docs available at `http://localhost:5050/api-docs/` after starting the server.
 
 ## Deployment
 
 - GitHub Actions builds ARM64 binary natively on `ubuntu-24.04-arm` runner
 - Local `deploy/deploy-to.sh` script builds minimal Docker image and deploys via SSH
-
-## Build & Run
-
-```bash
-cargo build --release
-cargo run
-```
-
-API docs available at `http://localhost:5050/api-docs/` after starting the server.

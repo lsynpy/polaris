@@ -29,6 +29,23 @@ echo "  Target: $([[ "${IS_LOCAL}" == "true" ]] && echo "Local Docker" || echo "
 echo "  Platform: ${BUILD_PLATFORM:-linux/arm64}"
 
 # ---------------------------------------------------------------------------
+# Build server binary locally
+build_server() {
+    echo ""
+    echo "[1/4] Building server binary..."
+
+    cd "${PROJECT_DIR}/server"
+    cargo build --release
+    cd "${PROJECT_DIR}"
+
+    mkdir -p "${PROJECT_DIR}/.deploy-tmp"
+    cp "${PROJECT_DIR}/server/target/release/polaris" "${PROJECT_DIR}/.deploy-tmp/polaris"
+    chmod +x "${PROJECT_DIR}/.deploy-tmp/polaris"
+
+    echo "  Binary built successfully"
+}
+
+# ---------------------------------------------------------------------------
 # Download pre-built ARM64 binary from GitHub Release
 download_binary() {
     local tmpdir
@@ -70,31 +87,49 @@ download_binary() {
 }
 
 # ---------------------------------------------------------------------------
-# Build minimal Docker image (no Rust toolchain needed)
+# Build web UI from local source
+build_web() {
+    echo ""
+    echo "[1/4] Building web UI..."
+
+    cd "${PROJECT_DIR}/web"
+    npm ci
+    npm run build
+    cd "${PROJECT_DIR}"
+
+    echo "  Web UI built successfully"
+}
+
+# ---------------------------------------------------------------------------
+# Build minimal Docker image (multi-stage: builds binary inside Linux container)
 build_image() {
     local image_name="$1"
+    local platform="${2:-linux/amd64}"
 
     echo ""
-    echo "[2/4] Building minimal Docker image..."
+    echo "[3/4] Building Docker image (multi-stage build)..."
 
-    # Download web UI
+    # Copy built web UI and server source
     mkdir -p "${PROJECT_DIR}/.deploy-tmp/web"
-    curl -sL -o /tmp/web.zip https://github.com/agersant/polaris-web/releases/latest/download/web.zip
+    cp -r "${PROJECT_DIR}/web/dist/"* "${PROJECT_DIR}/.deploy-tmp/web/"
+    cp -r "${PROJECT_DIR}/server" "${PROJECT_DIR}/.deploy-tmp/server"
 
-    # The zip may contain a 'web' subdirectory - extract and flatten
-    local tmpdir
-    tmpdir=$(mktemp -d)
-    unzip -q /tmp/web.zip -d "${tmpdir}"
-    # Find actual web files (might be in a 'web' subdir)
-    if [[ -d "${tmpdir}/web" ]]; then
-        cp -r "${tmpdir}/web/"* "${PROJECT_DIR}/.deploy-tmp/web/"
-    else
-        cp -r "${tmpdir}/"* "${PROJECT_DIR}/.deploy-tmp/web/"
-    fi
-    rm -rf "${tmpdir}" /tmp/web.zip
-
-    # Create minimal Dockerfile
+    # Create multi-stage Dockerfile
     cat > "${PROJECT_DIR}/.deploy-tmp/Dockerfile" << 'DOCKERFILE'
+# Stage 1: Build Rust binary
+FROM rust:slim-bookworm AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+COPY server/Cargo.toml server/Cargo.lock ./
+RUN mkdir src && echo "fn main(){}" > src/main.rs && cargo build --release --quiet \
+    && rm -rf src
+COPY server/src ./src/
+RUN touch src/main.rs && cargo build --release
+RUN cp target/release/polaris /polaris
+
+# Stage 2: Runtime
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -103,7 +138,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN mkdir -p /usr/share/polaris/web /var/cache/polaris /var/lib/polaris
 
-COPY polaris /usr/local/bin/polaris
+COPY --from=builder /polaris /usr/local/bin/polaris
 COPY web /usr/share/polaris/web
 
 WORKDIR /var/lib/polaris
@@ -114,9 +149,9 @@ ENTRYPOINT ["polaris"]
 CMD ["-f"]
 DOCKERFILE
 
-    # Build with explicit platform to ensure correct manifest
+    # Build with explicit platform
     export DOCKER_BUILDKIT=1
-    docker buildx build --platform linux/arm64 --load -t "${image_name}" "${PROJECT_DIR}/.deploy-tmp"
+    docker buildx build --platform "${platform}" --load -t "${image_name}" "${PROJECT_DIR}/.deploy-tmp"
 
     echo "  Image built: ${image_name}"
 }
@@ -128,23 +163,32 @@ cleanup() {
 }
 
 # ---------------------------------------------------------------------------
-# Local deployment
+# Local deployment (Docker)
 deploy_local() {
     local image_name="polaris:${ENV}"
 
-    download_binary
-    build_image "${image_name}"
+    # Detect local platform
+    local docker_platform
+    case "$(uname -m)" in
+        x86_64)  docker_platform="linux/amd64" ;;
+        aarch64) docker_platform="linux/arm64" ;;
+        arm64)   docker_platform="linux/arm64" ;;
+        *)       docker_platform="linux/amd64" ;;
+    esac
+
+    build_web
+    build_image "${image_name}" "${docker_platform}"
     cleanup
 
     echo ""
-    echo "[3/4] Stopping existing container..."
+    echo "[4/4] Starting container..."
     docker stop polaris 2>/dev/null || true
     docker rm polaris 2>/dev/null || true
 
     # Ensure host directories exist
     mkdir -p "${CONFIG_DIR}" "${CACHE_DIR}"
 
-    # Write config
+    # Write config if missing
     CONFIG_FILE="${CONFIG_DIR}/polaris.toml"
     if [[ ! -f "${CONFIG_FILE}" ]]; then
         echo "  Writing config..."
@@ -174,8 +218,6 @@ EOF
         fi
     fi
 
-    echo ""
-    echo "[4/4] Starting container on port ${POLARIS_PORT}..."
     docker run -d \
         --name polaris \
         --restart unless-stopped \
@@ -206,6 +248,7 @@ deploy_remote() {
     local image_name="polaris:jdc"
     local image_tag="${IMAGE}"
 
+    build_web
     download_binary
     build_image "${image_name}"
     cleanup

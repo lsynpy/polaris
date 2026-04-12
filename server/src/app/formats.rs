@@ -90,8 +90,8 @@ fn read_id3_from_file<P: AsRef<Path>>(file: &fs::File, path: P) -> Result<SongMe
 		})
 		.map_err(|e| Error::Id3(path.as_ref().to_owned(), e))?;
 
-	let artists = tag.get_text_values("TYPE1");
-	let album_artists = tag.get_text_values("TYPE2");
+	let artists = tag.get_text_values("TPE1");
+	let album_artists = tag.get_text_values("TPE2");
 	let album = tag.album().map(|s| s.to_string());
 	let title = tag.title().map(|s| s.to_string());
 	let duration = tag.duration().map(|d| d / 1000);

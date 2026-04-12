@@ -13,14 +13,16 @@ repos:
         language: system
         types: [rust]
         pass_filenames: false
+        args: [--manifest-path, server/Cargo.toml]
 
       # Rust linting
       - id: cargo-clippy
         name: cargo clippy
-        entry: cargo clippy -- -D warnings
+        entry: cargo clippy
         language: system
         types: [rust]
         pass_filenames: false
+        args: [--manifest-path, server/Cargo.toml, --, -D, warnings]
 
       # Config file validation
       - id: check-yaml

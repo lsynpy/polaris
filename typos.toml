@@ -7,6 +7,5 @@ extend-ignore-identifiers-re = ["B7ueBPw"]
 [default.extend-words]
 # False positive in base64 token examples
 ue = "ue"
-# False positive: standard ID3v2 frame names
-tpe1 = "TPE1"
-tpe2 = "TPE2"
+# False positive: standard ID3v2 frame names (TPE1, TPE2, etc.)
+TPE = "TPE"
