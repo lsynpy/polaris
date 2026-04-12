@@ -378,7 +378,7 @@ async fn delete_user(
 
 #[utoipa::path(
 	post,
-	path = "/trigger_index",	
+	path = "/trigger_index",
 	tag = "Configuration",
 	description = "Starts a scan of the mount directories that contain music files. If a scan is already in progress, it will be interrupted.\n\nThe music collection will update after the scan is fully completed.",
 	security(

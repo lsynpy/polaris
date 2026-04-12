@@ -92,6 +92,9 @@ native-windows-derive = { version = "1.0.5", optional = true }
 daemonize = "0.5"
 sd-notify = "0.4.2"
 
+[lints.clippy]
+result_large_err = "warn"
+
 [dev-dependencies]
 axum-test = "18.7.0"
 bytes = "1.7.1"

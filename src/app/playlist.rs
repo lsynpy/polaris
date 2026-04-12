@@ -107,7 +107,7 @@ impl Manager {
 		spawn_blocking({
 			let manager = self.clone();
 			let owner = owner.to_owned();
-			move || {
+			move || -> Result<Vec<PlaylistHeader>, Box<native_db::db_type::Error>> {
 				let transaction = manager.db.r_transaction()?;
 				let mut playlists = transaction
 					.scan()
@@ -136,7 +136,7 @@ impl Manager {
 			}
 		})
 		.await?
-		.map_err(|e| Error::NativeDatabase(Box::new(e)))
+		.map_err(Error::NativeDatabase)
 	}
 
 	pub async fn save_playlist(
@@ -157,7 +157,7 @@ impl Manager {
 			let manager = self.clone();
 			let owner = owner.to_owned();
 			let name = name.to_owned();
-			move || {
+			move || -> Result<(), Box<native_db::db_type::Error>> {
 				let transaction = manager.db.rw_transaction()?;
 
 				let duration = songs
@@ -188,7 +188,7 @@ impl Manager {
 			}
 		})
 		.await?
-		.map_err(|e| Error::NativeDatabase(Box::new(e)))
+		.map_err(Error::NativeDatabase)
 	}
 
 	pub async fn read_playlist(&self, name: &str, owner: &str) -> Result<Playlist, Error> {

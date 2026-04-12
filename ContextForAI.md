@@ -5,12 +5,14 @@
 **Polaris** is a self-hosted music streaming server designed for exceptional performance with large music collections (100,000+ songs). It is free, open-source software written in **Rust**.
 
 ### Key Characteristics
+
 - **Type**: Music streaming server with web UI
 - **Language**: Rust (edition 2021)
 - **License**: MIT
 - **Target Platforms**: Windows, Linux, BSD, Docker
 
 ### Core Features
+
 - Support for multiple audio formats: flac, mp3, mp4, mpc, ogg, opus, ape, wav, aiff
 - Multi-user support with playlists
 - Dark mode themes with customizable color palette
@@ -20,6 +22,7 @@
 - Plain-text TOML configuration (editable via built-in UI)
 
 ### Architecture
+
 - **Web Framework**: Axum (v0.8) with Tower HTTP middleware
 - **Database**: native_db / native_model
 - **Audio Processing**: symphonia (codecs/formats), id3, metaflac, mp4ameta, opus_headers
@@ -29,7 +32,8 @@
 - **API Documentation**: utoipa (OpenAPI/Swagger)
 
 ### Source Structure
-```
+
+```text
 src/
 ├── main.rs          # Entry point, CLI parsing, daemon setup, logging
 ├── app/             # Core application logic
@@ -51,12 +55,14 @@ src/
 ## Building and Running
 
 ### Prerequisites
+
 - Rust stable toolchain (see `rust-toolchain.toml`)
 - Required components: `rust-src`, `rustfmt`
 
 ### Development Environment Setup
 
 **Using Nix (recommended):**
+
 ```bash
 # Enter development shell
 nix develop
@@ -66,6 +72,7 @@ direnv allow
 ```
 
 **Manual setup:**
+
 ```bash
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -107,16 +114,17 @@ cargo run -- --bind-address 127.0.0.1 --port 5050
 ```
 
 ### CLI Options
-| Option | Description |
-|--------|-------------|
-| `-c, --config` | Path to configuration file (`.toml`) |
-| `--data` | Directory for runtime data (playlists, index, auth) |
-| `-w, --web-dir` | Directory to serve as web UI |
-| `-f, --foreground` | Don't daemonize (Unix only) |
-| `--bind-address` | IP address to bind to (default: `0.0.0.0`) |
-| `--port` | Port to listen on (default: `5050`) |
-| `--log-level` | Logging level (error, warn, info, debug, trace) |
-| `--show-paths` | Display resolved paths and exit |
+
+| Option             | Description                                         |
+|--------------------|-----------------------------------------------------|
+| `-c, --config`     | Path to configuration file (`.toml`)                |
+| `--data`           | Directory for runtime data (playlists, index, auth) |
+| `-w, --web-dir`    | Directory to serve as web UI                        |
+| `-f, --foreground` | Don't daemonize (Unix only)                         |
+| `--bind-address`   | IP address to bind to (default: `0.0.0.0`)          |
+| `--port`           | Port to listen on (default: `5050`)                 |
+| `--log-level`      | Logging level (error, warn, info, debug, trace)     |
+| `--show-paths`     | Display resolved paths and exit                     |
 
 ### Testing
 
@@ -144,12 +152,14 @@ cargo fmt --check
 ## Development Conventions
 
 ### Code Style
+
 - **Hard tabs** for indentation (`.rustfmt.toml: hard_tabs = true`)
 - Standard Rust naming conventions (snake_case for functions/variables, PascalCase for types)
 - Error handling uses `thiserror` for custom error types
 - Async code uses `tokio` runtime
 
 ### Configuration
+
 - Configuration file format: **TOML**
 - Default config location varies by platform:
   - Windows: `%LOCALAPPDATA%/Permafrost/Polaris/polaris.toml`
@@ -158,17 +168,20 @@ cargo fmt --check
   - Or specified via `-c` CLI option
 
 ### Testing Practices
+
 - Unit tests located in `src/app/test.rs` and module-level `#[cfg(test)]` blocks
 - Test data located in `test-data/` directory
 - Test collection available at `test-data/small-collection/`
 
 ### Git / Contribution Notes
+
 - This is a hobby project with limited openness to code contributions
 - Acceptable contributions: bug fixes, documentation, packaging, issue tracker help
 - For non-trivial features, maintain a fork and open discussion threads
 - See `docs/CONTRIBUTING.md` for detailed guidelines
 
 ### CI/CD
+
 - GitHub Actions workflows in `.github/workflows/`
 - Tests run on Ubuntu and Windows
 - Coverage tracking via Codecov
@@ -177,19 +190,22 @@ cargo fmt --check
 ## API Documentation
 
 When running, interactive API documentation is available at:
-```
+
+```text
 http://localhost:5050/api-docs/
 ```
 
 API version: 8.1 (as of v0.16.0)
 
 ## Related Projects
+
 - **Polaris Android**: Official mobile app
 - **Polarios**: iOS app (third-party)
 - **Polarity**: Hardware player (third-party)
 - **docker-polaris**: Docker containerization
 
 ## Documentation Files
+
 - `docs/SETUP.md` - Installation guide
 - `docs/CONFIGURATION.md` - Configuration reference
 - `docs/CONTRIBUTING.md` - Contribution guidelines

@@ -126,7 +126,7 @@ fn main() {
 		println!("Config file:      {:#?}", paths.config_file_path);
 		let log_file_path = match paths.log_file_path {
 			Some(log_file_path) => log_file_path,
-			None => "Undefined".into()
+			None => "Undefined".into(),
 		};
 		println!("Log file:         {:#?}", log_file_path);
 		#[cfg(unix)]

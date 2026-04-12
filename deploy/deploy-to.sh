@@ -33,14 +33,14 @@ echo "  Platform: ${BUILD_PLATFORM:-linux/arm64}"
 download_binary() {
     local tmpdir
     tmpdir=$(mktemp -d)
-    
+
     echo ""
     echo "[1/4] Downloading ARM64 binary from GitHub Release..."
-    
+
     # Get latest release tag
     local latest_tag
     latest_tag=$(gh release list --repo lsynpy/polaris --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null)
-    
+
     if [[ -z "${latest_tag}" ]]; then
         echo "Error: No releases found"
         echo "  Make sure the ARM64 build workflow has completed"
@@ -48,10 +48,10 @@ download_binary() {
         rm -rf "${tmpdir}"
         exit 1
     fi
-    
+
     echo "  Latest release: ${latest_tag}"
     gh release download "${latest_tag}" --repo lsynpy/polaris --pattern 'polaris-arm64.tar.gz' --dir "${tmpdir}" --clobber 2>/dev/null
-    
+
     if [[ ! -f "${tmpdir}/polaris-arm64.tar.gz" ]]; then
         echo "Error: Failed to download latest release binary"
         echo "  Make sure a workflow run has completed successfully"
@@ -59,12 +59,12 @@ download_binary() {
         rm -rf "${tmpdir}"
         exit 1
     fi
-    
+
     # Extract binary
     mkdir -p "${PROJECT_DIR}/.deploy-tmp"
     tar xzf "${tmpdir}/polaris-arm64.tar.gz" -C "${PROJECT_DIR}/.deploy-tmp"
     chmod +x "${PROJECT_DIR}/.deploy-tmp/polaris"
-    
+
     rm -rf "${tmpdir}"
     echo "  Binary downloaded successfully"
 }
@@ -73,14 +73,14 @@ download_binary() {
 # Build minimal Docker image (no Rust toolchain needed)
 build_image() {
     local image_name="$1"
-    
+
     echo ""
     echo "[2/4] Building minimal Docker image..."
-    
+
     # Download web UI
     mkdir -p "${PROJECT_DIR}/.deploy-tmp/web"
     curl -sL -o /tmp/web.zip https://github.com/agersant/polaris-web/releases/latest/download/web.zip
-    
+
     # The zip may contain a 'web' subdirectory - extract and flatten
     local tmpdir
     tmpdir=$(mktemp -d)
@@ -92,7 +92,7 @@ build_image() {
         cp -r "${tmpdir}/"* "${PROJECT_DIR}/.deploy-tmp/web/"
     fi
     rm -rf "${tmpdir}" /tmp/web.zip
-    
+
     # Create minimal Dockerfile
     cat > "${PROJECT_DIR}/.deploy-tmp/Dockerfile" << 'DOCKERFILE'
 FROM debian:bookworm-slim
@@ -113,11 +113,11 @@ EXPOSE 5050
 ENTRYPOINT ["polaris"]
 CMD ["-f"]
 DOCKERFILE
-    
+
     # Build with explicit platform to ensure correct manifest
     export DOCKER_BUILDKIT=1
     docker buildx build --platform linux/arm64 --load -t "${image_name}" "${PROJECT_DIR}/.deploy-tmp"
-    
+
     echo "  Image built: ${image_name}"
 }
 
@@ -131,11 +131,11 @@ cleanup() {
 # Local deployment
 deploy_local() {
     local image_name="polaris:${ENV}"
-    
+
     download_binary
     build_image "${image_name}"
     cleanup
-    
+
     echo ""
     echo "[3/4] Stopping existing container..."
     docker stop polaris 2>/dev/null || true
@@ -202,20 +202,20 @@ deploy_remote() {
         echo "Error: VPS_HOSTNAME not set in ${ENV_FILE}"
         exit 1
     fi
-    
+
     local image_name="polaris:jdc"
     local image_tag="${IMAGE}"
-    
+
     download_binary
     build_image "${image_name}"
     cleanup
-    
+
     # Push to Aliyun ACR
     echo ""
     echo "[3/4] Pushing image to Aliyun ACR..."
     docker tag "${image_name}" "${image_tag}"
     docker push "${image_tag}"
-    
+
     echo "  Pushed: ${image_tag}"
 
     # Deploy on JDC
@@ -223,14 +223,14 @@ deploy_remote() {
     echo "[4/4] Deploying on ${VPS_HOSTNAME}..."
     ssh "${VPS_HOSTNAME}" << REMOTE_EOF
         set -euo pipefail
-        
+
         echo "  Stopping existing container..."
         docker stop polaris 2>/dev/null || true
         docker rm polaris 2>/dev/null || true
-        
+
         echo "  Pulling latest image..."
         docker pull ${image_tag}
-        
+
         echo "  Starting container..."
         docker run -d \
             --name polaris \
@@ -242,7 +242,7 @@ deploy_remote() {
             ${image_tag} \
             -f \
             -w /usr/share/polaris/web
-        
+
         echo "  Done."
         docker ps --filter "name=polaris" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 REMOTE_EOF
