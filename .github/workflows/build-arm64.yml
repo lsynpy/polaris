@@ -20,6 +20,8 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: aarch64-unknown-linux-gnu
+          cache: true
+          cache-workspaces: server -> target
 
       - name: Install dependencies
         run: |
@@ -28,10 +30,15 @@ jobs:
 
       - name: Build release binary
         run: cargo build --release --bin polaris
+        working-directory: server
+
+      - name: Package binary
+        run: tar czf polaris-arm64.tar.gz polaris
+        working-directory: server/target/release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: polaris-arm64
-          path: target/release/polaris
+          path: server/target/release/polaris-arm64.tar.gz
           retention-days: 90
