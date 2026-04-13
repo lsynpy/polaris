@@ -51,6 +51,6 @@ test("can drag and drop multiple tracks to playlist", async ({ page }) => {
 
 test("can drag and drop album art to playlist", async ({ page }) => {
     await page.getByTestId('album').filter({ hasText: "Hunted" }).getByTestId('album-art').click({ force: true });
-    await page.getByTestId('album-art').dragTo(page.getByTestId('playlist-songs'), { force: true });
+    await page.getByTestId('album-art').first().dragTo(page.getByTestId('playlist-songs'), { force: true });
     await expect(page.getByTestId('playlist-song')).toHaveCount(5);
 });
