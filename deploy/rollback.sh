@@ -11,11 +11,17 @@ source "${SCRIPT_DIR}/.env.${ENV}"
 
 IMAGE_NAME="polaris"
 CONTAINER_NAME="polaris"
-IMAGE_TAG="${IMAGE_NAME}:${VERSION}"
+
+# Support both short tags (e.g. "local", "v1.0.0") and full registry paths
+if [[ "${VERSION}" == registry* ]]; then
+    IMAGE_TAG="${VERSION}"
+else
+    IMAGE_TAG="${IMAGE_NAME}:${VERSION}"
+fi
 
 rollback_local() {
     echo "==> Rolling back to ${IMAGE_TAG} [local]..."
-    echo "  Run: cd /path/to/polaris && git checkout ${VERSION} && deploy/deploy-to.sh local"
+    bash "${SCRIPT_DIR}/deploy.sh" local "${IMAGE_TAG}"
 }
 
 rollback_remote() {
@@ -49,6 +55,14 @@ REMOTE_EOF
 
     echo "==> Rolled back on ${VPS_HOSTNAME}!"
 }
+
+# Discover valid environments from .env.* files
+VALID_ENVS=$(ls "${SCRIPT_DIR}"/.env.* 2>/dev/null | xargs -I{} basename {} | sed 's/\.env\.//' | tr '\n' ' ')
+
+if ! echo "${VALID_ENVS}" | grep -qw "${ENV}"; then
+    echo "Error: Unknown ENV '${ENV}'. Use one of: ${VALID_ENVS}"
+    exit 1
+fi
 
 if [[ "${IS_LOCAL}" == "true" ]]; then
     rollback_local

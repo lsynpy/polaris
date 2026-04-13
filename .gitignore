@@ -31,5 +31,3 @@ release
 *.res
 
 cache
-registry.cn-hangzhou.aliyuncs.com
-deploy/.registry.env

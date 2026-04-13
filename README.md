@@ -49,9 +49,46 @@ API docs available at `http://localhost:5050/api-docs/` after starting the serve
 
 ## Deployment
 
-ARM64 binary is built by GitHub Actions on `ubuntu-24.04-arm`. Deploy uses the pre-built release (no local cross-compilation):
+Both local and remote deployments use pre-built binaries from GitHub Actions — no local Rust compilation.
+
+### 2-Step Deploy Flow
 
 ```bash
-# Build web, download ARM64 release, build runtime image, push to registry, deploy via SSH
-deploy/deploy-to.sh jdc
+# Step 1: Build web, download binary, build & push image to registry
+make prepare
+
+# Step 2: Deploy to local Docker or JDC
+make deploy ENV=local    # local Docker
+make deploy ENV=jdc      # remote JDC server
+```
+
+Or combine both:
+
+```bash
+make prepare-deploy ENV=jdc
+```
+
+Image tags use `YYYYMMDD-sha` format (e.g. `20260413-abc1234`) for easy rollback.
+
+### GitHub Actions Workflows
+
+Manually trigger binary builds (no auto-build on push):
+
+```bash
+gh workflow run "Build AMD64 Binary"   # for x86_64
+gh workflow run "Build ARM64 Binary"   # for ARM64
+```
+
+### Environment Files
+
+| File | Purpose |
+|------|---------|
+| `deploy/.env.local` | Local Docker config (port, mount paths) |
+| `deploy/.env.jdc` | JDC server config (SSH host, mount paths) |
+| `deploy/.registry.env` | Aliyun ACR registry URL and namespace |
+
+### Rollback
+
+```bash
+deploy/rollback.sh <previous-tag>
 ```

@@ -1,12 +1,12 @@
-name: Build ARM64 Binary
+name: Build AMD64 Binary
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-arm64:
-    name: Build ARM64 Binary
-    runs-on: ubuntu-24.04-arm
+  build-amd64:
+    name: Build AMD64 Binary
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
@@ -17,7 +17,7 @@ jobs:
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: aarch64-unknown-linux-gnu
+          target: x86_64-unknown-linux-gnu
           cache: true
           cache-workspaces: server -> target
 
@@ -31,21 +31,21 @@ jobs:
         working-directory: server
 
       - name: Package binary
-        run: tar czf polaris-arm64.tar.gz polaris
+        run: tar czf polaris-amd64.tar.gz polaris
         working-directory: server/target/release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: polaris-arm64
-          path: server/target/release/polaris-arm64.tar.gz
+          name: polaris-amd64
+          path: server/target/release/polaris-amd64.tar.gz
           retention-days: 90
 
       - name: Generate tag
         id: tag
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
-          TAG="latest-$(date +%Y%m%d)-${SHORT_SHA}"
+          TAG="latest-amd64-$(date +%Y%m%d)-${SHORT_SHA}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Tag: ${TAG}"
 
@@ -53,10 +53,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-          name: "Latest ARM64 Build - ${{ steps.tag.outputs.tag }}"
-          files: server/target/release/polaris-arm64.tar.gz
+          name: "Latest AMD64 Build - ${{ steps.tag.outputs.tag }}"
+          files: server/target/release/polaris-amd64.tar.gz
           body: |
-            Auto-generated ARM64 build from commit ${{ github.sha }}.
+            Auto-generated AMD64 build from commit ${{ github.sha }}.
             Branch: `${{ github.ref_name }}`
           draft: false
           prerelease: true

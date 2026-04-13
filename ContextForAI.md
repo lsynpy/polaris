@@ -64,6 +64,13 @@ web/                    # Frontend web UI (React + TypeScript)
 └── ...
 
 deploy/                 # Deployment scripts
+├── .env.local           # Local Docker config
+├── .env.jdc             # JDC server config
+├── .registry.env        # Aliyun ACR registry config
+├── prepare-image.sh     # Step 1: build web, download binary, build & push image
+├── deploy.sh            # Step 2: pull image, run container, verify health
+├── rollback.sh          # Rollback to a previous image tag
+└── uninstall.sh         # Remove container, preserve config/cache
 docs/                   # Documentation
 ```
 

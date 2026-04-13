@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+ENV="${1:?Usage: deploy.sh [local|jdc] [IMAGE_TAG]}"
+ENV_FILE="${SCRIPT_DIR}/.env.${ENV}"
+
+if [[ ! -f "${ENV_FILE}" ]]; then
+    echo "Error: ${ENV_FILE} not found"
+    exit 1
+fi
+
+source "${SCRIPT_DIR}/.registry.env"
+source "${ENV_FILE}"
+
+IMAGE_TAG="${2:-}"
+if [[ -z "${IMAGE_TAG}" ]]; then
+    echo "Error: IMAGE_TAG required. Run 'make prepare' first, or pass the tag manually."
+    echo "  Usage: $0 ${ENV} <IMAGE_TAG>"
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+get_ip() {
+    if [[ "${IS_LOCAL}" == "true" ]]; then
+        echo "127.0.0.1"
+    else
+        local get_ip_cmd
+        case "${ARCH}" in
+            amd64) get_ip_cmd="hostname -I 2>/dev/null | awk '{print \$1}'" ;;
+            arm64) get_ip_cmd="ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if(\$i==\"src\") print \$(i+1)}'" ;;
+            *)     get_ip_cmd="hostname -I 2>/dev/null | awk '{print \$1}'" ;;
+        esac
+        ssh "${VPS_HOSTNAME}" "$get_ip_cmd"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+verify_health() {
+    local port="$1"
+    local ip
+    ip=$(get_ip)
+    local prefix=""
+    if [[ "${IS_LOCAL}" != "true" ]]; then
+        prefix="ssh ${VPS_HOSTNAME}"
+    fi
+
+    echo ""
+    echo "  Checking http://${ip}:${port}/"
+    local ok=false
+    for i in 1 2 3 4 5; do
+        if ${prefix} curl -sf "http://${ip}:${port}/" > /dev/null 2>&1; then
+            echo "  Web UI: OK"
+            ok=true
+            break
+        fi
+        echo "  Waiting... (${i}/5)"
+        sleep 2
+    done
+    if [[ "${ok}" != "true" ]]; then
+        echo "  Web UI: FAILED"
+    fi
+
+    echo "  Checking http://${ip}:${port}/api/version"
+    if ${prefix} curl -sf "http://${ip}:${port}/api/version" > /dev/null 2>&1; then
+        echo "  API:    OK"
+    else
+        echo "  API:    FAILED"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+deploy_container() {
+    echo "[2/3] Starting container..."
+
+    if [[ "${IS_LOCAL}" == "true" ]]; then
+        docker pull "${IMAGE_TAG}"
+        docker stop polaris 2>/dev/null || true
+        docker rm polaris 2>/dev/null || true
+        docker run -d \
+            --name polaris \
+            --restart unless-stopped \
+            -p "${POLARIS_PORT}:${POLARIS_PORT}" \
+            -v "${MUSIC_DIR}:/music" \
+            -v "${CONFIG_DIR}:/var/lib/polaris" \
+            -v "${CACHE_DIR}:/var/cache/polaris" \
+            "${IMAGE_TAG}" \
+            -f -w /usr/share/polaris/web
+    else
+        ssh "${VPS_HOSTNAME}" <<SSH_EOF
+            set -euo pipefail
+            echo '  Pulling image...'
+            docker pull ${IMAGE_TAG}
+            echo '  Starting container...'
+            docker stop polaris 2>/dev/null || true
+            docker rm polaris 2>/dev/null || true
+            docker run -d \
+                --name polaris \
+                --restart unless-stopped \
+                -p ${POLARIS_PORT}:${POLARIS_PORT} \
+                -v ${MUSIC_DIR}:/music \
+                -v ${CONFIG_DIR}:/var/lib/polaris \
+                -v ${CACHE_DIR}:/var/cache/polaris \
+                ${IMAGE_TAG} \
+                -f -w /usr/share/polaris/web
+SSH_EOF
+    fi
+}
+
+# ---------------------------------------------------------------------------
+deploy() {
+    echo ""
+    echo "==> Deploying to ${ENV} (${ARCH})..."
+    if [[ "${IS_LOCAL}" == "false" ]]; then
+        echo "  Target: ${VPS_HOSTNAME}"
+    fi
+    echo "  Image: ${IMAGE_TAG}"
+
+    # Config management (local only)
+    if [[ "${IS_LOCAL}" == "true" ]]; then
+        mkdir -p "${CONFIG_DIR}" "${CACHE_DIR}"
+
+        CONFIG_FILE="${CONFIG_DIR}/polaris.toml"
+        if [[ ! -f "${CONFIG_FILE}" ]]; then
+            echo "  Writing config..."
+            cat > "${CONFIG_FILE}" << EOF
+album_art_pattern = "(album|cover|folder|front|back|artwork)[.](jpeg|jpg|png)"
+
+[[mount_dirs]]
+source = "${MUSIC_DIR}"
+name = "Music"
+
+[users]
+
+[users.admin]
+admin = true
+initial_password = "admin"
+EOF
+        elif ! grep -q '^\[\[mount_dirs\]\]' "${CONFIG_FILE}" 2>/dev/null; then
+            echo "  Adding mount_dirs..."
+            cat >> "${CONFIG_FILE}" << EOF
+
+[[mount_dirs]]
+source = "${MUSIC_DIR}"
+name = "Music"
+EOF
+        fi
+    fi
+
+    deploy_container
+
+    echo "[3/3] Verifying deployment..."
+    if [[ "${IS_LOCAL}" != "true" ]]; then
+        echo "  Waiting for service to start..."
+        sleep 3
+    fi
+    verify_health "${POLARIS_PORT}"
+
+    local ip
+    ip=$(get_ip)
+    echo ""
+    echo "==> Deployed!"
+    echo "  Image:    ${IMAGE_TAG}"
+    echo "  Web UI:   http://${ip}:${POLARIS_PORT}"
+    echo "  API docs: http://${ip}:${POLARIS_PORT}/api-docs/"
+    if [[ "${IS_LOCAL}" == "true" ]]; then
+        docker ps --filter "name=polaris" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Discover valid environments from .env.* files
+VALID_ENVS=$(ls "${SCRIPT_DIR}"/.env.* 2>/dev/null | xargs -I{} basename {} | sed 's/\.env\.//' | tr '\n' ' ')
+
+if ! echo "${VALID_ENVS}" | grep -qw "${ENV}"; then
+    echo "Error: Unknown ENV '${ENV}'. Use one of: ${VALID_ENVS}"
+    exit 1
+fi
+
+deploy
