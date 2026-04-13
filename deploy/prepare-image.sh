@@ -42,23 +42,39 @@ TMPDIR="${SCRIPT_DIR}/.deploy-tmp"
 # ---------------------------------------------------------------------------
 echo ""
 echo "[1/5] Triggering GitHub Actions build (both archs)..."
-RUN_ID=$(gh workflow run "Build All Binaries" --ref master --json databaseId --jq '.databaseId' 2>/dev/null)
+OUTPUT=$(gh workflow run "Build All Binaries" --ref master 2>&1) || true
+RUN_ID="${OUTPUT##*/}"
+RUN_ID="${RUN_ID//[^0-9]/}"
 if [[ -z "${RUN_ID}" ]]; then
     echo "  Error: Failed to trigger workflow"
+    echo "  ${OUTPUT}"
     exit 1
 fi
 echo "  Run: https://github.com/lsynpy/polaris/actions/runs/${RUN_ID}"
 echo "  Waiting for both arch builds to complete..."
 
-# Poll every 20s until completed
+# Poll every 5s until completed
+max_attempts=120  # 10 minutes max
+attempt=0
 while true; do
-    status=$(gh run view "${RUN_ID}" --json status --jq '.status' 2>/dev/null)
-    conclusion=$(gh run view "${RUN_ID}" --json conclusion --jq '.conclusion' 2>/dev/null)
-    echo "  $(date +%H:%M:%S) status=${status:-unknown} conclusion=${conclusion:-...}"
+    attempt=$((attempt + 1))
+    if [[ ${attempt} -gt ${max_attempts} ]]; then
+        echo "  Timeout waiting for build"
+        exit 1
+    fi
+    run_json=$(gh run view "${RUN_ID}" --json status,conclusion 2>/dev/null) || true
+    if [[ -z "${run_json}" ]]; then
+        echo "  $(date +%H:%M:%S) waiting for run to appear..."
+        sleep 5
+        continue
+    fi
+    status=$(echo "${run_json}" | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])" 2>/dev/null) || status="unknown"
+    conclusion=$(echo "${run_json}" | python3 -c "import sys,json; print(json.load(sys.stdin)['conclusion'])" 2>/dev/null) || conclusion="..."
+    echo "  $(date +%H:%M:%S) status=${status} conclusion=${conclusion}"
     if [[ "${status}" == "completed" ]]; then
         break
     fi
-    sleep 20
+    sleep 5
 done
 
 if [[ "${conclusion}" != "success" ]]; then
@@ -72,7 +88,7 @@ echo "  Build succeeded"
 echo ""
 echo "[2/5] Finding latest release for ${ARCH}..."
 
-LATEST_TAG=$(gh release list --repo lsynpy/polaris --limit 5 --json tagName --jq '.[].tagName' 2>/dev/null | grep "${ARCH}" | head -1)
+LATEST_TAG=$(gh release list --repo lsynpy/polaris --limit 5 --json tagName 2>/dev/null | python3 -c "import sys,json; [print(r['tagName']) for r in json.load(sys.stdin)]" 2>/dev/null | grep "${ARCH}" | head -1)
 
 if [[ -z "${LATEST_TAG}" ]]; then
     echo "  Error: No release found for ${ARCH}"
@@ -144,9 +160,7 @@ echo "  Image built: polaris:staging"
 echo ""
 echo "  Tagging and pushing to Aliyun ACR..."
 
-docker login --username "${ALIYUN_NAMESPACE}" "${REGISTRY}" 2>/dev/null || \
-    { echo "  Login with cached credentials..."; docker login "${REGISTRY}"; }
-
+# Use cached credentials from ~/.docker/config.json
 docker tag "polaris:staging" "${IMAGE_TAG}"
 docker push "${IMAGE_TAG}"
 
