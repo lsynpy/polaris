@@ -1,5 +1,5 @@
 use std::{
-	collections::{HashMap, HashSet},
+	collections::HashSet,
 	path::{Path, PathBuf},
 };
 
@@ -19,15 +19,6 @@ pub enum File {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct Genre {
-	pub name: Spur,
-	pub albums: HashSet<AlbumKey>,
-	pub artists: HashSet<ArtistKey>,
-	pub related_genres: HashMap<GenreKey, u32>,
-	pub songs: Vec<SongKey>,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
 pub struct Artist {
 	pub name: Spur,
 	pub all_albums: HashSet<AlbumKey>,
@@ -35,7 +26,6 @@ pub struct Artist {
 	pub albums_as_additional_performer: HashSet<AlbumKey>,
 	pub albums_as_composer: HashSet<AlbumKey>,
 	pub albums_as_lyricist: HashSet<AlbumKey>,
-	pub num_songs_by_genre: HashMap<Spur, u32>,
 	pub num_songs: u32,
 }
 
@@ -64,7 +54,6 @@ pub struct Song {
 	pub duration: Option<i64>,
 	pub lyricists: TinyVec<[ArtistKey; 0]>,
 	pub composers: TinyVec<[ArtistKey; 0]>,
-	pub genres: TinyVec<[Spur; 1]>,
 	pub labels: TinyVec<[Spur; 0]>,
 	pub date_added: i64,
 }
@@ -73,9 +62,6 @@ pub struct Song {
 	Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize,
 )]
 pub struct PathKey(pub Spur);
-
-#[derive(Copy, Clone, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct GenreKey(pub Spur);
 
 #[derive(Copy, Clone, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct ArtistKey(pub Spur);
@@ -161,7 +147,6 @@ pub fn store_song(
 			.filter_map(&mut canonicalize)
 			.map(ArtistKey)
 			.collect(),
-		genres: song.genres.iter().filter_map(&mut canonicalize).collect(),
 		labels: song.labels.iter().filter_map(&mut canonicalize).collect(),
 		date_added: song.date_added,
 	})
@@ -199,11 +184,6 @@ pub fn fetch_song(dictionary: &Dictionary, song: &Song) -> super::Song {
 			.composers
 			.iter()
 			.map(|k| dictionary.resolve(&k.0).to_string())
-			.collect(),
-		genres: song
-			.genres
-			.iter()
-			.map(|s| dictionary.resolve(s).to_string())
 			.collect(),
 		labels: song
 			.labels

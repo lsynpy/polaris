@@ -17,10 +17,6 @@
                 </p>
             </div>
         </div>
-        <div v-if="genreData.length > 2" class="flex flex-col">
-            <SectionTitle label="Main Genres" icon="hexagon" />
-            <apexchart type="radar" :options="genreChartOptions" :series="genreSeries" />
-        </div>
         <div v-if="yearData.length > 1" class="flex flex-col">
             <SectionTitle label="Songs by Year" icon="timeline" />
             <apexchart type="line" :options="yearChartOptions" :series="yearSeries" />
@@ -58,35 +54,19 @@ const playlistSongs = computed(() => {
     }, out);
 });
 
-const genreData: Ref<{ x: string, y: number }[]> = ref([]);
 const yearData: Ref<[string, number][]> = ref([]);
 const duration = ref(0);
 const durationUnit = ref("");
 
 watchImmediate(playlistSongs, () => {
-    let songsByGenre = new Map<string, number>();
     let songsByYear = new Map<number, number>();
     let seconds = 0;
 
     for (const song of playlistSongs.value) {
-        for (const genre of song.genres || []) {
-            songsByGenre.set(genre, 1 + (songsByGenre.get(genre) || 0));
-        }
         if (song.year) {
             songsByYear.set(song.year, 1 + (songsByYear.get(song.year) || 0));
         }
         seconds += song.duration || 0;
-    }
-
-    {
-        // Sort genres by most songs
-        let genres = Array.from(songsByGenre, ([genre, count]) => ({ x: genre, y: Math.pow(count, 0.4) }));
-        genres.sort((a, b) => a.y - b.y).reverse();
-
-        // Only keep top 8 and sort alphabetically
-        genres = genres.slice(0, 8);
-        genres.sort((a, b) => a.x < b.x ? -1 : 1);
-        genreData.value = genres;
     }
 
     {
@@ -118,7 +98,6 @@ watchImmediate(playlistSongs, () => {
     }
 });
 
-const genreSeries = computed(() => [{ data: genreData.value }]);
 const yearSeries = computed(() => [{ data: yearData.value }]);
 
 const lightMode = computed(() => preferences.polarity == "light");
@@ -133,48 +112,6 @@ const surface700 = useCssVar(() => lightMode.value ? "--surface-700" : "--surfac
 function toHex(color: string) {
     return formatHex(rgb(`rgb(${color})`));
 }
-
-const genreChartOptions = computed(() => ({
-    chart: {
-        animations: { enabled: false },
-        redrawOnParentResize: true,
-        toolbar: { show: false },
-        zoom: { enabled: false },
-    },
-    colors: [toHex(accent600.value)],
-    markers: { size: 5, shape: "diamond", strokeOpacity: 0, },
-    plotOptions: {
-        radar: {
-            size: 130,
-            polygons: {
-                connectorColors: toHex(surface200.value),
-                strokeColors: toHex(surface200.value),
-                fill: {
-                    colors: [toHex(surface50.value), toHex(surface0.value)]
-                }
-            }
-        }
-    },
-    stroke: {
-        width: 1.5,
-    },
-    tooltip: { enabled: false },
-    xaxis: {
-        labels: {
-            style: {
-                colors: genreData.value.map(_ => toHex(surface700.value)),
-                fontSize: "12px",
-                fontWeight: 500,
-                fontFamily: "InterVariable",
-            },
-        },
-    },
-    yaxis: {
-        // Draw transparent. Disabling these entirely misaligns the chart.
-        labels: { style: { colors: "#00000000" } },
-    },
-}));
-
 
 const yearChartOptions = {
     chart: {

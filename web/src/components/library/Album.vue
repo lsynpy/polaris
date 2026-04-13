@@ -26,10 +26,6 @@
 								<span v-else-if="index < albumKey.artists.length - 1">,&nbsp;</span>
 							</span>
 						</div>
-						<div class="max-h-6 overflow-hidden flex flex-wrap gap-2">
-							<Badge v-for="genre of genres" :label="genre" :auto-color="true"
-								@click="onGenreClicked(genre)" />
-						</div>
 					</div>
 				</div>
 			</template>
@@ -46,9 +42,6 @@
 						<span v-if="index == albumKey.artists.length - 2">&nbsp;&&nbsp;</span>
 						<span v-else-if="index < albumKey.artists.length - 1">,&nbsp;</span>
 					</span>
-				</div>
-				<div class="shrink-[2] basis-80 grow max-h-6 overflow-hidden flex flex-wrap justify-end gap-2">
-					<Badge v-for="genre of genres" :label="genre" :auto-color="true" @click="onGenreClicked(genre)" />
 				</div>
 			</div>
 
@@ -120,7 +113,7 @@ import AlbumSong from '@/components/library/AlbumSong.vue';
 import { DndPayloadAlbum, DndPayloadSongs } from "@/dnd";
 import { isFakeArtist } from "@/format";
 import { saveScrollState, useHistory } from "@/history";
-import { makeArtistURL, makeGenreURL, makeSongURL } from "@/router";
+import { makeArtistURL, makeSongURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
 import { useSongsStore } from "@/stores/songs";
 import useMultiselect from "@/multiselect";
@@ -184,21 +177,6 @@ const discs = computed(() => {
 	return discs;
 });
 
-const genres = computed(() => {
-	if (!album.value) {
-		return undefined;
-	}
-	let counts = new Map<string, number>();
-	for (const song of album.value.songs) {
-		for (const genre of song.genres || []) {
-			counts.set(genre, 1 + (counts.get(genre) || 0));
-		}
-	}
-	let names = [...counts.keys()];
-	names.sort((a, b) => (counts.get(b) || 0) - (counts.get(a) || 0));
-	return names;
-});
-
 const { clickItem, selection, selectItem, selectedKeys, focusedKey, multiselect, pivotKey } = useMultiselect(
 	() => {
 		return album.value?.songs.map(s => ({ key: s.path, ...s })) || [];
@@ -239,10 +217,6 @@ function onArtistClicked(name: string) {
 	if (!isFakeArtist(name)) {
 		router.push(makeArtistURL(name));
 	}
-}
-
-function onGenreClicked(name: string) {
-	router.push(makeGenreURL(name));
 }
 
 function onSongDoubleClicked(song: Song) {

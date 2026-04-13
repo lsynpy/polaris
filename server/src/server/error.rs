@@ -31,8 +31,6 @@ pub enum APIError {
 	ArtistNotFound,
 	#[error("Album not found")]
 	AlbumNotFound,
-	#[error("Genre not found")]
-	GenreNotFound,
 	#[error("Song not found")]
 	SongNotFound,
 	#[error("DDNS update query failed with HTTP status {0}")]
@@ -150,7 +148,6 @@ impl From<app::Error> for APIError {
 			app::Error::DirectoryNotFound(d) => APIError::DirectoryNotFound(d),
 			app::Error::ArtistNotFound => APIError::ArtistNotFound,
 			app::Error::AlbumNotFound => APIError::AlbumNotFound,
-			app::Error::GenreNotFound => APIError::GenreNotFound,
 			app::Error::SongNotFound => APIError::SongNotFound,
 			app::Error::PlaylistNotFound => APIError::PlaylistNotFound,
 			app::Error::PlaylistExportZip => APIError::PlaylistExportError,

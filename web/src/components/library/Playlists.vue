@@ -21,11 +21,6 @@
 							<span class="mt-1 text-xs text-ls-500 dark:text-ds-500"
 								v-text="formatLongDuration(playlist.duration)" />
 						</div>
-						<div
-							class="hidden xl:inline-flex basis-1/4 grow shrink-[10] overflow-hidden max-h-14 flex-wrap justify-end gap-2">
-							<Badge v-for="genre of getMainGenres(playlist)" :label="genre" auto-color
-								@click="onGenreClicked(genre)" />
-						</div>
 					</div>
 				</div>
 				<div v-else class="grow flex mt-40 justify-center text-center">
@@ -58,7 +53,6 @@ import { useRouter } from "vue-router";
 
 import { PlaylistHeader } from "@/api/dto";
 import { exportPlaylists as doExportPlaylists, getPlaylist } from "@/api/endpoints";
-import Badge from "@/components/basic/Badge.vue";
 import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
 import Button from "@/components/basic/Button.vue";
 import Error from "@/components/basic/Error.vue";
@@ -68,7 +62,6 @@ import PageHeader from "@/components/basic/PageHeader.vue";
 import { formatLongDuration } from "@/format";
 import { saveScrollState, useHistory } from "@/history";
 import notify from "@/notify";
-import { makeGenreURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
 import { usePlaylistsStore } from "@/stores/playlists";
 
@@ -106,17 +99,8 @@ const filtered = computed(() => {
 	return playlists.listing.filter(p => p.name.toLowerCase().includes(query));
 });
 
-function getMainGenres(playlist: PlaylistHeader) {
-	let genres = Object.entries(playlist.num_songs_by_genre).map(([genre, count]) => ({ genre, count }));
-	genres.sort((a, b) => {
-		if (a.count != b.count) {
-			return a.count - b.count
-		} else {
-			return a.genre < b.genre ? 1 : -1;
-		}
-	}).reverse();
-	let displayGenres = genres.slice(0, 5).map(({ genre }) => genre);
-	return displayGenres;
+function onPlaylistClicked(playlist: PlaylistHeader) {
+	router.push("/playlists/" + encodeURIComponent(playlist.name)).catch(err => { });
 }
 
 async function play(playlist: PlaylistHeader) {
@@ -125,14 +109,6 @@ async function play(playlist: PlaylistHeader) {
 	playback.stop();
 	playback.queueTracks(songs);
 	playback.setName(playlist.name);
-}
-
-function onPlaylistClicked(playlist: PlaylistHeader) {
-	router.push("/playlists/" + encodeURIComponent(playlist.name)).catch(err => { });
-}
-
-function onGenreClicked(name: string) {
-	router.push(makeGenreURL(name));
 }
 
 function exportPlaylists() {

@@ -39,7 +39,6 @@ pub struct Song {
 	pub duration: Option<i64>,
 	pub lyricists: Vec<String>,
 	pub composers: Vec<String>,
-	pub genres: Vec<String>,
 	pub labels: Vec<String>,
 	pub date_added: i64,
 }
@@ -487,7 +486,6 @@ fn process_directory<P: AsRef<Path>, Q: AsRef<Path>>(
 				duration: metadata.duration.map(|n| n as i64),
 				lyricists: metadata.lyricists,
 				composers: metadata.composers,
-				genres: metadata.genres,
 				labels: metadata.labels,
 				date_added: get_date_created(&entry_real_path).unwrap_or_default(),
 			});

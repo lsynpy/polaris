@@ -17,8 +17,8 @@ mod search;
 mod storage;
 
 pub use browser::File;
-pub use collection::{Album, AlbumHeader, Artist, ArtistHeader, Genre, GenreHeader, Song};
-use storage::{store_song, AlbumKey, ArtistKey, GenreKey, InternPath, SongKey};
+pub use collection::{Album, AlbumHeader, Artist, ArtistHeader, Song};
+use storage::{store_song, AlbumKey, ArtistKey, InternPath, SongKey};
 
 #[derive(Clone)]
 pub struct Manager {
@@ -120,38 +120,6 @@ impl Manager {
 			move || {
 				let index = index_manager.index.read().unwrap();
 				index.browser.flatten(&index.dictionary, virtual_path)
-			}
-		})
-		.await
-		.unwrap()
-	}
-
-	pub async fn get_genres(&self) -> Vec<GenreHeader> {
-		spawn_blocking({
-			let index_manager = self.clone();
-			move || {
-				let index = index_manager.index.read().unwrap();
-				index.collection.get_genres(&index.dictionary)
-			}
-		})
-		.await
-		.unwrap()
-	}
-
-	pub async fn get_genre(&self, name: String) -> Result<Genre, Error> {
-		spawn_blocking({
-			let index_manager = self.clone();
-			move || {
-				let index = index_manager.index.read().unwrap();
-				let name = index
-					.dictionary
-					.get(&name)
-					.ok_or_else(|| Error::GenreNotFound)?;
-				let genre_key = GenreKey(name);
-				index
-					.collection
-					.get_genre(&index.dictionary, genre_key)
-					.ok_or_else(|| Error::GenreNotFound)
 			}
 		})
 		.await

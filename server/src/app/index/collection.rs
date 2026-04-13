@@ -12,23 +12,9 @@ use tinyvec::TinyVec;
 use unicase::UniCase;
 
 use crate::app::index::dictionary::Dictionary;
-use crate::app::index::storage::{self, AlbumKey, ArtistKey, GenreKey, SongKey};
+use crate::app::index::storage::{self, AlbumKey, ArtistKey, SongKey};
 
 use super::{dictionary, storage::fetch_song};
-
-#[derive(Debug, Default, PartialEq, Eq)]
-pub struct GenreHeader {
-	pub name: String,
-}
-
-#[derive(Debug, Default, PartialEq, Eq)]
-pub struct Genre {
-	pub header: GenreHeader,
-	pub albums: Vec<AlbumHeader>,
-	pub artists: Vec<ArtistHeader>,
-	pub related_genres: HashMap<String, u32>,
-	pub songs: Vec<Song>,
-}
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ArtistHeader {
@@ -37,7 +23,6 @@ pub struct ArtistHeader {
 	pub num_albums_as_additional_performer: u32,
 	pub num_albums_as_composer: u32,
 	pub num_albums_as_lyricist: u32,
-	pub num_songs_by_genre: HashMap<String, u32>,
 	pub num_songs: u32,
 }
 
@@ -77,7 +62,6 @@ pub struct Song {
 	pub duration: Option<i64>,
 	pub lyricists: Vec<String>,
 	pub composers: Vec<String>,
-	pub genres: Vec<String>,
 	pub labels: Vec<String>,
 	pub date_added: i64,
 }
@@ -86,7 +70,6 @@ pub struct Song {
 pub struct Collection {
 	artists: HashMap<ArtistKey, storage::Artist>,
 	albums: HashMap<AlbumKey, storage::Album>,
-	genres: HashMap<GenreKey, storage::Genre>,
 	songs: HashMap<SongKey, storage::Song>,
 	recent_albums: Vec<AlbumKey>,
 }
@@ -199,69 +182,6 @@ impl Collection {
 			.collect()
 	}
 
-	pub fn get_genres(&self, dictionary: &Dictionary) -> Vec<GenreHeader> {
-		let mut genres = self
-			.genres
-			.values()
-			.filter(|g| !g.albums.is_empty())
-			.map(|g| make_genre_header(g, dictionary))
-			.collect::<Vec<_>>();
-		let collator = dictionary::make_collator();
-		genres.sort_by(|a, b| collator.compare(&a.name, &b.name));
-		genres
-	}
-
-	pub fn get_genre(&self, dictionary: &Dictionary, genre_key: GenreKey) -> Option<Genre> {
-		self.genres.get(&genre_key).map(|genre| {
-			let collator = dictionary::make_collator();
-
-			let mut albums = genre
-				.albums
-				.iter()
-				.filter_map(|album_key| {
-					self.albums
-						.get(album_key)
-						.map(|a| make_album_header(a, dictionary))
-				})
-				.collect::<Vec<_>>();
-			albums.sort_by(|a, b| collator.compare(&a.name, &b.name));
-
-			let mut artists = genre
-				.artists
-				.iter()
-				.filter_map(|artist_key| {
-					self.artists
-						.get(artist_key)
-						.map(|a| make_artist_header(a, dictionary))
-				})
-				.collect::<Vec<_>>();
-			artists.sort_by(|a, b| collator.compare(&a.name, &b.name));
-
-			let mut songs = genre.songs.to_vec();
-			self.sort_songs(&mut songs, dictionary);
-			let songs = songs
-				.into_iter()
-				.filter_map(|k| self.get_song(dictionary, k))
-				.collect::<Vec<_>>();
-
-			let related_genres = genre
-				.related_genres
-				.iter()
-				.map(|(genre_key, song_count)| {
-					(dictionary.resolve(&genre_key.0).to_owned(), *song_count)
-				})
-				.collect();
-
-			Genre {
-				header: make_genre_header(genre, dictionary),
-				albums,
-				artists,
-				related_genres,
-				songs,
-			}
-		})
-	}
-
 	pub fn num_songs(&self) -> usize {
 		self.songs.len()
 	}
@@ -351,18 +271,7 @@ fn make_artist_header(artist: &storage::Artist, dictionary: &Dictionary) -> Arti
 		num_albums_as_additional_performer: artist.albums_as_additional_performer.len() as u32,
 		num_albums_as_composer: artist.albums_as_composer.len() as u32,
 		num_albums_as_lyricist: artist.albums_as_lyricist.len() as u32,
-		num_songs_by_genre: artist
-			.num_songs_by_genre
-			.iter()
-			.map(|(genre, num)| (dictionary.resolve(genre).to_string(), *num))
-			.collect(),
 		num_songs: artist.num_songs,
-	}
-}
-
-fn make_genre_header(genre: &storage::Genre, dictionary: &Dictionary) -> GenreHeader {
-	GenreHeader {
-		name: dictionary.resolve(&genre.name).to_string(),
 	}
 }
 
@@ -370,7 +279,6 @@ fn make_genre_header(genre: &storage::Genre, dictionary: &Dictionary) -> GenreHe
 pub struct Builder {
 	artists: HashMap<ArtistKey, storage::Artist>,
 	albums: HashMap<AlbumKey, storage::Album>,
-	genres: HashMap<GenreKey, storage::Genre>,
 	songs: HashMap<SongKey, storage::Song>,
 }
 
@@ -378,7 +286,6 @@ impl Builder {
 	pub fn add_song(&mut self, song: &storage::Song) {
 		self.add_song_to_album(song);
 		self.add_song_to_artists(song);
-		self.add_song_to_genres(song);
 
 		self.songs.insert(
 			SongKey {
@@ -400,7 +307,6 @@ impl Builder {
 		Collection {
 			artists: self.artists,
 			albums: self.albums,
-			genres: self.genres,
 			songs: self.songs,
 			recent_albums,
 		}
@@ -458,13 +364,6 @@ impl Builder {
 				if let Some(album_key) = &album_key {
 					artist.all_albums.insert(album_key.clone());
 				}
-				for genre in &song.genres {
-					*artist
-						.num_songs_by_genre
-						.entry(*genre)
-						.or_default()
-						.borrow_mut() += 1;
-				}
 			}
 		}
 	}
@@ -479,7 +378,6 @@ impl Builder {
 				albums_as_additional_performer: HashSet::new(),
 				albums_as_composer: HashSet::new(),
 				albums_as_lyricist: HashSet::new(),
-				num_songs_by_genre: HashMap::new(),
 				num_songs: 0,
 			})
 			.borrow_mut()
@@ -513,60 +411,6 @@ impl Builder {
 		album.songs.insert(SongKey {
 			virtual_path: song.virtual_path,
 		});
-	}
-
-	fn add_song_to_genres(&mut self, song: &storage::Song) {
-		for name in &song.genres {
-			let genre_key = GenreKey(*name);
-			let genre = self.genres.entry(genre_key).or_insert(storage::Genre {
-				name: *name,
-				albums: HashSet::new(),
-				artists: HashSet::new(),
-				related_genres: HashMap::new(),
-				songs: Vec::new(),
-			});
-
-			if let Some(album_key) = song.album_key() {
-				genre.albums.insert(album_key);
-			}
-
-			for artist_key in &song.album_artists {
-				genre.artists.insert(*artist_key);
-			}
-
-			for artist_key in &song.artists {
-				genre.artists.insert(*artist_key);
-			}
-
-			for artist_key in &song.composers {
-				genre.artists.insert(*artist_key);
-			}
-
-			for artist_key in &song.lyricists {
-				genre.artists.insert(*artist_key);
-			}
-
-			genre.songs.push(SongKey {
-				virtual_path: song.virtual_path,
-			});
-		}
-
-		let genres = song.genres.clone();
-		for genre in &genres {
-			for other_genre in &genres {
-				if genre == other_genre {
-					continue;
-				}
-				let Some(genre) = self.genres.get_mut(&GenreKey(*genre)) else {
-					continue;
-				};
-				genre
-					.related_genres
-					.entry(GenreKey(*other_genre))
-					.and_modify(|n| *n += 1)
-					.or_insert(1);
-			}
-		}
 	}
 }
 
@@ -1038,82 +882,6 @@ mod test {
 				album: Some("ISDN".to_owned()),
 				..Default::default()
 			})
-		);
-	}
-
-	#[test]
-	fn can_list_genres() {
-		let (collection, strings) = setup_test(Vec::from([
-			scanner::Song {
-				virtual_path: PathBuf::from("Kai.mp3"),
-				title: Some("Kai".to_owned()),
-				album: Some("ISDN".to_owned()),
-				artists: vec!["FSOL".to_owned()],
-				genres: vec!["Ambient".to_owned()],
-				..Default::default()
-			},
-			scanner::Song {
-				virtual_path: PathBuf::from("Fantasy.mp3"),
-				title: Some("Fantasy".to_owned()),
-				album: Some("Nemesis".to_owned()),
-				artists: vec!["Stratovarius".to_owned()],
-				genres: vec!["Metal".to_owned()],
-				..Default::default()
-			},
-		]));
-
-		let genres = collection
-			.get_genres(&strings)
-			.into_iter()
-			.map(|a| a.name)
-			.collect::<Vec<_>>();
-
-		assert_eq!(genres, vec!["Ambient".to_owned(), "Metal".to_owned()]);
-	}
-
-	#[test]
-	fn can_get_genre() {
-		let (collection, strings) = setup_test(Vec::from([
-			scanner::Song {
-				virtual_path: PathBuf::from("Seasons.mp3"),
-				title: Some("Seasons".to_owned()),
-				artists: vec!["Dragonforce".to_owned()],
-				genres: vec!["Metal".to_owned()],
-				..Default::default()
-			},
-			scanner::Song {
-				virtual_path: PathBuf::from("Fantasy.mp3"),
-				title: Some("Fantasy".to_owned()),
-				artists: vec!["Stratovarius".to_owned()],
-				genres: vec!["Metal".to_owned(), "Power Metal".to_owned()],
-				..Default::default()
-			},
-			scanner::Song {
-				virtual_path: PathBuf::from("Arv.mp3"),
-				title: Some("Arv".to_owned()),
-				artists: vec!["Ásmegin".to_owned()],
-				genres: vec!["Metal".to_owned()],
-				..Default::default()
-			},
-			scanner::Song {
-				virtual_path: PathBuf::from("Calcium.mp3"),
-				title: Some("Calcium".to_owned()),
-				genres: vec!["Electronic".to_owned()],
-				..Default::default()
-			},
-		]));
-
-		let genre = collection
-			.get_genre(&strings, GenreKey(strings.get("Metal").unwrap()))
-			.unwrap();
-
-		assert_eq!(genre.header.name, "Metal".to_owned());
-		assert_eq!(genre.artists[0].name, UniCase::new("Ásmegin"));
-		assert_eq!(genre.artists[1].name, UniCase::new("Dragonforce"));
-		assert_eq!(genre.artists[2].name, UniCase::new("Stratovarius"));
-		assert_eq!(
-			genre.related_genres,
-			HashMap::from_iter([("Power Metal".to_owned(), 1)])
 		);
 	}
 }

@@ -54,7 +54,6 @@ function isCurrent(item: Item) {
 
 const navigation: Ref<Item[]> = ref([
 	{ label: "Files", icon: "folder", pattern: new RegExp("^/files"), testID: "files", action: navigateTo("/files") },
-	{ label: "Genres", icon: "label", pattern: new RegExp("^/genres"), testID: "genres", action: navigateTo("/genres") },
 	{ label: "Artists", icon: "person", pattern: new RegExp("^/artists"), testID: "artists", action: navigateTo("/artists") },
 	{ label: "Albums", icon: "library_music", pattern: new RegExp("^/albums"), testID: "albums", action: navigateTo("/albums") },
 	{ label: "Playlists", icon: "playlist_play", pattern: new RegExp("^/playlist"), testID: "playlists", action: navigateTo("/playlists") },

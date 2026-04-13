@@ -44,14 +44,6 @@
                     <SongField v-if="song.album" label="Album"
                         :values="[{ text: song.album, link: makeAlbumURLFromSong(song) }]" />
                     <SongField v-if="song.year" label="Year" :values="[{ text: song.year.toString() }]" />
-                    <SongField v-if="song.genres?.length" label="Genres" :values="song.genres.map(v => ({ text: v }))">
-                        <template #default="{ values }">
-                            <div class="flex flex-wrap gap-2">
-                                <Badge v-for="value in values" :label="value.text" auto-color
-                                    @click="onGenreClicked(value.text)" />
-                            </div>
-                        </template>
-                    </SongField>
                     <SongField v-if="song.composers?.length" label="Composers"
                         :values="song.composers.map(v => ({ text: v, link: tryMakeArtistURL(v) }))" />
                     <SongField v-if="song.album_artists?.length" label="Album artists"
@@ -75,7 +67,6 @@ import { useRouter } from 'vue-router';
 
 import { makeThumbnailURL } from '@/api/endpoints';
 import AlbumArt from '@/components/AlbumArt.vue';
-import Badge from '@/components/basic/Badge.vue';
 import Draggable from '@/components/basic/Draggable.vue';
 import PageHeader from '@/components/basic/PageHeader.vue';
 import Spinner from '@/components/basic/Spinner.vue';
@@ -83,7 +74,7 @@ import SongField from '@/components/library/SongField.vue';
 import { DndPayloadAlbumKey } from '@/dnd';
 import { formatLongDuration, isFakeArtist } from '@/format';
 import { useSongsStore } from '@/stores/songs';
-import { makeAlbumURLFromSong, makeArtistURL, makeGenreURL } from '@/router';
+import { makeAlbumURLFromSong, makeArtistURL } from '@/router';
 
 const router = useRouter();
 const songs = useSongsStore();
@@ -138,7 +129,4 @@ function onAlbumClicked() {
     router.push(albumURL.value);
 }
 
-function onGenreClicked(name: string) {
-    router.push(makeGenreURL(name));
-}
 </script>

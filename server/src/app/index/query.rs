@@ -15,7 +15,6 @@ pub enum TextField {
 	AlbumArtist,
 	Artist,
 	Composer,
-	Genre,
 	Label,
 	Lyricist,
 	Path,
@@ -87,7 +86,6 @@ pub fn make_parser() -> impl Parser<char, Expr, Error = Simple<char>> {
 			keyword("albumartist").to(TextField::AlbumArtist),
 			keyword("artist").to(TextField::Artist),
 			keyword("composer").to(TextField::Composer),
-			keyword("genre").to(TextField::Genre),
 			keyword("label").to(TextField::Label),
 			keyword("lyricist").to(TextField::Lyricist),
 			keyword("path").to(TextField::Path),
@@ -212,10 +210,6 @@ fn can_parse_text_fields() {
 	assert_eq!(
 		parser.parse(r#"composer = "yoko kanno""#).unwrap(),
 		Expr::TextCmp(TextField::Composer, TextOp::Eq, "yoko kanno".to_owned()),
-	);
-	assert_eq!(
-		parser.parse(r#"genre = "jazz""#).unwrap(),
-		Expr::TextCmp(TextField::Genre, TextOp::Eq, "jazz".to_owned()),
 	);
 	assert_eq!(
 		parser.parse(r#"label = "diverse system""#).unwrap(),

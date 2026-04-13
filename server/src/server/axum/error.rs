@@ -26,7 +26,6 @@ impl IntoResponse for APIError {
 			APIError::DuplicateUsername => StatusCode::CONFLICT,
 			APIError::ArtistNotFound => StatusCode::NOT_FOUND,
 			APIError::AlbumNotFound => StatusCode::NOT_FOUND,
-			APIError::GenreNotFound => StatusCode::NOT_FOUND,
 			APIError::SongNotFound => StatusCode::NOT_FOUND,
 			APIError::EmbeddedArtworkNotFound => StatusCode::NOT_FOUND,
 			APIError::EmptyPassword => StatusCode::BAD_REQUEST,

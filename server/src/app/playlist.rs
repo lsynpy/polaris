@@ -1,5 +1,5 @@
 use core::clone::Clone;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::io::{Cursor, Read, Write};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -29,7 +29,6 @@ pub struct Manager {
 pub struct PlaylistHeader {
 	pub name: String,
 	pub duration: Duration,
-	pub num_songs_by_genre: HashMap<String, u32>,
 }
 
 #[derive(Debug)]
@@ -59,7 +58,6 @@ pub mod v1 {
 		pub owner: String,
 		pub name: String,
 		pub duration: Duration,
-		pub num_songs_by_genre: BTreeMap<String, u32>,
 		pub virtual_paths: Vec<PathBuf>,
 	}
 
@@ -75,7 +73,6 @@ impl From<PlaylistModel> for PlaylistHeader {
 		Self {
 			name: p.name,
 			duration: p.duration,
-			num_songs_by_genre: p.num_songs_by_genre.into_iter().collect(),
 		}
 	}
 }
@@ -165,20 +162,12 @@ impl Manager {
 					.filter_map(|s| s.duration.map(|d| d as u64))
 					.sum();
 
-				let mut num_songs_by_genre = BTreeMap::<String, u32>::new();
-				for song in &songs {
-					for genre in &song.genres {
-						*num_songs_by_genre.entry(genre.clone()).or_default() += 1;
-					}
-				}
-
 				let virtual_paths = songs.into_iter().map(|s| s.virtual_path).collect();
 
 				transaction.upsert::<PlaylistModel>(PlaylistModel {
 					owner: owner.to_owned(),
 					name: name.to_owned(),
 					duration: Duration::from_secs(duration),
-					num_songs_by_genre,
 					virtual_paths,
 				})?;
 

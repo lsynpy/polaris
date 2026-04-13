@@ -23,11 +23,6 @@
                         {{ `${item.data.num_songs} ${pluralize('song', item.data.num_songs)}` }}
                     </span>
                 </div>
-                <div
-                    class="hidden xl:inline-flex basis-1/4 grow shrink-[10] overflow-hidden max-h-14 flex-wrap justify-end gap-2">
-                    <Badge v-for="genre of getMainGenres(item.data)" :label="genre" auto-color
-                        @click="onGenreClicked(genre)" />
-                </div>
             </li>
         </ul>
     </div>
@@ -39,9 +34,8 @@ import { useVirtualList } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 
 import { ArtistHeader } from '@/api/dto';
-import Badge from "@/components/basic/Badge.vue";
 import { pluralize } from '@/format';
-import { makeArtistURL, makeGenreURL } from "@/router";
+import { makeArtistURL } from "@/router";
 import { ArtistListMode, usePreferencesStore } from '@/stores/preferences';
 
 const router = useRouter();
@@ -87,21 +81,4 @@ const proportionalStyle: Ref<{ [key: string]: CSSProperties }> = computed(() => 
 
     return style;
 });
-
-function getMainGenres(artist: ArtistHeader) {
-    let genres = Object.entries(artist.num_songs_by_genre).map(([genre, count]) => ({ genre, count }));
-    genres.sort((a, b) => {
-        if (a.count != b.count) {
-            return a.count - b.count
-        } else {
-            return a.genre < b.genre ? 1 : -1;
-        }
-    }).reverse();
-    let displayGenres = genres.slice(0, 10).map(({ genre }) => genre);
-    return displayGenres;
-}
-
-function onGenreClicked(name: string) {
-    router.push(makeGenreURL(name));
-}
 </script>

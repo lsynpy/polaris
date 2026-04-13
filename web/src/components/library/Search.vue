@@ -72,9 +72,9 @@
 					J.S.
 					Bach or Jacques Offenbach as their composer.</p>
 				<p>Exact matches can be expressed with the = operator. For example, <span
-						class="font-medium text-accent-600 font-mono">genre = metal</span> would return songs that have
-					a "Metal"
-					tag, but not those with only a "Doom Metal" tag.</p>
+						class="font-medium text-accent-600 font-mono">label = ninja</span> would return songs that have
+					a "Ninja Tuna"
+					label.</p>
 				<p>For number fields (track number, disc number, year), comparisons using
 					<span class="font-medium text-accent-600 font-mono">&lt;</span>,
 					<span class="font-medium text-accent-600 font-mono">&lt;=</span>,
@@ -112,7 +112,6 @@
 					<li><span class="font-medium text-accent-600 font-mono">artist</span></li>
 					<li><span class="font-medium text-accent-600 font-mono">composer</span></li>
 					<li><span class="font-medium text-accent-600 font-mono">discnumber</span></li>
-					<li><span class="font-medium text-accent-600 font-mono">genre</span></li>
 					<li><span class="font-medium text-accent-600 font-mono">label</span></li>
 					<li><span class="font-medium text-accent-600 font-mono">lyricist</span></li>
 					<li><span class="font-medium text-accent-600 font-mono">path</span></li>

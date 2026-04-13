@@ -70,7 +70,6 @@ const sampleArtist = {
     num_albums_as_composer: 3,
     num_albums_as_lyricist: 2,
     num_albums_as_additional_performer: 1,
-    num_songs_by_genre: {},
 };
 
 defineExpose({ contentHeight, numColumns });

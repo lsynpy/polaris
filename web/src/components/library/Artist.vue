@@ -1,13 +1,6 @@
 <template>
     <div class="flex flex-col">
-        <PageHeader :title="name">
-            <template #right>
-                <div
-                    class="basis-auto xl:basis-0 grow max-h-6 my-1.5 xl:mb-0 overflow-hidden flex flex-wrap xl:justify-end gap-2">
-                    <Badge v-for="genre of genres" :label="genre" :auto-color="true" @click="onGenreClicked(genre)" />
-                </div>
-            </template>
-        </PageHeader>
+        <PageHeader :title="name" />
 
         <div v-if="artist" class="flex flex-col min-h-0">
             <div ref="viewport" class="relative grow -m-4 p-4 mb-0 overflow-y-auto flex flex-col gap-8">
@@ -64,7 +57,6 @@ import { useRouter } from "vue-router";
 
 import { AlbumHeader, AlbumKey } from "@/api/dto";
 import { getAlbum, getArtist, } from "@/api/endpoints";
-import Badge from '@/components/basic/Badge.vue';
 import Button from '@/components/basic/Button.vue';
 import ButtonGroup from '@/components/basic/ButtonGroup.vue';
 import Error from '@/components/basic/Error.vue';
@@ -75,7 +67,6 @@ import Spinner from '@/components/basic/Spinner.vue';
 import AlbumGrid from '@/components/library/AlbumGrid.vue';
 import Timeline from '@/components/library/Timeline.vue';
 import { saveScrollState, useHistory } from "@/history";
-import { makeGenreURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
 import { usePreferencesStore } from "@/stores/preferences";
 
@@ -92,13 +83,6 @@ const { state: artist, isLoading, error, execute: fetchArtist } = useAsyncState(
     undefined,
     { immediate: false, resetOnExecute: true }
 );
-
-const genres = computed(() => {
-    let entries = Object.entries(artist.value?.num_songs_by_genre || {});
-    let displayGenres = entries.map(([genre, count]) => ({ genre, count }));
-    displayGenres.sort((a, b) => a.count - b.count).reverse();
-    return displayGenres.map(({ genre }) => genre);
-});
 
 const mainWorks = computed(() => {
     if (!artist.value) {
@@ -138,10 +122,6 @@ if (!useHistory("artist", [artist, saveScrollState(viewport)])) {
 watch(() => props.name, () => {
     fetchArtist(0, props.name);
 });
-
-function onGenreClicked(name: string) {
-    router.push(makeGenreURL(name));
-}
 
 async function play(albums: AlbumHeader[]) {
     const songs = await listSongs(albums);

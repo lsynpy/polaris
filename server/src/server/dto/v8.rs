@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 use crate::app::{config, index, peaks, playlist, scanner, thumbnail};
-use std::{collections::HashMap, convert::From, path::PathBuf, time::UNIX_EPOCH};
+use std::{convert::From, path::PathBuf, time::UNIX_EPOCH};
 
 #[derive(PartialEq, Eq, Debug, Serialize, Deserialize, ToSchema)]
 pub struct Version {
@@ -96,8 +96,6 @@ impl From<peaks::Peaks> for Peaks {
 pub struct PlaylistHeader {
 	#[schema(examples("Hotel Lounge Jazz", "Chill Beats 🏝️"))]
 	pub name: String,
-	#[schema(examples(json!({ "Jazz": 2, "Classical": 11 })))]
-	pub num_songs_by_genre: HashMap<String, u32>,
 	#[schema(examples(2309))]
 	/// Playlist duration in seconds
 	pub duration: u64,
@@ -107,7 +105,6 @@ impl From<playlist::PlaylistHeader> for PlaylistHeader {
 	fn from(header: playlist::PlaylistHeader) -> Self {
 		Self {
 			name: header.name.to_string(),
-			num_songs_by_genre: header.num_songs_by_genre,
 			duration: header.duration.as_secs(),
 		}
 	}
@@ -289,9 +286,6 @@ pub struct Song {
 	#[schema(examples(json!(["Jane Composer"])))]
 	pub composers: Vec<String>,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
-	#[schema(examples(json!(["Jazz", "Classical"])))]
-	pub genres: Vec<String>,
-	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	#[schema(examples(json!(["Ninja Tuna"])))]
 	pub labels: Vec<String>,
 }
@@ -311,7 +305,6 @@ impl From<index::Song> for Song {
 			duration: s.duration,
 			lyricists: s.lyricists,
 			composers: s.composers,
-			genres: s.genres,
 			labels: s.labels,
 		}
 	}
@@ -349,66 +342,6 @@ impl From<index::File> for BrowserEntry {
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
-pub struct GenreHeader {
-	#[schema(examples("Jazz", "Classical"))]
-	pub name: String,
-}
-
-impl From<index::GenreHeader> for GenreHeader {
-	fn from(g: index::GenreHeader) -> Self {
-		Self {
-			name: g.name.to_string(),
-		}
-	}
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
-pub struct Genre {
-	#[serde(flatten)]
-	pub header: GenreHeader,
-	#[schema(examples(json!({ "Jazz": 20, "Classical": 90 })))]
-	pub related_genres: HashMap<String, u32>,
-	pub main_artists: Vec<ArtistHeader>,
-	pub recently_added: Vec<AlbumHeader>,
-}
-
-impl From<index::Genre> for Genre {
-	fn from(mut genre: index::Genre) -> Self {
-		let main_artists = {
-			genre.artists.sort_by_key(|a| {
-				-(a.num_songs_by_genre
-					.get(&genre.header.name)
-					.copied()
-					.unwrap_or_default() as i32)
-			});
-			genre
-				.artists
-				.into_iter()
-				.take(20)
-				.map(|a| a.into())
-				.collect()
-		};
-
-		let recently_added = {
-			genre.albums.sort_by_key(|a| -a.date_added);
-			genre
-				.albums
-				.into_iter()
-				.take(20)
-				.map(|a| a.into())
-				.collect()
-		};
-
-		Self {
-			header: GenreHeader::from(genre.header),
-			related_genres: genre.related_genres,
-			main_artists,
-			recently_added,
-		}
-	}
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 pub struct ArtistHeader {
 	#[schema(examples("Stratovarius", "Parov Stelar"))]
 	pub name: String,
@@ -420,8 +353,6 @@ pub struct ArtistHeader {
 	pub num_albums_as_composer: u32,
 	#[schema(examples(0, 5))]
 	pub num_albums_as_lyricist: u32,
-	#[schema(examples(json!({ "Jazz": 2, "Classical": 11 })))]
-	pub num_songs_by_genre: HashMap<String, u32>,
 	#[schema(examples(12))]
 	pub num_songs: u32,
 }
@@ -434,7 +365,6 @@ impl From<index::ArtistHeader> for ArtistHeader {
 			num_albums_as_additional_performer: a.num_albums_as_additional_performer,
 			num_albums_as_composer: a.num_albums_as_composer,
 			num_albums_as_lyricist: a.num_albums_as_lyricist,
-			num_songs_by_genre: a.num_songs_by_genre,
 			num_songs: a.num_songs,
 		}
 	}

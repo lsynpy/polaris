@@ -7,8 +7,6 @@ import {
 	ArtistHeader,
 	Authorization,
 	BrowserEntry,
-	Genre,
-	GenreHeader,
 	IndexStatus,
 	InitialSetup,
 	MountDir,
@@ -156,37 +154,6 @@ export async function flatten(path: string): Promise<SongList> {
 }
 
 // Semantic
-
-export async function getGenres(): Promise<GenreHeader[]> {
-	const response = await request("/genres");
-	return await response.json();
-}
-
-export async function getGenre(name: string): Promise<Genre> {
-	const response = await request(`/genre/${encodeURIComponent(name)}`);
-	return await response.json();
-}
-
-export async function getGenreAlbums(name: string): Promise<AlbumHeader[]> {
-	const response = await request(`/genre/${encodeURIComponent(name)}/albums`);
-	return await response.json();
-}
-
-export async function getGenreArtists(name: string): Promise<ArtistHeader[]> {
-	const response = await request(`/genre/${encodeURIComponent(name)}/artists`);
-	return await response.json();
-}
-
-export async function getGenreSongs(genre: string): Promise<SongList> {
-	const songs = useSongsStore();
-	const response = await request(`/genre/${encodeURIComponent(genre)}/songs`);
-	const songList = response.json().then((list: SongList) => {
-		songs.ingest(list.first_songs);
-		songs.request(list.paths);
-		return list;
-	});
-	return await songList;
-}
 
 export async function getAlbums(): Promise<AlbumHeader[]> {
 	const response = await request("/albums");

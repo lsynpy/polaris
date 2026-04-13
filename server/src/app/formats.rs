@@ -2,7 +2,6 @@ use id3::TagLike;
 use lewton::inside_ogg::OggStreamReader;
 use log::error;
 use regex::Regex;
-use std::borrow::Cow;
 use std::fs;
 use std::io::{Seek, SeekFrom};
 use std::path::Path;
@@ -25,7 +24,6 @@ pub struct SongMetadata {
 	pub has_artwork: bool,
 	pub lyricists: Vec<String>,
 	pub composers: Vec<String>,
-	pub genres: Vec<String>,
 	pub labels: Vec<String>,
 }
 
@@ -105,7 +103,6 @@ fn read_id3_from_file<P: AsRef<Path>>(file: &fs::File, path: P) -> Result<SongMe
 	let has_artwork = tag.pictures().count() > 0;
 	let lyricists = tag.get_text_values("TEXT");
 	let composers = tag.get_text_values("TCOM");
-	let genres = tag.genres_parsed().iter().map(Cow::to_string).collect();
 	let labels = tag.get_text_values("TPUB");
 
 	Ok(SongMetadata {
@@ -120,7 +117,6 @@ fn read_id3_from_file<P: AsRef<Path>>(file: &fs::File, path: P) -> Result<SongMe
 		has_artwork,
 		lyricists,
 		composers,
-		genres,
 		labels,
 	})
 }
@@ -180,7 +176,6 @@ fn read_ape<P: AsRef<Path>>(path: P) -> Result<SongMetadata, Error> {
 	let track_number = tag.item("Track").and_then(ape_ext::read_x_of_y);
 	let lyricists = ape_ext::read_strings(tag.item("LYRICIST"));
 	let composers = ape_ext::read_strings(tag.item("COMPOSER"));
-	let genres = ape_ext::read_strings(tag.item("GENRE"));
 	let labels = ape_ext::read_strings(tag.item("PUBLISHER"));
 	Ok(SongMetadata {
 		artists,
@@ -194,7 +189,6 @@ fn read_ape<P: AsRef<Path>>(path: P) -> Result<SongMetadata, Error> {
 		has_artwork: false,
 		lyricists,
 		composers,
-		genres,
 		labels,
 	})
 }
@@ -216,7 +210,6 @@ fn read_vorbis<P: AsRef<Path>>(path: P) -> Result<SongMetadata, Error> {
 				"DATE" => metadata.year = parse_year(&value),
 				"LYRICIST" => metadata.lyricists.push(value),
 				"COMPOSER" => metadata.composers.push(value),
-				"GENRE" => metadata.genres.push(value),
 				"PUBLISHER" => metadata.labels.push(value),
 				_ => (),
 			}
@@ -242,7 +235,6 @@ fn read_opus<P: AsRef<Path>>(path: P) -> Result<SongMetadata, Error> {
 				"DATE" => metadata.year = parse_year(&value),
 				"LYRICIST" => metadata.lyricists.push(value),
 				"COMPOSER" => metadata.composers.push(value),
-				"GENRE" => metadata.genres.push(value),
 				"PUBLISHER" => metadata.labels.push(value),
 				_ => (),
 			}
@@ -283,7 +275,6 @@ fn read_flac<P: AsRef<Path>>(path: P) -> Result<SongMetadata, Error> {
 		has_artwork,
 		lyricists: multivalue(vorbis.get("LYRICIST")),
 		composers: multivalue(vorbis.get("COMPOSER")),
-		genres: multivalue(vorbis.get("GENRE")),
 		labels: multivalue(vorbis.get("PUBLISHER")),
 	})
 }
@@ -310,7 +301,6 @@ fn read_mp4<P: AsRef<Path>>(path: P) -> Result<SongMetadata, Error> {
 		has_artwork: tag.artwork().is_some(),
 		lyricists: tag.take_lyricists().collect(),
 		composers: tag.take_composers().collect(),
-		genres: tag.take_genres().collect(),
 		labels: tag.take_strings_of(&label_ident).collect(),
 	})
 }
@@ -329,7 +319,6 @@ fn reads_file_metadata() {
 		has_artwork: false,
 		lyricists: vec!["TEST LYRICIST".into()],
 		composers: vec!["TEST COMPOSER".into()],
-		genres: vec!["TEST GENRE".into()],
 		labels: vec!["TEST LABEL".into()],
 	};
 	let expected_with_duration = SongMetadata {
@@ -447,7 +436,6 @@ fn reads_multivalue_fields() {
 		has_artwork: false,
 		lyricists: vec!["TEST LYRICIST".into(), "OTHER LYRICIST".into()],
 		composers: vec!["TEST COMPOSER".into(), "OTHER COMPOSER".into()],
-		genres: vec!["TEST GENRE".into(), "OTHER GENRE".into()],
 		labels: vec!["TEST LABEL".into(), "OTHER LABEL".into()],
 	};
 	let expected_with_duration = SongMetadata {

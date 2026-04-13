@@ -279,10 +279,6 @@ impl Builder {
 			self.number_fields[NumberField::DiscNumber].insert(*disc_number, song_key);
 		}
 
-		for (str, spur) in scanner_song.genres.iter().zip(storage_song.genres.iter()) {
-			self.text_fields[TextField::Genre].insert(str, *spur, song_key);
-		}
-
 		for (str, spur) in scanner_song.labels.iter().zip(storage_song.labels.iter()) {
 			self.text_fields[TextField::Label].insert(str, *spur, song_key);
 		}
@@ -602,7 +598,6 @@ mod test {
 			scanner::Song {
 				virtual_path: PathBuf::from("accented.mp3"),
 				artists: vec!["à la maison".to_owned()],
-				genres: vec!["Metal".to_owned()],
 				..Default::default()
 			},
 			scanner::Song {
@@ -610,7 +605,6 @@ mod test {
 				artists: vec!["Dragonforce".to_owned()],
 				album: Some("The Power Within".to_owned()),
 				year: Some(2012),
-				genres: vec!["Metal".to_owned()],
 				..Default::default()
 			},
 			scanner::Song {
@@ -619,7 +613,6 @@ mod test {
 				album: Some("Valley of the Damned".to_owned()),
 				year: Some(2003),
 				track_number: Some(7),
-				genres: vec!["Metal".to_owned()],
 				..Default::default()
 			},
 			scanner::Song {
@@ -628,34 +621,28 @@ mod test {
 				album: Some("Valley of the Damned".to_owned()),
 				year: Some(2003),
 				track_number: Some(5),
-				genres: vec!["Metal".to_owned()],
 				..Default::default()
 			},
 			scanner::Song {
 				virtual_path: PathBuf::from("eternal snow.mp3"),
 				artists: vec!["Rhapsody".to_owned()],
-				genres: vec!["Metal".to_owned()],
 				..Default::default()
 			},
 			scanner::Song {
 				virtual_path: PathBuf::from("alchemy.mp3"),
 				artists: vec!["Avantasia".to_owned()],
-				genres: vec!["Metal".to_owned()],
 				..Default::default()
 			},
 		]);
 
-		let songs = ctx.search("metal");
-		assert_eq!(songs.len(), 6);
+		let songs = ctx.search("dragonforce");
+		assert_eq!(songs.len(), 3);
 		assert_eq!(
 			songs,
 			vec![
-				PathBuf::from("accented.mp3"),
-				PathBuf::from("alchemy.mp3"),
 				PathBuf::from("starfire.mp3"),
 				PathBuf::from("revelations.mp3"),
 				PathBuf::from("cry thunder.mp3"),
-				PathBuf::from("eternal snow.mp3"),
 			]
 		);
 	}

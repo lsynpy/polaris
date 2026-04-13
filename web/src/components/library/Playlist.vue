@@ -8,9 +8,6 @@
         </PageHeader>
 
         <div v-if="songs.length" class="mb-8 basis-10 shrink-0 flex items-center justify-between">
-            <div class="basis-0 grow max-h-6 mr-6 mt-1.5 overflow-hidden flex flex-wrap gap-2">
-                <Badge v-for="genre of genres" :label="genre" :auto-color="true" @click="onGenreClicked(genre)" />
-            </div>
             <Switch v-model="preferences.savedPlaylistDisplayMode"
                 :items="[{ icon: 'compress', value: 'compact' }, { icon: 'view_list', value: 'tall' }]" />
         </div>
@@ -44,14 +41,12 @@ import { watchImmediate } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 
 import { getPlaylist } from '@/api/endpoints';
-import Badge from '@/components/basic/Badge.vue';
 import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
 import Error from '@/components/basic/Error.vue';
 import PageHeader from '@/components/basic/PageHeader.vue';
 import Spinner from '@/components/basic/Spinner.vue';
 import Switch from '@/components/basic/Switch.vue';
 import SongList from '@/components/SongList.vue';
-import { makeGenreURL } from '@/router';
 import { formatLongDuration } from '@/format';
 import { usePlaybackStore } from '@/stores/playback';
 import { usePlaylistsStore } from '@/stores/playlists';
@@ -74,13 +69,6 @@ const error = ref(false);
 
 const songs = computed(() => playlist.value?.songs.paths || []);
 
-const genres = computed(() => {
-    let entries = Object.entries(playlist.value?.num_songs_by_genre || {});
-    let displayGenres = entries.map(([genre, count]) => ({ genre, count }));
-    displayGenres.sort((a, b) => a.count - b.count).reverse();
-    return displayGenres.map(({ genre }) => genre);
-});
-
 watchImmediate(() => props.name, async () => {
     try {
         isLoading.value = true;
@@ -92,10 +80,6 @@ watchImmediate(() => props.name, async () => {
 });
 
 const playlist = computed(() => playlists.playlists.get(props.name));
-
-function onGenreClicked(name: string) {
-    router.push(makeGenreURL(name));
-}
 
 async function play() {
     const songs = await listSongs();
