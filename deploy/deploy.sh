@@ -42,33 +42,8 @@ verify_health() {
     local port="$1"
     local ip
     ip=$(get_ip)
-    local prefix=""
-    if [[ "${IS_LOCAL}" != "true" ]]; then
-        prefix="ssh ${VPS_HOSTNAME}"
-    fi
 
-    echo ""
-    echo "  Checking http://${ip}:${port}/"
-    local ok=false
-    for i in 1 2 3 4 5; do
-        if ${prefix} curl -sf "http://${ip}:${port}/" > /dev/null 2>&1; then
-            echo "  Web UI: OK"
-            ok=true
-            break
-        fi
-        echo "  Waiting... (${i}/5)"
-        sleep 2
-    done
-    if [[ "${ok}" != "true" ]]; then
-        echo "  Web UI: FAILED"
-    fi
-
-    echo "  Checking http://${ip}:${port}/api/version"
-    if ${prefix} curl -sf "http://${ip}:${port}/api/version" > /dev/null 2>&1; then
-        echo "  API:    OK"
-    else
-        echo "  API:    FAILED"
-    fi
+    uv run "${SCRIPT_DIR}/verify.py" "${ip}" "${port}"
 }
 
 # ---------------------------------------------------------------------------
