@@ -109,12 +109,12 @@ jobs:
         run: |
           mkdir -p /tmp/polaris-data
           (cd ../server && cargo run -- \
-            --foreground \
-            --config automated.config.toml \
-            --web-dir ../web/dist \
+            -f \
+            -c automated.config.toml \
+            -w ../web/dist \
             --data /tmp/polaris-data \
             --bind-address 127.0.0.1 \
-            --port 5050 &)
+            -p 5050 &)
 
           # Wait for server to be ready
           for i in $(seq 1 60); do
