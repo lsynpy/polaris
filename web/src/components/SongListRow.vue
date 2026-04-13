@@ -6,7 +6,7 @@
             <AlbumArt :url="artworkURL" />
         </div>
         <!-- Title + Artist (2 lines) -->
-        <div v-if="!compact" class="grow basis-0 pr-4 flex flex-col justify-center min-w-0">
+        <div v-if="!compact" class="grow basis-0 pr-0 flex flex-col justify-center min-w-0 -mr-4">
             <div class="truncate" v-if="song">
                 {{ formatTitle(song) }}
             </div>
@@ -24,7 +24,7 @@
             <div v-else class="bg-black/5 dark:bg-white/5 h-3 rounded-full" />
         </div>
         <!-- Album -->
-        <div v-if="!compact" class="basis-40 shrink-0 pr-4 truncate self-center">
+        <div v-if="!compact" class="basis-72 shrink-0 pr-2 -ml-6 truncate self-center">
             <span v-if="song" v-text="song.album || 'Unknown Album'" />
             <div v-else class="bg-black/5 dark:bg-white/5 h-3 rounded-full" />
         </div>

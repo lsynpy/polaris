@@ -57,3 +57,81 @@ jobs:
       - name: Build
         working-directory: web
         run: npm run build
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # --- Server ---
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: true
+          cache-workspaces: server -> target
+
+      - name: Install server dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Build server
+        working-directory: server
+        run: cargo build --verbose
+
+      # --- Web ---
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Build web
+        working-directory: web
+        run: npx vite build
+
+      # --- Playwright ---
+      - name: Install Playwright
+        working-directory: web
+        run: npx playwright install --with-deps firefox
+
+      # --- Start Polaris ---
+      - name: Create blank config
+        run: |
+          touch server/automated.config.toml
+
+      - name: Start Polaris server
+        working-directory: server
+        run: |
+          mkdir -p /tmp/polaris-data
+          cargo run -- \
+            --foreground \
+            --config automated.config.toml \
+            --web-dir ../web/dist \
+            --data /tmp/polaris-data \
+            --bind-address 127.0.0.1 \
+            --port 5050 &
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5050/api/version && break
+            sleep 1
+          done
+
+      # --- Run tests ---
+      - name: Run Playwright tests
+        working-directory: web
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 30
