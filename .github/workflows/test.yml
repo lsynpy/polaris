@@ -99,34 +99,33 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps firefox
 
-      # --- Start Polaris ---
+      # --- Start Polaris and run tests ---
       - name: Create blank config
         run: |
           touch server/automated.config.toml
 
-      - name: Start Polaris server
-        working-directory: server
+      - name: Start Polaris and run tests
+        working-directory: web
         run: |
           mkdir -p /tmp/polaris-data
-          cargo run -- \
+          (cd ../server && cargo run -- \
             --foreground \
             --config automated.config.toml \
             --web-dir ../web/dist \
             --data /tmp/polaris-data \
             --bind-address 127.0.0.1 \
-            --port 5050 &
+            --port 5050 &)
 
-      - name: Wait for server
-        run: |
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:5050/api/version && break
+          # Wait for server to be ready
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:5050/api/version > /dev/null 2>&1; then
+              echo "Server ready after ${i}s"
+              break
+            fi
             sleep 1
           done
 
-      # --- Run tests ---
-      - name: Run Playwright tests
-        working-directory: web
-        run: npx playwright test
+          npx playwright test
 
       - name: Upload Playwright report
         if: always()
