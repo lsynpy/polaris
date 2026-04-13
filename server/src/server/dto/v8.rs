@@ -561,3 +561,16 @@ pub struct GetRecentAlbumsParameters {
 	#[schema(examples(100, 1000))]
 	pub count: Option<usize>,
 }
+
+// ─── Play Statistics ────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RecordPlayInput {
+	#[schema(value_type = String, examples("my_music/artist/album/song.mp3"))]
+	pub song_path: PathBuf,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct RecordPlayOutput {
+	pub success: bool,
+}

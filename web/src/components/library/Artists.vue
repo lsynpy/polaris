@@ -8,11 +8,13 @@
                 <InputText class="w-64 xl:w-80" v-model="filter" id="filter" placeholder="Filter" icon="filter_alt"
                     autofocus clearable />
                 <!-- TODO tooltips -->
-                <Switch v-model="preferences.artistListMode"
-                    :items="[{ icon: 'view_list', value: 'fixed' }, { icon: 'text_fields', value: 'proportional' }]" />
+                <Switch v-model="sortBy" :items="[
+                    { icon: 'sort_by_alpha', value: 'alpha' },
+                    { icon: 'trending_up', value: 'popularity' },
+                    { icon: 'history', value: 'recent' }
+                ]" />
             </div>
-            <ArtistList v-if="filtered.length" ref="list" class="grow min-h-0 -mr-4 pr-4" :artists="filtered"
-                :list-mode="preferences.artistListMode" />
+            <ArtistGrid v-if="filtered.length" ref="list" class="grow min-h-0 -mr-4 pr-4" :artists="filtered" />
             <div v-else class="grow flex mt-40 justify-center text-center">
                 <BlankStateFiller icon="filter_alt_off">
                     No artists match this filter.
@@ -40,32 +42,45 @@
 
 <script setup lang="ts">
 import { computed, Ref, ref, toRaw, useTemplateRef, watch } from "vue";
-import { useAsyncState, useScroll } from "@vueuse/core";
+import { useScroll } from "@vueuse/core";
 
 import { ArtistHeader } from "@/api/dto";
-import { getArtists } from "@/api/endpoints";
+import { getArtists, ArtistSort } from "@/api/endpoints";
 import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
 import Error from "@/components/basic/Error.vue";
 import InputText from "@/components/basic/InputText.vue";
 import Switch from "@/components/basic/Switch.vue";
 import PageHeader, { PageViewMode } from "@/components/basic/PageHeader.vue";
 import Spinner from "@/components/basic/Spinner.vue";
-import ArtistList from "@/components/library/ArtistList.vue";
+import ArtistGrid from "@/components/library/ArtistGrid.vue";
 import { saveScrollState, useHistory } from "@/history";
-import { usePreferencesStore } from "@/stores/preferences";
-
-const preferences = usePreferencesStore();
 
 const artists: Ref<ArtistHeader[]> = ref([]);
+const isLoading = ref(true);
+const isReady = ref(false);
+const error = ref(false);
 
-const { state: fetchedArtists, isLoading, isReady, error } = useAsyncState(getArtists, []);
-watch(fetchedArtists, (a) => {
-    if (!artists.value.length) {
-        artists.value = a;
+async function fetchArtists(sort?: ArtistSort) {
+    isLoading.value = true;
+    error.value = false;
+    try {
+        artists.value = await getArtists(sort);
+        isReady.value = true;
+    } catch (e) {
+        error.value = true;
+    } finally {
+        isLoading.value = false;
     }
-});
+}
+
+fetchArtists();
 
 const filter = ref("");
+const sortBy = ref<ArtistSort>("alpha");
+
+watch(sortBy, (newSort) => {
+    fetchArtists(newSort);
+});
 
 type ArtistRole = "performer" | "composer" | "lyricist";
 const roleFilter: Ref<ArtistRole> = ref("performer");

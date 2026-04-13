@@ -203,8 +203,11 @@ export async function getRecentAlbums(offset: number, count: number): Promise<Al
 	return await response.json();
 }
 
-export async function getArtists(): Promise<ArtistHeader[]> {
-	const response = await request("/artists");
+export type ArtistSort = 'alpha' | '-alpha' | 'popularity' | 'recent' | '-recent';
+
+export async function getArtists(sort?: ArtistSort): Promise<ArtistHeader[]> {
+	const params = sort ? `?sort=${sort}` : '';
+	const response = await request("/artists" + params);
 	return await response.json();
 }
 
@@ -311,4 +314,18 @@ export function makeAudioURL(path: string) {
 export function makeThumbnailURL(path: string, size: "tiny" | "small" | "large" | "native") {
 	size = size || "small";
 	return `api/thumbnail/${encodeURIComponent(path)}?size=${size}&pad=false&auth_token=${getAuthToken()}`;
+}
+
+// Play Statistics
+
+export interface RecordPlayInput {
+	song_path: string;
+}
+
+export async function recordPlay(input: RecordPlayInput): Promise<void> {
+	await request("/play/record", {
+		method: "POST",
+		body: JSON.stringify(input),
+		headers: { "Content-Type": "application/json" },
+	});
 }

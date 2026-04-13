@@ -16,6 +16,7 @@ mod browser;
 mod collection;
 mod docs;
 mod media;
+mod play_stats;
 mod playlist;
 mod search;
 mod settings;
@@ -118,6 +119,10 @@ pub trait TestService {
 
 	async fn login(&mut self) {
 		self.login_internal(TEST_USERNAME, TEST_PASSWORD).await;
+	}
+
+	async fn login_as(&mut self, username: &str, password: &str) {
+		self.login_internal(username, password).await;
 	}
 
 	async fn logout(&mut self) {

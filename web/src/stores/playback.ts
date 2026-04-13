@@ -4,6 +4,7 @@ import { defineStore, acceptHMRUpdate } from "pinia";
 import { loadUserValue, saveUserValue } from "@/storage";
 import { useSongsStore } from "@/stores/songs";
 import { useUserStore } from "@/stores/user";
+import { recordPlay } from "@/api/endpoints";
 
 let next_key = 0;
 
@@ -36,6 +37,7 @@ export const usePlaybackStore = defineStore("playback", () => {
 	const volume = ref(1);
 	const elapsedSeconds = ref(0);
 	const duration = ref(0);
+	const playedSongs = new Set<string>();
 
 	reset();
 
@@ -131,6 +133,7 @@ export const usePlaybackStore = defineStore("playback", () => {
 	function clear() {
 		playlist.value = [];
 		name.value = "";
+		playedSongs.clear();
 		savePlaylist();
 	}
 
@@ -219,7 +222,22 @@ export const usePlaybackStore = defineStore("playback", () => {
 	}
 
 	function setElapsedSeconds(seconds: number) {
+		const wasPlaying = currentTrack.value && elapsedSeconds.value < duration.value && duration.value > 0;
+		const isFinished = seconds >= duration.value && duration.value > 0 && currentTrack.value;
+
 		elapsedSeconds.value = seconds;
+
+		// Record play when song finishes
+		if (wasPlaying && isFinished && currentTrack.value) {
+			const songPath = currentTrack.value.path;
+			if (!playedSongs.has(songPath)) {
+				playedSongs.add(songPath);
+				recordPlay({ song_path: songPath }).catch(() => {
+					// Silently fail - don't disrupt playback
+				});
+			}
+		}
+
 		savePlaybackState();
 	}
 

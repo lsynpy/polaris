@@ -288,6 +288,23 @@ impl Manager {
 		.unwrap()
 	}
 
+	pub async fn get_song(&self, virtual_path: PathBuf) -> Result<Song, Error> {
+		spawn_blocking({
+			let index_manager = self.clone();
+			move || {
+				let index = index_manager.index.read().unwrap();
+				virtual_path
+					.get(&index.dictionary)
+					.and_then(|virtual_path| {
+						let key = SongKey { virtual_path };
+						index.collection.get_song(&index.dictionary, key)
+					})
+					.ok_or_else(|| Error::SongNotFound)
+			}
+		})
+		.await?
+	}
+
 	pub async fn search(&self, query: String) -> Result<Vec<PathBuf>, Error> {
 		spawn_blocking({
 			let index_manager = self.clone();

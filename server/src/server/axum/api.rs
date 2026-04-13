@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
 	extract::{multipart::MultipartError, DefaultBodyLimit, Multipart, Path, Query, State},
@@ -12,11 +13,12 @@ use axum_extra::TypedHeader;
 use axum_range::{KnownSize, Ranged};
 use http::{header, HeaderMap};
 use regex::Regex;
+use serde::Deserialize;
 use tower_http::{compression::CompressionLayer, CompressionLevel};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 use crate::{
-	app::{auth, config, ddns, index, peaks, playlist, scanner, thumbnail, App},
+	app::{auth, config, ddns, index, peaks, play_stats, playlist, scanner, thumbnail, App},
 	server::{
 		dto, error::APIError, APIMajorVersion, API_ARRAY_SEPARATOR, API_MAJOR_VERSION,
 		API_MINOR_VERSION,
@@ -69,6 +71,8 @@ pub fn router() -> OpenApiRouter<App> {
 		.routes(routes!(get_songs))
 		.routes(routes!(get_peaks))
 		.routes(routes!(get_thumbnail))
+		// Play statistics
+		.routes(routes!(record_play))
 		// Layers
 		.layer(CompressionLayer::new().quality(CompressionLevel::Fastest))
 		.layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB
@@ -577,6 +581,9 @@ async fn get_albums(
 		("auth_token" = []),
 		("auth_query_param" = []),
 	),
+	params(
+		("sort" = Option<String>, Query, description = "Sort order: alpha (default), -alpha, popularity, -popularity, recent, -recent"),
+	),
 	responses(
 		(status = 200, body = Vec<dto::ArtistHeader>),
 	)
@@ -584,14 +591,73 @@ async fn get_albums(
 async fn get_artists(
 	_auth: Auth,
 	State(index_manager): State<index::Manager>,
+	State(play_stats_manager): State<play_stats::Manager>,
+	Query(query): Query<ArtistQuery>,
 ) -> Result<Json<Vec<dto::ArtistHeader>>, APIError> {
-	let artists = index_manager
+	let mut artists = index_manager
 		.get_artists()
 		.await
 		.into_iter()
 		.map(|a| a.into())
-		.collect();
+		.collect::<Vec<_>>();
+
+	if let Some(ref sort_param) = query.sort {
+		let (field, desc) = parse_sort(sort_param);
+
+		match (field, desc) {
+			("popularity", desc) => {
+				let stats = play_stats_manager
+					.get_artist_play_counts(_auth.get_username())
+					.await?;
+				let counts: HashMap<String, u32> = stats
+					.into_iter()
+					.map(|s| (s.name, s.play_count))
+					.collect();
+				artists.sort_by(|a: &dto::ArtistHeader, b: &dto::ArtistHeader| {
+					let ca = counts.get(&a.name).copied().unwrap_or(0);
+					let cb = counts.get(&b.name).copied().unwrap_or(0);
+					if desc { ca.cmp(&cb) } else { cb.cmp(&ca) }
+						.then_with(|| a.name.cmp(&b.name))
+				});
+			}
+			("recent", desc) => {
+				let stats = play_stats_manager
+					.get_artist_recently_played(_auth.get_username())
+					.await?;
+				let last_played: HashMap<String, SystemTime> = stats
+					.into_iter()
+					.map(|s| (s.name, s.last_played))
+					.collect();
+				artists.sort_by(|a: &dto::ArtistHeader, b: &dto::ArtistHeader| {
+					let la = last_played.get(&a.name).copied().unwrap_or(UNIX_EPOCH);
+					let lb = last_played.get(&b.name).copied().unwrap_or(UNIX_EPOCH);
+					if desc { la.cmp(&lb) } else { lb.cmp(&la) }
+						.then_with(|| a.name.cmp(&b.name))
+				});
+			}
+			("alpha", desc) => {
+				artists.sort_by(|a, b| {
+					if desc { b.name.cmp(&a.name) } else { a.name.cmp(&b.name) }
+				});
+			}
+			_ => { /* invalid sort param, use default alpha */ }
+		}
+	}
+
 	Ok(Json(artists))
+}
+
+fn parse_sort(sort: &str) -> (&str, bool) {
+	if sort.starts_with('-') {
+		(&sort[1..], true)
+	} else {
+		(sort, false)
+	}
+}
+
+#[derive(Debug, Deserialize)]
+struct ArtistQuery {
+	sort: Option<String>,
 }
 
 #[utoipa::path(
@@ -1188,4 +1254,31 @@ async fn get_thumbnail(
 
 	let range = range.map(|TypedHeader(r)| r);
 	Ok(Ranged::new(range, body))
+}
+
+// ─── Play Statistics ────────────────────────────────────────────────────────
+
+#[utoipa::path(
+	post,
+	path = "/play/record",
+	tag = "Statistics",
+	description = "Records a song play. Should be called when a song finishes playing.",
+	security(
+		("auth_token" = []),
+		("auth_query_param" = []),
+	),
+	request_body = dto::RecordPlayInput,
+	responses(
+		(status = 200, body = dto::RecordPlayOutput),
+	)
+)]
+async fn record_play(
+	auth: Auth,
+	State(play_stats_manager): State<play_stats::Manager>,
+	Json(input): Json<dto::RecordPlayInput>,
+) -> Result<Json<dto::RecordPlayOutput>, APIError> {
+	play_stats_manager
+		.record_play(auth.get_username(), &input.song_path)
+		.await?;
+	Ok(Json(dto::RecordPlayOutput { success: true }))
 }

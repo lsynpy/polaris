@@ -14,6 +14,7 @@ pub mod formats;
 pub mod index;
 pub mod ndb;
 pub mod peaks;
+pub mod play_stats;
 pub mod playlist;
 pub mod scanner;
 pub mod thumbnail;
@@ -160,6 +161,7 @@ pub struct App {
 	pub config_manager: config::Manager,
 	pub peaks_manager: peaks::Manager,
 	pub playlist_manager: playlist::Manager,
+	pub play_stats_manager: play_stats::Manager,
 	pub thumbnail_manager: thumbnail::Manager,
 }
 
@@ -188,7 +190,9 @@ impl App {
 		let scanner = scanner::Scanner::new(index_manager.clone(), config_manager.clone()).await?;
 		let peaks_manager = peaks::Manager::new(peaks_dir_path);
 		let playlist_manager =
-			playlist::Manager::new(config_manager.clone(), index_manager.clone(), ndb_manager);
+			playlist::Manager::new(config_manager.clone(), index_manager.clone(), ndb_manager.clone());
+		let play_stats_manager =
+			play_stats::Manager::new(index_manager.clone(), ndb_manager);
 		let thumbnail_manager = thumbnail::Manager::new(thumbnails_dir_path);
 
 		let app = Self {
@@ -200,6 +204,7 @@ impl App {
 			config_manager,
 			peaks_manager,
 			playlist_manager,
+			play_stats_manager,
 			thumbnail_manager,
 		};
 

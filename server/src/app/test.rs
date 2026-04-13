@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use crate::app::config::storage::*;
-use crate::app::{auth, config, index, ndb, playlist, scanner};
+use crate::app::{auth, config, index, ndb, play_stats, playlist, scanner};
 use crate::test::*;
 
 pub struct Context {
@@ -9,6 +9,7 @@ pub struct Context {
 	pub scanner: scanner::Scanner,
 	pub config_manager: config::Manager,
 	pub playlist_manager: playlist::Manager,
+	pub play_stats_manager: play_stats::Manager,
 }
 
 pub struct ContextBuilder {
@@ -59,6 +60,10 @@ impl ContextBuilder {
 			index_manager.clone(),
 			ndb_manager.clone(),
 		);
+		let play_stats_manager = play_stats::Manager::new(
+			index_manager.clone(),
+			ndb_manager,
+		);
 
 		config_manager.apply_config(self.config).await.unwrap();
 
@@ -67,6 +72,7 @@ impl ContextBuilder {
 			scanner,
 			config_manager,
 			playlist_manager,
+			play_stats_manager,
 		}
 	}
 }

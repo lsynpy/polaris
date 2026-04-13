@@ -365,3 +365,25 @@ pub fn import_playlists(files: HashMap<String, Vec<u8>>) -> Request<Vec<u8>> {
 fn url_encode(input: &str) -> String {
 	percent_encode(input.as_bytes(), NON_ALPHANUMERIC).to_string()
 }
+
+// ─── Play Statistics ────────────────────────────────────────────────────────
+
+pub fn record_play(song_path: &str) -> Request<dto::RecordPlayInput> {
+	let input = dto::RecordPlayInput {
+		song_path: Path::new(song_path).to_path_buf(),
+	};
+	Request::builder()
+		.method(Method::POST)
+		.uri("/api/play/record")
+		.body(input)
+		.unwrap()
+}
+
+pub fn artists_with_sort(sort: &str) -> Request<()> {
+	let endpoint = format!("/api/artists?sort={}", sort);
+	Request::builder()
+		.method(Method::GET)
+		.uri(&endpoint)
+		.body(())
+		.unwrap()
+}

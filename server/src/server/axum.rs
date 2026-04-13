@@ -84,6 +84,12 @@ impl FromRef<App> for app::playlist::Manager {
 	}
 }
 
+impl FromRef<App> for app::play_stats::Manager {
+	fn from_ref(app: &App) -> Self {
+		app.play_stats_manager.clone()
+	}
+}
+
 impl FromRef<App> for app::thumbnail::Manager {
 	fn from_ref(app: &App) -> Self {
 		app.thumbnail_manager.clone()
