@@ -1,0 +1,69 @@
+name: Build All Binaries
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            target: x86_64-unknown-linux-gnu
+            runner: ubuntu-24.04
+            platform: linux/amd64
+          - arch: arm64
+            target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+            platform: linux/arm64
+
+    name: Build ${{ matrix.arch }} Binary
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          cache: true
+          cache-workspaces: server -> target
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Build release binary
+        run: cargo build --release --bin polaris
+        working-directory: server
+
+      - name: Package binary
+        run: tar czf polaris-${{ matrix.arch }}.tar.gz polaris
+        working-directory: server/target/release
+
+      - name: Generate tag
+        id: tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TAG="latest-${{ matrix.arch }}-$(date +%Y%m%d)-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Tag: ${TAG}"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "Latest ${{ matrix.arch }} Build - ${{ steps.tag.outputs.tag }}"
+          files: server/target/release/polaris-${{ matrix.arch }}.tar.gz
+          body: |
+            Auto-generated ${{ matrix.arch }} build from commit ${{ github.sha }}.
+            Branch: `${{ github.ref_name }}`
+          draft: false
+          prerelease: true
+          generate_release_notes: true

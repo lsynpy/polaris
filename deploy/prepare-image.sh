@@ -28,6 +28,9 @@ if [[ -z "${ARCH:-}" ]]; then
     esac
 fi
 
+# Convert ARCH to title case for workflow name (amd64→AMD64, arm64→ARM64)
+ARCH_UPPER=$(echo "${ARCH}" | tr '[:lower:]' '[:upper:]')
+
 case "${ARCH}" in
     amd64) PLATFORM="linux/amd64" ;;
     arm64) PLATFORM="linux/arm64" ;;
@@ -38,34 +41,55 @@ TMPDIR="${SCRIPT_DIR}/.deploy-tmp"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "[1/4] Building web UI..."
-cd "${PROJECT_DIR}/web" && npm ci && npm run build
-echo "  Web UI built"
+echo "[1/5] Triggering GitHub Actions build (both archs)..."
+RUN_ID=$(gh workflow run "Build All Binaries" --ref master --json databaseId --jq '.databaseId' 2>/dev/null)
+if [[ -z "${RUN_ID}" ]]; then
+    echo "  Error: Failed to trigger workflow"
+    exit 1
+fi
+echo "  Run: https://github.com/lsynpy/polaris/actions/runs/${RUN_ID}"
+echo "  Waiting for both arch builds to complete..."
+
+# Poll every 20s until completed
+while true; do
+    status=$(gh run view "${RUN_ID}" --json status --jq '.status' 2>/dev/null)
+    conclusion=$(gh run view "${RUN_ID}" --json conclusion --jq '.conclusion' 2>/dev/null)
+    echo "  $(date +%H:%M:%S) status=${status:-unknown} conclusion=${conclusion:-...}"
+    if [[ "${status}" == "completed" ]]; then
+        break
+    fi
+    sleep 20
+done
+
+if [[ "${conclusion}" != "success" ]]; then
+    echo "  Build failed (conclusion: ${conclusion})"
+    echo "  Check: https://github.com/lsynpy/polaris/actions/runs/${RUN_ID}"
+    exit 1
+fi
+echo "  Build succeeded"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "[2/4] Downloading server binary from GitHub Release..."
-DOWNLOAD_DIR=$(mktemp -d)
+echo "[2/5] Finding latest release for ${ARCH}..."
 
-LATEST_TAG=$(gh release list --repo lsynpy/polaris --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null)
+LATEST_TAG=$(gh release list --repo lsynpy/polaris --limit 5 --json tagName --jq '.[].tagName' 2>/dev/null | grep "${ARCH}" | head -1)
 
 if [[ -z "${LATEST_TAG}" ]]; then
-    echo "  Error: No releases found"
-    echo "  Trigger a build first:"
-    echo "    gh workflow run 'Build ${ARCH} Binary'"
-    rm -rf "${DOWNLOAD_DIR}"
+    echo "  Error: No release found for ${ARCH}"
     exit 1
 fi
+echo "  Release: ${LATEST_TAG}"
 
-echo "  Latest release: ${LATEST_TAG}"
+# ---------------------------------------------------------------------------
+echo ""
+echo "[3/5] Downloading server binary..."
+DOWNLOAD_DIR=$(mktemp -d)
 
 if ! gh release download "${LATEST_TAG}" \
     --repo lsynpy/polaris \
     --pattern "polaris-${ARCH}.tar.gz" \
     --dir "${DOWNLOAD_DIR}" --clobber 2>/dev/null; then
     echo "  Error: Failed to download polaris-${ARCH}.tar.gz"
-    echo "  Trigger a build first:"
-    echo "    gh workflow run 'Build ${ARCH^^} Binary'"
     rm -rf "${DOWNLOAD_DIR}"
     exit 1
 fi
@@ -78,7 +102,13 @@ echo "  Binary downloaded"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "[3/4] Building Docker image (${PLATFORM})..."
+echo "[4/5] Building web UI..."
+cd "${PROJECT_DIR}/web" && npm ci && npm run build
+echo "  Web UI built"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "[5/5] Building Docker image (${PLATFORM}) and pushing to ACR..."
 
 mkdir -p "${TMPDIR}/web"
 cp -r "${PROJECT_DIR}/web/dist/"* "${TMPDIR}/web/"
@@ -112,7 +142,7 @@ echo "  Image built: polaris:staging"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "[4/4] Tagging and pushing to Aliyun ACR..."
+echo "  Tagging and pushing to Aliyun ACR..."
 
 docker login --username "${ALIYUN_NAMESPACE}" "${REGISTRY}" 2>/dev/null || \
     { echo "  Login with cached credentials..."; docker login "${REGISTRY}"; }
@@ -124,4 +154,4 @@ rm -rf "${TMPDIR}"
 
 echo ""
 echo "==> Image ready: ${IMAGE_TAG}"
-echo "  To deploy: make deploy ENV=local|jdc IMAGE_TAG=${IMAGE_TAG}"
+echo "  To deploy: make deploy ENV=${ENV}"
