@@ -19,34 +19,20 @@ pub struct Manager {
 
 // ─── Native DB Model ───────────────────────────────────────────────────────
 
-pub mod v1 {
-	use std::{
-		path::PathBuf,
-		time::SystemTime,
-	};
-
-	use native_db::*;
-	use native_model::{native_model, Model};
-	use serde::{Deserialize, Serialize};
-
-	#[derive(Debug, Serialize, Deserialize)]
-	#[native_model(id = 2, version = 1)]
-	#[native_db]
-	pub struct PlayRecordModel {
-		#[primary_key]
-		pub play_id: String,
-		#[secondary_key]
-		pub username: String,
-		pub song_path: PathBuf,
-		pub artist_names: Vec<String>,
-		pub album_name: String,
-		pub album_artists: Vec<String>,
-		pub played_at: SystemTime,
-	}
+#[derive(Debug, Serialize, Deserialize)]
+#[native_model(id = 100, version = 1)]
+#[native_db]
+pub struct PlayRecordModel {
+	#[primary_key]
+	pub play_id: String,
+	#[secondary_key]
+	pub username: String,
+	pub song_path: PathBuf,
+	pub artist_names: Vec<String>,
+	pub album_name: String,
+	pub album_artists: Vec<String>,
+	pub played_at: SystemTime,
 }
-
-pub type PlayRecordModel = v1::PlayRecordModel;
-pub type PlayRecordModelKey = v1::PlayRecordModelKey;
 
 // ─── Public types ──────────────────────────────────────────────────────────
 
@@ -54,6 +40,7 @@ pub type PlayRecordModelKey = v1::PlayRecordModelKey;
 pub struct ArtistPlayCount {
 	pub name: String,
 	pub play_count: u32,
+	#[allow(dead_code)]
 	pub last_played: SystemTime,
 }
 
@@ -79,7 +66,6 @@ impl Manager {
 		username: &str,
 		song_path: &Path,
 	) -> Result<(), Error> {
-		// Look up song metadata from the collection index
 		let song_result = self.index_manager.get_song(song_path.to_path_buf()).await;
 		let (artist_names, album_name, album_artists) = match &song_result {
 			Ok(song) => (
@@ -87,14 +73,19 @@ impl Manager {
 				song.album.clone().unwrap_or_default(),
 				song.album_artists.clone(),
 			),
-			Err(_) => {
-				(Vec::new(), String::new(), Vec::new())
-			}
+			Err(_) => (Vec::new(), String::new(), Vec::new()),
 		};
 
 		let record = PlayRecordModel {
 			username: username.to_owned(),
-			play_id: format!("{}-{}", username, SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos()),
+			play_id: format!(
+				"{}-{}",
+				username,
+				SystemTime::now()
+					.duration_since(UNIX_EPOCH)
+					.unwrap_or_default()
+					.as_nanos()
+			),
 			song_path: song_path.to_path_buf(),
 			artist_names,
 			album_name,
@@ -116,6 +107,7 @@ impl Manager {
 	}
 
 	/// Get recent plays for a user.
+	#[allow(dead_code)]
 	pub async fn get_recent_plays(
 		&self,
 		username: &str,
@@ -170,15 +162,14 @@ impl Manager {
 					}
 				}
 
-				let result: Vec<ArtistPlayCount> = map
+				Ok(map
 					.into_iter()
 					.map(|(name, (count, last))| ArtistPlayCount {
 						name,
 						play_count: count,
 						last_played: last,
 					})
-					.collect();
-				Ok(result)
+					.collect())
 			}
 		})
 		.await?
@@ -206,12 +197,13 @@ impl Manager {
 				for record in records {
 					for artist in &record.artist_names {
 						let entry = map.entry(artist.clone());
-						entry.and_modify(|last| {
-							if record.played_at > *last {
-								*last = record.played_at;
-							}
-						})
-						.or_insert(record.played_at);
+						entry
+							.and_modify(|last| {
+								if record.played_at > *last {
+									*last = record.played_at;
+								}
+							})
+							.or_insert(record.played_at);
 					}
 				}
 
@@ -229,14 +221,13 @@ impl Manager {
 	}
 
 	/// Remove play records for a song that was deleted from the library.
+	#[allow(dead_code)]
 	pub async fn cleanup_removed_song(&self, song_path: &Path) -> Result<usize, Error> {
 		spawn_blocking({
 			let manager = self.clone();
 			let song_path = song_path.to_path_buf();
 			move || -> Result<usize, Box<native_db::db_type::Error>> {
 				let transaction = manager.db.rw_transaction()?;
-
-				// Scan all records and remove ones matching the song path
 				let all_records = transaction
 					.scan()
 					.primary::<PlayRecordModel>()?
@@ -261,6 +252,7 @@ impl Manager {
 	}
 
 	/// Remove play records older than the given number of days.
+	#[allow(dead_code)]
 	pub async fn cleanup_old_records(&self, days_to_keep: u32) -> Result<usize, Error> {
 		let cutoff = SystemTime::now()
 			.checked_sub(std::time::Duration::from_secs(days_to_keep as u64 * 86400))
@@ -270,7 +262,6 @@ impl Manager {
 			let manager = self.clone();
 			move || -> Result<usize, Box<native_db::db_type::Error>> {
 				let transaction = manager.db.rw_transaction()?;
-
 				let all_records = transaction
 					.scan()
 					.primary::<PlayRecordModel>()?
@@ -339,7 +330,6 @@ mod test {
 
 		ctx.scanner.run_scan().await.unwrap();
 
-		// Play 3 songs by Khemmis
 		let songs = [
 			"root/Khemmis/Hunted/01 - Above The Water.mp3",
 			"root/Khemmis/Hunted/02 - Candlelight.mp3",
@@ -369,12 +359,8 @@ mod test {
 		ctx.scanner.run_scan().await.unwrap();
 
 		let path = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
-
-		// Alice plays twice
 		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
 		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
-
-		// Bob plays once
 		ctx.play_stats_manager.record_play("bob", path).await.unwrap();
 
 		let alice_stats = ctx.play_stats_manager.get_artist_play_counts(TEST_USER).await.unwrap();
@@ -401,7 +387,6 @@ mod test {
 		let path_b = song_path("root/Tobokegao/Picnic/01 - ピクニック (Picnic).mp3");
 
 		ctx.play_stats_manager.record_play(TEST_USER, path_a).await.unwrap();
-		// Small delay to ensure different timestamps
 		tokio::time::sleep(std::time::Duration::from_millis(10)).await;
 		ctx.play_stats_manager.record_play(TEST_USER, path_b).await.unwrap();
 
@@ -425,15 +410,12 @@ mod test {
 		let path = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
 		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
 
-		// Verify play exists
 		let plays = ctx.play_stats_manager.get_recent_plays(TEST_USER, 10).await.unwrap();
 		assert_eq!(plays.len(), 1);
 
-		// Cleanup that song
 		let removed = ctx.play_stats_manager.cleanup_removed_song(path).await.unwrap();
 		assert_eq!(removed, 1);
 
-		// Verify play is gone
 		let plays = ctx.play_stats_manager.get_recent_plays(TEST_USER, 10).await.unwrap();
 		assert!(plays.is_empty());
 	}
@@ -448,11 +430,9 @@ mod test {
 
 		ctx.scanner.run_scan().await.unwrap();
 
-		// Play a song (creates a recent record)
 		let path = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
 		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
 
-		// Keep 0 days — should remove everything
 		let removed = ctx.play_stats_manager.cleanup_old_records(0).await.unwrap();
 		assert_eq!(removed, 1);
 
