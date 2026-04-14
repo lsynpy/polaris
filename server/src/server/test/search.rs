@@ -8,7 +8,7 @@ use crate::{
 		test::{
 			constants::*,
 			protocol::{self, V8},
-			ServiceType, TestService,
+			TestService, TestServiceType,
 		},
 	},
 	test_name,
@@ -16,7 +16,7 @@ use crate::{
 
 #[tokio::test]
 async fn search_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::search::<V8>("rhapsody");
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -24,7 +24,7 @@ async fn search_requires_auth() {
 
 #[tokio::test]
 async fn search_with_query() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;

@@ -7,12 +7,12 @@ use http::{header, StatusCode};
 
 use crate::server::dto::{self};
 use crate::server::test::protocol::V8;
-use crate::server::test::{constants::*, protocol, ServiceType, TestService};
+use crate::server::test::{constants::*, protocol, TestService, TestServiceType};
 use crate::test_name;
 
 #[tokio::test]
 async fn list_playlists_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::playlists();
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -20,7 +20,7 @@ async fn list_playlists_requires_auth() {
 
 #[tokio::test]
 async fn list_playlists_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 	let request = protocol::playlists();
@@ -32,7 +32,7 @@ async fn list_playlists_golden_path() {
 
 #[tokio::test]
 async fn save_playlist_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let my_playlist = dto::SavePlaylistInput { tracks: Vec::new() };
 	let request = protocol::save_playlist(TEST_PLAYLIST_NAME, my_playlist);
 	let response = service.fetch(&request).await;
@@ -41,7 +41,7 @@ async fn save_playlist_requires_auth() {
 
 #[tokio::test]
 async fn save_playlist_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -53,7 +53,7 @@ async fn save_playlist_golden_path() {
 
 #[tokio::test]
 async fn save_playlist_large() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -68,7 +68,7 @@ async fn save_playlist_large() {
 
 #[tokio::test]
 async fn get_playlist_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::read_playlist::<V8>(TEST_PLAYLIST_NAME);
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -76,7 +76,7 @@ async fn get_playlist_requires_auth() {
 
 #[tokio::test]
 async fn get_playlist_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -103,7 +103,7 @@ async fn get_playlist_golden_path() {
 
 #[tokio::test]
 async fn get_playlist_bad_name_returns_not_found() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -114,7 +114,7 @@ async fn get_playlist_bad_name_returns_not_found() {
 
 #[tokio::test]
 async fn delete_playlist_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::delete_playlist(TEST_PLAYLIST_NAME);
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -122,7 +122,7 @@ async fn delete_playlist_requires_auth() {
 
 #[tokio::test]
 async fn delete_playlist_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -140,7 +140,7 @@ async fn delete_playlist_golden_path() {
 
 #[tokio::test]
 async fn export_playlists_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -191,7 +191,7 @@ async fn export_playlists_golden_path() {
 
 #[tokio::test]
 async fn import_playlists_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;

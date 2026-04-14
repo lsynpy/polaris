@@ -1,15 +1,13 @@
-use http::StatusCode;
-
 use crate::server::dto::{self};
-use crate::server::test::protocol;
-use crate::server::test::{constants::*, protocol::V8, ServiceType, TestService};
+use crate::server::test::{protocol, TestService, TestServiceType};
 use crate::test_name;
+use http::StatusCode;
 
 const KHEMMIS_SONG: &str = "root/Khemmis/Hunted/01 - Above The Water.mp3";
 
 #[tokio::test]
 async fn record_play_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::record_play(KHEMMIS_SONG);
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -17,7 +15,7 @@ async fn record_play_requires_auth() {
 
 #[tokio::test]
 async fn record_play_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -34,7 +32,7 @@ async fn record_play_golden_path() {
 
 #[tokio::test]
 async fn get_artists_sort_popularity_desc() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -57,7 +55,7 @@ async fn get_artists_sort_popularity_desc() {
 
 #[tokio::test]
 async fn get_artists_sort_popularity_asc() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -76,7 +74,7 @@ async fn get_artists_sort_popularity_asc() {
 
 #[tokio::test]
 async fn get_artists_sort_recent_desc() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -93,7 +91,7 @@ async fn get_artists_sort_recent_desc() {
 
 #[tokio::test]
 async fn get_artists_sort_alpha_desc() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -114,7 +112,7 @@ async fn get_artists_sort_alpha_desc() {
 
 #[tokio::test]
 async fn get_artists_no_sort_defaults_to_alpha() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -135,7 +133,7 @@ async fn get_artists_no_sort_defaults_to_alpha() {
 
 #[tokio::test]
 async fn get_artists_sort_invalid_falls_back_to_alpha() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -156,15 +154,16 @@ async fn get_artists_sort_invalid_falls_back_to_alpha() {
 
 #[tokio::test]
 async fn get_artists_sort_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::artists_with_sort("popularity");
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn per_user_isolation() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;

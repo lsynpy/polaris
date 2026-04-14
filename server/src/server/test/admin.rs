@@ -2,12 +2,12 @@ use http::StatusCode;
 
 use crate::server::dto;
 use crate::server::test::protocol::V8;
-use crate::server::test::{protocol, ServiceType, TestService};
+use crate::server::test::{protocol, TestService, TestServiceType};
 use crate::test_name;
 
 #[tokio::test]
 async fn returns_api_version() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::version();
 	let response = service.fetch_json::<_, dto::Version>(&request).await;
 	assert_eq!(response.status(), StatusCode::OK);
@@ -15,7 +15,7 @@ async fn returns_api_version() {
 
 #[tokio::test]
 async fn initial_setup_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::initial_setup();
 	{
 		let response = service.fetch_json::<_, dto::InitialSetup>(&request).await;
@@ -44,7 +44,7 @@ async fn initial_setup_golden_path() {
 
 #[tokio::test]
 async fn trigger_index_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 
@@ -67,7 +67,7 @@ async fn trigger_index_golden_path() {
 
 #[tokio::test]
 async fn trigger_index_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::trigger_index();
 	let response = service.fetch(&request).await;
@@ -76,7 +76,7 @@ async fn trigger_index_requires_auth() {
 
 #[tokio::test]
 async fn trigger_index_requires_admin() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 	let request = protocol::trigger_index();

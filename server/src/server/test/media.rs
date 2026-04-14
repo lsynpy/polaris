@@ -2,12 +2,12 @@ use http::{header, HeaderValue, StatusCode};
 use std::path::PathBuf;
 
 use crate::server::dto::{self, ThumbnailSize};
-use crate::server::test::{constants::*, protocol, ServiceType, TestService};
+use crate::server::test::{constants::*, protocol, TestService, TestServiceType};
 use crate::test_name;
 
 #[tokio::test]
 async fn songs_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::songs(dto::GetSongsBulkInput::default());
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -15,7 +15,7 @@ async fn songs_requires_auth() {
 
 #[tokio::test]
 async fn songs_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -41,7 +41,7 @@ async fn songs_golden_path() {
 
 #[tokio::test]
 async fn audio_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 
 	let path: PathBuf = [TEST_MOUNT_NAME, "Khemmis", "Hunted", "02 - Candlelight.mp3"]
 		.iter()
@@ -54,7 +54,7 @@ async fn audio_requires_auth() {
 
 #[tokio::test]
 async fn audio_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -76,7 +76,7 @@ async fn audio_golden_path() {
 
 #[tokio::test]
 async fn audio_does_not_encode_content() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -105,7 +105,7 @@ async fn audio_does_not_encode_content() {
 
 #[tokio::test]
 async fn audio_partial_content() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -133,7 +133,7 @@ async fn audio_partial_content() {
 
 #[tokio::test]
 async fn audio_bad_path_returns_not_found() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -146,7 +146,7 @@ async fn audio_bad_path_returns_not_found() {
 
 #[tokio::test]
 async fn peaks_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 
 	let path: PathBuf = [TEST_MOUNT_NAME, "Khemmis", "Hunted", "02 - Candlelight.mp3"]
 		.iter()
@@ -159,7 +159,7 @@ async fn peaks_requires_auth() {
 
 #[tokio::test]
 async fn peaks_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -178,7 +178,7 @@ async fn peaks_golden_path() {
 
 #[tokio::test]
 async fn peaks_bad_path_returns_not_found() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -191,7 +191,7 @@ async fn peaks_bad_path_returns_not_found() {
 
 #[tokio::test]
 async fn thumbnail_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 
 	let path: PathBuf = [TEST_MOUNT_NAME, "Khemmis", "Hunted", "Folder.jpg"]
 		.iter()
@@ -206,7 +206,7 @@ async fn thumbnail_requires_auth() {
 
 #[tokio::test]
 async fn thumbnail_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -225,7 +225,7 @@ async fn thumbnail_golden_path() {
 
 #[tokio::test]
 async fn thumbnail_bad_path_returns_not_found() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -259,7 +259,7 @@ async fn thumbnail_size_native() {
 }
 
 async fn thumbnail_size(name: &str, size: Option<ThumbnailSize>, pad: Option<bool>, expected: u32) {
-	let mut service = ServiceType::new(name).await;
+	let mut service = TestServiceType::new(name).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;

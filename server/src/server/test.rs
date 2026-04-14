@@ -27,7 +27,7 @@ use crate::server::dto;
 use crate::server::test::constants::*;
 use protocol::V8;
 
-pub use crate::server::axum::test::ServiceType;
+pub use crate::server::axum::test::TestServiceType;
 
 pub trait TestService {
 	async fn new(test_name: &str) -> Self;

@@ -6,7 +6,7 @@ use crate::{
 		test::{
 			add_trailing_slash,
 			protocol::{self, V8},
-			ServiceType, TestService,
+			TestService, TestServiceType,
 		},
 	},
 	test_name,
@@ -14,7 +14,7 @@ use crate::{
 
 #[tokio::test]
 async fn random_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::random::<V8>();
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -22,7 +22,7 @@ async fn random_requires_auth() {
 
 #[tokio::test]
 async fn random_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -39,7 +39,7 @@ async fn random_golden_path() {
 
 #[tokio::test]
 async fn random_with_trailing_slash() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -57,7 +57,7 @@ async fn random_with_trailing_slash() {
 
 #[tokio::test]
 async fn recent_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::recent::<V8>();
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -65,7 +65,7 @@ async fn recent_requires_auth() {
 
 #[tokio::test]
 async fn recent_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -82,7 +82,7 @@ async fn recent_golden_path() {
 
 #[tokio::test]
 async fn recent_with_trailing_slash() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;

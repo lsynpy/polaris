@@ -1,12 +1,12 @@
 use http::StatusCode;
 
 use crate::server::dto::{self, Settings};
-use crate::server::test::{protocol, ServiceType, TestService};
+use crate::server::test::{protocol, TestService, TestServiceType};
 use crate::test_name;
 
 #[tokio::test]
 async fn get_settings_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let request = protocol::get_settings();
@@ -16,7 +16,7 @@ async fn get_settings_requires_auth() {
 
 #[tokio::test]
 async fn get_settings_requires_admin() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -27,7 +27,7 @@ async fn get_settings_requires_admin() {
 
 #[tokio::test]
 async fn get_settings_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 
@@ -38,7 +38,7 @@ async fn get_settings_golden_path() {
 
 #[tokio::test]
 async fn put_settings_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::put_settings(dto::NewSettings::default());
 	let response = service.fetch(&request).await;
@@ -47,7 +47,7 @@ async fn put_settings_requires_auth() {
 
 #[tokio::test]
 async fn put_settings_requires_admin() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 	let request = protocol::put_settings(dto::NewSettings::default());
@@ -57,7 +57,7 @@ async fn put_settings_requires_admin() {
 
 #[tokio::test]
 async fn put_settings_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 

@@ -18,7 +18,7 @@ pub struct AxumTestService {
 	server: TestServer,
 }
 
-pub type ServiceType = AxumTestService;
+pub type TestServiceType = AxumTestService;
 
 impl TestService for AxumTestService {
 	async fn new(test_name: &str) -> Self {

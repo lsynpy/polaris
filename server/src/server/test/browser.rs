@@ -3,12 +3,12 @@ use std::path::{Path, PathBuf};
 
 use crate::server::dto;
 use crate::server::test::protocol::V8;
-use crate::server::test::{constants::*, protocol, ServiceType, TestService};
+use crate::server::test::{constants::*, protocol, TestService, TestServiceType};
 use crate::test_name;
 
 #[tokio::test]
 async fn browse_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::browse::<V8>(&PathBuf::new());
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -16,7 +16,7 @@ async fn browse_requires_auth() {
 
 #[tokio::test]
 async fn browse_root() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -33,7 +33,7 @@ async fn browse_root() {
 
 #[tokio::test]
 async fn browse_directory() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -51,7 +51,7 @@ async fn browse_directory() {
 
 #[tokio::test]
 async fn browse_missing_directory() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 
@@ -63,7 +63,7 @@ async fn browse_missing_directory() {
 
 #[tokio::test]
 async fn flatten_requires_auth() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::flatten::<V8>(&PathBuf::new());
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -71,7 +71,7 @@ async fn flatten_requires_auth() {
 
 #[tokio::test]
 async fn flatten_root() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -86,7 +86,7 @@ async fn flatten_root() {
 
 #[tokio::test]
 async fn flatten_directory() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	service.index().await;
@@ -101,7 +101,7 @@ async fn flatten_directory() {
 
 #[tokio::test]
 async fn flatten_missing_directory() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login().await;
 

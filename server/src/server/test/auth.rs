@@ -3,12 +3,12 @@ use http::StatusCode;
 
 use crate::server::dto;
 use crate::server::test::protocol::V8;
-use crate::server::test::{constants::*, protocol, ServiceType, TestService};
+use crate::server::test::{constants::*, protocol, TestService, TestServiceType};
 use crate::test_name;
 
 #[tokio::test]
 async fn login_rejects_bad_username() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let request = protocol::login("garbage", TEST_PASSWORD);
@@ -18,7 +18,7 @@ async fn login_rejects_bad_username() {
 
 #[tokio::test]
 async fn login_rejects_bad_password() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let request = protocol::login(TEST_USERNAME, "garbage");
@@ -28,7 +28,7 @@ async fn login_rejects_bad_password() {
 
 #[tokio::test]
 async fn login_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let request = protocol::login(TEST_USERNAME, TEST_PASSWORD);
@@ -43,7 +43,7 @@ async fn login_golden_path() {
 
 #[tokio::test]
 async fn authentication_via_bearer_http_header_rejects_bad_token() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let mut request = protocol::random::<V8>();
@@ -56,7 +56,7 @@ async fn authentication_via_bearer_http_header_rejects_bad_token() {
 
 #[tokio::test]
 async fn authentication_via_bearer_http_header_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let authorization = {
@@ -77,7 +77,7 @@ async fn authentication_via_bearer_http_header_golden_path() {
 
 #[tokio::test]
 async fn authentication_via_query_param_rejects_bad_token() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let mut request = protocol::random::<V8>();
@@ -91,7 +91,7 @@ async fn authentication_via_query_param_rejects_bad_token() {
 
 #[tokio::test]
 async fn authentication_via_query_param_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 
 	let authorization = {

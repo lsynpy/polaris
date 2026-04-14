@@ -2,12 +2,12 @@ use http::StatusCode;
 use std::default::Default;
 
 use crate::server::dto;
-use crate::server::test::{constants::*, protocol, ServiceType, TestService};
+use crate::server::test::{constants::*, protocol, TestService, TestServiceType};
 use crate::test_name;
 
 #[tokio::test]
 async fn list_users_requires_admin() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::list_users();
 
@@ -21,7 +21,7 @@ async fn list_users_requires_admin() {
 
 #[tokio::test]
 async fn list_users_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 	let request = protocol::list_users();
@@ -31,7 +31,7 @@ async fn list_users_golden_path() {
 
 #[tokio::test]
 async fn create_user_requires_admin() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::create_user(dto::NewUser {
 		name: "Walter".into(),
@@ -49,7 +49,7 @@ async fn create_user_requires_admin() {
 
 #[tokio::test]
 async fn create_user_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
 
@@ -65,7 +65,7 @@ async fn create_user_golden_path() {
 
 #[tokio::test]
 async fn update_user_requires_admin() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::update_user("Walter", dto::UserUpdate::default());
 
@@ -79,7 +79,7 @@ async fn update_user_requires_admin() {
 
 #[tokio::test]
 async fn update_user_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::update_user("Walter", dto::UserUpdate::default());
 
@@ -90,7 +90,7 @@ async fn update_user_golden_path() {
 
 #[tokio::test]
 async fn update_user_cannot_unadmin_self() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::update_user(
 		TEST_USERNAME_ADMIN,
@@ -107,7 +107,7 @@ async fn update_user_cannot_unadmin_self() {
 
 #[tokio::test]
 async fn delete_user_requires_admin() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::delete_user("Walter");
 
@@ -121,7 +121,7 @@ async fn delete_user_requires_admin() {
 
 #[tokio::test]
 async fn delete_user_golden_path() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::delete_user("Walter");
 
@@ -132,7 +132,7 @@ async fn delete_user_golden_path() {
 
 #[tokio::test]
 async fn delete_user_cannot_delete_self() {
-	let mut service = ServiceType::new(&test_name!()).await;
+	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	let request = protocol::delete_user(TEST_USERNAME_ADMIN);
 	service.login_admin().await;
