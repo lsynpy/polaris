@@ -24,7 +24,9 @@ async fn record_play_golden_path() {
 	service.login().await;
 
 	let request = protocol::record_play(KHEMMIS_SONG);
-	let response = service.fetch_json::<_, dto::RecordPlayOutput>(&request).await;
+	let response = service
+		.fetch_json::<_, dto::RecordPlayOutput>(&request)
+		.await;
 	assert_eq!(response.status(), StatusCode::OK);
 	let body = response.into_body();
 	assert!(body.success);

@@ -5,7 +5,7 @@
          Preferably, we would draw a single white waveform canvas. We would then
          use it as mask for two empty divs with colored backgrounds. However, this
          requires `mask-image: element(#myMaskID)` which is not well supported.
-         See: 
+         See:
             https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image
             https://developer.mozilla.org/en-US/docs/Web/CSS/image
             https://developer.mozilla.org/en-US/docs/Web/CSS/element

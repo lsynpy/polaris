@@ -604,35 +604,33 @@ async fn get_artists(
 				let stats = play_stats_manager
 					.get_artist_play_counts(_auth.get_username())
 					.await?;
-				let counts: HashMap<String, u32> = stats
-					.into_iter()
-					.map(|s| (s.name, s.play_count))
-					.collect();
+				let counts: HashMap<String, u32> =
+					stats.into_iter().map(|s| (s.name, s.play_count)).collect();
 				artists.sort_by(|a: &dto::ArtistHeader, b: &dto::ArtistHeader| {
 					let ca = counts.get(&a.name).copied().unwrap_or(0);
 					let cb = counts.get(&b.name).copied().unwrap_or(0);
-					if desc { ca.cmp(&cb) } else { cb.cmp(&ca) }
-						.then_with(|| a.name.cmp(&b.name))
+					if desc { ca.cmp(&cb) } else { cb.cmp(&ca) }.then_with(|| a.name.cmp(&b.name))
 				});
 			}
 			("recent", desc) => {
 				let stats = play_stats_manager
 					.get_artist_recently_played(_auth.get_username())
 					.await?;
-				let last_played: HashMap<String, SystemTime> = stats
-					.into_iter()
-					.map(|s| (s.name, s.last_played))
-					.collect();
+				let last_played: HashMap<String, SystemTime> =
+					stats.into_iter().map(|s| (s.name, s.last_played)).collect();
 				artists.sort_by(|a: &dto::ArtistHeader, b: &dto::ArtistHeader| {
 					let la = last_played.get(&a.name).copied().unwrap_or(UNIX_EPOCH);
 					let lb = last_played.get(&b.name).copied().unwrap_or(UNIX_EPOCH);
-					if desc { la.cmp(&lb) } else { lb.cmp(&la) }
-						.then_with(|| a.name.cmp(&b.name))
+					if desc { la.cmp(&lb) } else { lb.cmp(&la) }.then_with(|| a.name.cmp(&b.name))
 				});
 			}
 			("alpha", desc) => {
 				artists.sort_by(|a, b| {
-					if desc { b.name.cmp(&a.name) } else { a.name.cmp(&b.name) }
+					if desc {
+						b.name.cmp(&a.name)
+					} else {
+						a.name.cmp(&b.name)
+					}
 				});
 			}
 			_ => { /* invalid sort param, use default alpha */ }
@@ -643,8 +641,8 @@ async fn get_artists(
 }
 
 fn parse_sort(sort: &str) -> (&str, bool) {
-	if sort.starts_with('-') {
-		(&sort[1..], true)
+	if let Some(stripped) = sort.strip_prefix('-') {
+		(stripped, true)
 	} else {
 		(sort, false)
 	}

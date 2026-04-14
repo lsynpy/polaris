@@ -2,7 +2,8 @@
 
 ## Project Overview
 
-**Polaris** is a self-hosted music streaming server designed for exceptional performance with large music collections (100,000+ songs). It is free, open-source software written in **Rust**.
+**Polaris** is a self-hosted music streaming server designed for exceptional performance with large
+music collections (100,000+ songs). It is free, open-source software written in **Rust**.
 
 ### Key Characteristics
 

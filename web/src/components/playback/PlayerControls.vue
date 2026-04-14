@@ -16,8 +16,8 @@
                 skip_previous
             </span>
 
-            <div @click="togglePlayback" class="material-icons-round py-1 size-12 
-                text-4xl text-center text-accent-0 rounded-full 
+            <div @click="togglePlayback" class="material-icons-round py-1 size-12
+                text-4xl text-center text-accent-0 rounded-full
                 ring-accent-500 dark:ring-accent-600 ring-offset-4 ring-offset-ls-0 dark:ring-offset-ds-900
                 active:pt-[5px]"
                 :class="(playback.currentTrack && !error)

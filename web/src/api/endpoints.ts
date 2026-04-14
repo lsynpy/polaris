@@ -258,7 +258,7 @@ export async function importPlaylists(files: { filename: string, content: Blob }
 	});
 }
 
-// Media 
+// Media
 
 export async function get_songs(paths: string[]): Promise<{ songs: Song[], not_found: string[] }> {
 	const response = await request("/songs", {

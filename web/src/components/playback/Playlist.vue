@@ -11,7 +11,7 @@
 				<div v-if="savingPlaylist" v-on-click-outside="cancelSavePlaylist" class="z-10 absolute right-0 -bottom-2 w-80 translate-y-full
 							rounded-md
 							bg-ls-0 dark:bg-ds-950
-							shadow-lg shadow-accent-600/20	
+							shadow-lg shadow-accent-600/20
 							dark:shadow-none dark:border dark:border-ds-800
 							">
 					<form @submit.prevent="savePlaylist" class="relative p-6 flex flex-col gap-4">

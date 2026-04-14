@@ -90,4 +90,4 @@ export function pluralize(word: string, n: number) {
 	} else {
 		return word;
 	}
-} 
+}

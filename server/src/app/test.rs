@@ -60,10 +60,7 @@ impl ContextBuilder {
 			index_manager.clone(),
 			ndb_manager.clone(),
 		);
-		let play_stats_manager = play_stats::Manager::new(
-			index_manager.clone(),
-			ndb_manager,
-		);
+		let play_stats_manager = play_stats::Manager::new(index_manager.clone(), ndb_manager);
 
 		config_manager.apply_config(self.config).await.unwrap();
 

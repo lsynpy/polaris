@@ -54,18 +54,11 @@ pub struct ArtistLastPlayed {
 
 impl Manager {
 	pub fn new(index_manager: index::Manager, db: ndb::Manager) -> Self {
-		Self {
-			index_manager,
-			db,
-		}
+		Self { index_manager, db }
 	}
 
 	/// Record a play when a song finishes playing.
-	pub async fn record_play(
-		&self,
-		username: &str,
-		song_path: &Path,
-	) -> Result<(), Error> {
+	pub async fn record_play(&self, username: &str, song_path: &Path) -> Result<(), Error> {
 		let song_result = self.index_manager.get_song(song_path.to_path_buf()).await;
 		let (artist_names, album_name, album_artists) = match &song_result {
 			Ok(song) => (
@@ -290,7 +283,7 @@ impl Manager {
 mod test {
 	use std::path::Path;
 
-	use crate::app::test::{self, Context, ContextBuilder};
+	use crate::app::test::ContextBuilder;
 	use crate::test_name;
 
 	const TEST_USER: &str = "alice";
@@ -312,9 +305,16 @@ mod test {
 		ctx.scanner.run_scan().await.unwrap();
 
 		let path = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
-		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
+		ctx.play_stats_manager
+			.record_play(TEST_USER, path)
+			.await
+			.unwrap();
 
-		let plays = ctx.play_stats_manager.get_recent_plays(TEST_USER, 10).await.unwrap();
+		let plays = ctx
+			.play_stats_manager
+			.get_recent_plays(TEST_USER, 10)
+			.await
+			.unwrap();
 		assert_eq!(plays.len(), 1);
 		assert_eq!(plays[0].song_path, path);
 		assert_eq!(plays[0].username, TEST_USER);
@@ -342,7 +342,11 @@ mod test {
 				.unwrap();
 		}
 
-		let stats = ctx.play_stats_manager.get_artist_play_counts(TEST_USER).await.unwrap();
+		let stats = ctx
+			.play_stats_manager
+			.get_artist_play_counts(TEST_USER)
+			.await
+			.unwrap();
 		let khemmis = stats.iter().find(|s| s.name == "Khemmis").unwrap();
 		assert_eq!(khemmis.play_count, 3);
 	}
@@ -359,12 +363,29 @@ mod test {
 		ctx.scanner.run_scan().await.unwrap();
 
 		let path = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
-		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
-		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
-		ctx.play_stats_manager.record_play("bob", path).await.unwrap();
+		ctx.play_stats_manager
+			.record_play(TEST_USER, path)
+			.await
+			.unwrap();
+		ctx.play_stats_manager
+			.record_play(TEST_USER, path)
+			.await
+			.unwrap();
+		ctx.play_stats_manager
+			.record_play("bob", path)
+			.await
+			.unwrap();
 
-		let alice_stats = ctx.play_stats_manager.get_artist_play_counts(TEST_USER).await.unwrap();
-		let bob_stats = ctx.play_stats_manager.get_artist_play_counts("bob").await.unwrap();
+		let alice_stats = ctx
+			.play_stats_manager
+			.get_artist_play_counts(TEST_USER)
+			.await
+			.unwrap();
+		let bob_stats = ctx
+			.play_stats_manager
+			.get_artist_play_counts("bob")
+			.await
+			.unwrap();
 
 		let alice_khemmis = alice_stats.iter().find(|s| s.name == "Khemmis").unwrap();
 		let bob_khemmis = bob_stats.iter().find(|s| s.name == "Khemmis").unwrap();
@@ -386,11 +407,21 @@ mod test {
 		let path_a = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
 		let path_b = song_path("root/Tobokegao/Picnic/01 - ピクニック (Picnic).mp3");
 
-		ctx.play_stats_manager.record_play(TEST_USER, path_a).await.unwrap();
+		ctx.play_stats_manager
+			.record_play(TEST_USER, path_a)
+			.await
+			.unwrap();
 		tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-		ctx.play_stats_manager.record_play(TEST_USER, path_b).await.unwrap();
+		ctx.play_stats_manager
+			.record_play(TEST_USER, path_b)
+			.await
+			.unwrap();
 
-		let stats = ctx.play_stats_manager.get_artist_recently_played(TEST_USER).await.unwrap();
+		let stats = ctx
+			.play_stats_manager
+			.get_artist_recently_played(TEST_USER)
+			.await
+			.unwrap();
 		let khemmis = stats.iter().find(|s| s.name == "Khemmis").unwrap();
 		let tobokegao = stats.iter().find(|s| s.name == "Tobokegao").unwrap();
 
@@ -408,15 +439,30 @@ mod test {
 		ctx.scanner.run_scan().await.unwrap();
 
 		let path = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
-		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
+		ctx.play_stats_manager
+			.record_play(TEST_USER, path)
+			.await
+			.unwrap();
 
-		let plays = ctx.play_stats_manager.get_recent_plays(TEST_USER, 10).await.unwrap();
+		let plays = ctx
+			.play_stats_manager
+			.get_recent_plays(TEST_USER, 10)
+			.await
+			.unwrap();
 		assert_eq!(plays.len(), 1);
 
-		let removed = ctx.play_stats_manager.cleanup_removed_song(path).await.unwrap();
+		let removed = ctx
+			.play_stats_manager
+			.cleanup_removed_song(path)
+			.await
+			.unwrap();
 		assert_eq!(removed, 1);
 
-		let plays = ctx.play_stats_manager.get_recent_plays(TEST_USER, 10).await.unwrap();
+		let plays = ctx
+			.play_stats_manager
+			.get_recent_plays(TEST_USER, 10)
+			.await
+			.unwrap();
 		assert!(plays.is_empty());
 	}
 
@@ -431,12 +477,19 @@ mod test {
 		ctx.scanner.run_scan().await.unwrap();
 
 		let path = song_path("root/Khemmis/Hunted/01 - Above The Water.mp3");
-		ctx.play_stats_manager.record_play(TEST_USER, path).await.unwrap();
+		ctx.play_stats_manager
+			.record_play(TEST_USER, path)
+			.await
+			.unwrap();
 
 		let removed = ctx.play_stats_manager.cleanup_old_records(0).await.unwrap();
 		assert_eq!(removed, 1);
 
-		let plays = ctx.play_stats_manager.get_recent_plays(TEST_USER, 10).await.unwrap();
+		let plays = ctx
+			.play_stats_manager
+			.get_recent_plays(TEST_USER, 10)
+			.await
+			.unwrap();
 		assert!(plays.is_empty());
 	}
 }

@@ -3,7 +3,7 @@
         <ContextMenu :items="contextMenuItems">
             <div @click="router.push(makeAlbumURL(album.main_artists, album.name))"
                 :class="size == 'lg' ? 'hover:scale-105' : 'hover:scale-110'" class="
-                cursor-pointer aspect-square w-full min-h-0 origin-center 
+                cursor-pointer aspect-square w-full min-h-0 origin-center
                 transition-all ease-out duration-100
                 hover:opacity-90
                 ">

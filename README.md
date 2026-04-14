@@ -81,11 +81,11 @@ gh workflow run "Build ARM64 Binary"   # for ARM64
 
 ### Environment Files
 
-| File | Purpose |
-|------|---------|
-| `deploy/.env.local` | Local Docker config (port, mount paths) |
-| `deploy/.env.jdc` | JDC server config (SSH host, mount paths) |
-| `deploy/.registry.env` | Aliyun ACR registry URL and namespace |
+| File                   | Purpose                                   |
+|------------------------|-------------------------------------------|
+| `deploy/.env.local`    | Local Docker config (port, mount paths)   |
+| `deploy/.env.jdc`      | JDC server config (SSH host, mount paths) |
+| `deploy/.registry.env` | Aliyun ACR registry URL and namespace     |
 
 ### Rollback
 

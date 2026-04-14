@@ -101,7 +101,7 @@
 					</li>
 				</ul>
 
-				<p>Queries separated by spaces are implicitely joined by &&. For example searching for <span
+				<p>Queries separated by spaces are implicitly joined by &&. For example searching for <span
 						class="font-medium text-accent-600 font-mono">sonata beethoven</span> will list pieces with
 					"sonata" appearing in any field and "beethoven" appearing in any field.</p>
 

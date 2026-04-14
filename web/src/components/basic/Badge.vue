@@ -1,5 +1,5 @@
 <template>
-    <span class="cursor-pointer inline-flex items-center rounded-md 
+    <span class="cursor-pointer inline-flex items-center rounded-md
         whitespace-nowrap
         text-ls-700 dark:text-ds-300
         ring-1 ring-inset

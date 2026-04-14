@@ -2,7 +2,7 @@
 	<div @contextmenu="show">
 		<slot />
 		<FloatingWidget ref="el" :position="position" @dismissed="open = false">
-			<div v-if="open" class="flex flex-col min-w-40 p-2 text-sm 
+			<div v-if="open" class="flex flex-col min-w-40 p-2 text-sm
 				rounded-md bg-ls-0 dark:bg-ds-900
 				border border-ls-200 dark:border-ds-700
 				shadow-lg shadow-accent-800/20 dark:shadow-accent-900/20">

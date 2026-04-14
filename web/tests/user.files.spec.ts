@@ -47,4 +47,3 @@ test("can drag and drop multiple directories to playlist at once", async ({ page
     await page.getByTestId('node').filter({ hasText: 'Tobokegao' }).dragTo(page.getByTestId('playlist-songs'));
     await expect(page.getByTestId('playlist-song')).toHaveCount(13);
 });
-

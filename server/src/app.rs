@@ -187,10 +187,12 @@ impl App {
 		let index_manager = index::Manager::new(&paths.data_dir_path).await?;
 		let scanner = scanner::Scanner::new(index_manager.clone(), config_manager.clone()).await?;
 		let peaks_manager = peaks::Manager::new(peaks_dir_path);
-		let playlist_manager =
-			playlist::Manager::new(config_manager.clone(), index_manager.clone(), ndb_manager.clone());
-		let play_stats_manager =
-			play_stats::Manager::new(index_manager.clone(), ndb_manager);
+		let playlist_manager = playlist::Manager::new(
+			config_manager.clone(),
+			index_manager.clone(),
+			ndb_manager.clone(),
+		);
+		let play_stats_manager = play_stats::Manager::new(index_manager.clone(), ndb_manager);
 		let thumbnail_manager = thumbnail::Manager::new(thumbnails_dir_path);
 
 		let app = Self {
