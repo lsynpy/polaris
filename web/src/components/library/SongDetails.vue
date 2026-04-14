@@ -61,72 +61,75 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { watchImmediate } from '@vueuse/core';
-import { useRouter } from 'vue-router';
+import { watchImmediate } from "@vueuse/core";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
 
-import { makeThumbnailURL } from '@/api/endpoints';
-import AlbumArt from '@/components/AlbumArt.vue';
-import Draggable from '@/components/basic/Draggable.vue';
-import PageHeader from '@/components/basic/PageHeader.vue';
-import Spinner from '@/components/basic/Spinner.vue';
-import SongField from '@/components/library/SongField.vue';
-import { DndPayloadAlbumKey } from '@/dnd';
-import { formatLongDuration, isFakeArtist } from '@/format';
-import { useSongsStore } from '@/stores/songs';
-import { makeAlbumURLFromSong, makeArtistURL } from '@/router';
+import { makeThumbnailURL } from "@/api/endpoints";
+import { DndPayloadAlbumKey } from "@/dnd";
+import { formatLongDuration, isFakeArtist } from "@/format";
+import { makeAlbumURLFromSong, makeArtistURL } from "@/router";
+import { useSongsStore } from "@/stores/songs";
 
 const router = useRouter();
 const songs = useSongsStore();
 
 const props = defineProps<{
-    path: string
+  path: string;
 }>();
 
 const song = computed(() => songs.cache.get(props.path));
 
-watchImmediate(() => props.path, () => {
+watchImmediate(
+  () => props.path,
+  () => {
     songs.request([props.path]);
-});
+  }
+);
 
 const title = computed(() => song.value?.title || "Unknown Song");
 const album = computed(() => song.value?.album || "Unknown Album");
-const artworkURLSmall = computed(() => song.value?.artwork ? makeThumbnailURL(song.value.artwork, "small") : undefined);
-const artworkURLTiny = computed(() => song.value?.artwork ? makeThumbnailURL(song.value.artwork, "tiny") : undefined);
+const artworkURLSmall = computed(() =>
+  song.value?.artwork
+    ? makeThumbnailURL(song.value.artwork, "small")
+    : undefined
+);
+const artworkURLTiny = computed(() =>
+  song.value?.artwork ? makeThumbnailURL(song.value.artwork, "tiny") : undefined
+);
 
 const mainArtists = computed(() => {
-    if (!song.value) {
-        return [];
-    }
-    if (song.value.album_artists?.length) {
-        return song.value.album_artists;
-    } else if (song.value.artists?.length) {
-        return song.value.artists;
-    }
+  if (!song.value) {
     return [];
+  }
+  if (song.value.album_artists?.length) {
+    return song.value.album_artists;
+  } else if (song.value.artists?.length) {
+    return song.value.artists;
+  }
+  return [];
 });
 
 const albumURL = computed(() => {
-    if (!song.value) {
-        return undefined;
-    }
-    return makeAlbumURLFromSong(song.value);
+  if (!song.value) {
+    return undefined;
+  }
+  return makeAlbumURLFromSong(song.value);
 });
 
 const hasValidAlbum = computed(() => albumURL.value !== undefined);
 
 function tryMakeArtistURL(artist: string) {
-    if (isFakeArtist(artist)) {
-        return undefined;
-    }
-    return makeArtistURL(artist);
+  if (isFakeArtist(artist)) {
+    return undefined;
+  }
+  return makeArtistURL(artist);
 }
 
 function onAlbumClicked() {
-    if (!albumURL.value) {
-        return;
-    }
-    router.push(albumURL.value);
+  if (!albumURL.value) {
+    return;
+  }
+  router.push(albumURL.value);
 }
-
 </script>

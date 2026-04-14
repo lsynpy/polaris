@@ -55,22 +55,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref, shallowRef, useTemplateRef, watch } from "vue";
 import { useAsyncState } from "@vueuse/core";
+import {
+  computed,
+  type Ref,
+  ref,
+  type ShallowRef,
+  shallowRef,
+  useTemplateRef,
+  watch
+} from "vue";
 import { useRouter } from "vue-router";
 
-import { BrowserEntry } from "@/api/dto";
+import type { BrowserEntry } from "@/api/dto";
 import { browse, flatten, search } from "@/api/endpoints";
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
-import ContextMenu, { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
-import Error from "@/components/basic/Error.vue";
-import InputText from "@/components/basic/InputText.vue";
-import PageHeader from "@/components/basic/PageHeader.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import VirtualTree from "@/components/basic/VirtualTree.vue";
-import { Node } from "@/components/basic/VirtualTree.vue";
-import { DndPayloadFiles, useDragAndDrop } from '@/dnd';
-import { getPathTail } from '@/format';
+import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
+import type { Node } from "@/components/basic/VirtualTree.vue";
+import { DndPayloadFiles, useDragAndDrop } from "@/dnd";
+import { getPathTail } from "@/format";
 import { useHistory } from "@/history";
 import { makeSongURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
@@ -79,227 +81,287 @@ import { useSongsStore } from "@/stores/songs";
 const playback = usePlaybackStore();
 const router = useRouter();
 const songs = useSongsStore();
-const { activeDnD, startDrag, updateDrag, endDrag, dragPreview } = useDragAndDrop();
+const { activeDnD, startDrag, updateDrag, endDrag, dragPreview } =
+  useDragAndDrop();
 
 const treeModel: Ref<Node[]> = shallowRef([]);
 const filterTreeModel: Ref<Node[]> = shallowRef([]);
 
-const { state: topLevel, isLoading, isReady, error } = useAsyncState(browse("").then(f => makeTreeNodes(f, undefined)), []);
+const {
+  state: topLevel,
+  isLoading,
+  isReady,
+  error
+} = useAsyncState(
+  browse("").then((f) => makeTreeNodes(f, undefined)),
+  []
+);
 watch(topLevel, (v) => {
-	if (!treeModel.value.length) {
-		treeModel.value = v;
-	}
+  if (!treeModel.value.length) {
+    treeModel.value = v;
+  }
 });
 
 const filterQuery = ref("");
 const showFiltered = computed(() => filterQuery.value.length);
 
-const { state: filterResults, isLoading: filtering, error: filterError, execute: fetchFiltered } = useAsyncState(
-	async () => {
-		if (filterQuery.value.length < 2) {
-			return Promise.resolve(undefined);
-		}
-		let paths = (await search(`path % "${filterQuery.value}"`)).paths;
-		paths.sort();
-		return paths;
-	},
-	undefined, { immediate: false, resetOnExecute: false }
+const {
+  state: filterResults,
+  isLoading: filtering,
+  error: filterError,
+  execute: fetchFiltered
+} = useAsyncState(
+  async () => {
+    if (filterQuery.value.length < 2) {
+      return Promise.resolve(undefined);
+    }
+    let paths = (await search(`path % "${filterQuery.value}"`)).paths;
+    paths.sort();
+    return paths;
+  },
+  undefined,
+  { immediate: false, resetOnExecute: false }
 );
 
 watch(filterQuery, (to, from) => {
-	if (!filterResults.value || !to.startsWith(from)) {
-		filterTreeModel.value = [];
-	}
-	if (filterQuery.value.length > 2) {
-		fetchFiltered();
-	}
+  if (!filterResults.value || !to.startsWith(from)) {
+    filterTreeModel.value = [];
+  }
+  if (filterQuery.value.length > 2) {
+    fetchFiltered();
+  }
 });
 
 watch(filterResults, () => {
-	let nodes = [];
-	let folders = new Set<string>();
-	const separator = /[\/\\]/g;
+  let nodes = [];
+  let folders = new Set<string>();
+  const separator = /[/\\]/g;
 
-	for (let path of (filterResults.value || [])) {
-		let depth = 0;
-		let match;
-		let skippedRoot = false;
-		while ((match = separator.exec(path)) !== null) {
-			const directory = path.substring(0, match.index);
-			if (!skippedRoot && treeModel.value[0].key != directory) {
-				skippedRoot = true;
-				continue;
-			}
-			if (directory != path && !folders.has(directory)) {
-				folders.add(directory);
-				nodes.push({ depth, key: directory, label: getPathTail(directory), icon: "folder", leaf: false });
-			}
-			depth += 1;
-		}
-		nodes.push({ depth, key: path, label: getPathTail(path), icon: "audio_file", leaf: true });
-	}
+  for (let path of filterResults.value || []) {
+    let depth = 0;
+    let match: RegExpExecArray | null;
+    let skippedRoot = false;
+    while (true) {
+      match = separator.exec(path);
+      if (match === null) break;
+      const directory = path.substring(0, match.index);
+      if (!skippedRoot && treeModel.value[0].key !== directory) {
+        skippedRoot = true;
+        continue;
+      }
+      if (directory !== path && !folders.has(directory)) {
+        folders.add(directory);
+        nodes.push({
+          depth,
+          key: directory,
+          label: getPathTail(directory),
+          icon: "folder",
+          leaf: false
+        });
+      }
+      depth += 1;
+    }
+    nodes.push({
+      depth,
+      key: path,
+      label: getPathTail(path),
+      icon: "audio_file",
+      leaf: true
+    });
+  }
 
-	filterTreeModel.value = nodes;
+  filterTreeModel.value = nodes;
 });
 
-const tree = useTemplateRef("tree");
-const filteredTree = useTemplateRef("filteredTree");
+const tree = useTemplateRef("tree") as ShallowRef<
+  { selection: Node[] } | undefined
+>;
+const filteredTree = useTemplateRef("filteredTree") as ShallowRef<
+  { selection: Node[] } | undefined
+>;
 const draggedFiles: Ref<DndPayloadFiles | null> = ref(null);
 
 async function openDirectory(node: Node) {
-	{
-		let parentIndex = treeModel.value.findIndex(n => n.key == node.key);
-		const nextNode = treeModel.value[parentIndex + 1];
-		if (nextNode && nextNode.depth > node.depth) {
-			return;
-		}
-		treeModel.value[parentIndex].loading = true;
-	}
+  {
+    let parentIndex = treeModel.value.findIndex((n) => n.key === node.key);
+    const nextNode = treeModel.value[parentIndex + 1];
+    if (nextNode && nextNode.depth > node.depth) {
+      return;
+    }
+    treeModel.value[parentIndex].loading = true;
+  }
 
-	let children;
-	try {
-		children = await browse(node.key || "").then(f => makeTreeNodes(f, node));
-	} catch (e) { }
+  let children;
+  try {
+    children = await browse(node.key || "").then((f) => makeTreeNodes(f, node));
+  } catch (_e) {}
 
-	{
-		let parentIndex = treeModel.value.findIndex(n => n.key == node.key);
-		let newModel = [...treeModel.value];
-		if (children) {
-			newModel.splice(parentIndex + 1, 0, ...children);
-		}
-		newModel[parentIndex] = { ...newModel[parentIndex], loading: false };
-		treeModel.value = newModel;
-	}
+  {
+    let parentIndex = treeModel.value.findIndex((n) => n.key === node.key);
+    let newModel = [...treeModel.value];
+    if (children) {
+      newModel.splice(parentIndex + 1, 0, ...children);
+    }
+    newModel[parentIndex] = { ...newModel[parentIndex], loading: false };
+    treeModel.value = newModel;
+  }
 }
 
 function makeTreeNodes(entries: BrowserEntry[], parent?: Node): Node[] {
-	return entries.map((e, index) => {
-		return {
-			depth: parent ? parent.depth + 1 : 0,
-			key: e.path,
-			label: getPathTail(e.path),
-			icon: e.is_directory ? "folder" : "audio_file",
-			leaf: !e.is_directory,
-		};
-	});
+  return entries.map((e, _index) => {
+    return {
+      depth: parent ? parent.depth + 1 : 0,
+      key: e.path,
+      label: getPathTail(e.path),
+      icon: e.is_directory ? "folder" : "audio_file",
+      leaf: !e.is_directory
+    };
+  });
 }
 
 async function onKeyDown(event: KeyboardEvent) {
-	if (event.code == "Enter") {
-		sendSelectionToPlaylist(!event.shiftKey);
-	}
+  if (event.code === "Enter") {
+    sendSelectionToPlaylist(!event.shiftKey);
+  }
 }
 
 function getSelection(): Node[] {
-	if (showFiltered.value) {
-		return filteredTree.value?.selection || [];
-	} else {
-		return tree.value?.selection || [];
-	}
+  if (showFiltered.value) {
+    return filteredTree.value?.selection || [];
+  } else {
+    return tree.value?.selection || [];
+  }
 }
 
 async function flattenSelection(): Promise<string[]> {
-	return showFiltered.value ? flattenSelectionFiltered() : await flattenSelectionUnfiltered();
+  return showFiltered.value
+    ? flattenSelectionFiltered()
+    : await flattenSelectionUnfiltered();
 }
 
 async function flattenSelectionUnfiltered(): Promise<string[]> {
-	if (!tree.value) {
-		return [];
-	}
-	return (
-		await Promise.all(tree.value.selection.map((e) => {
-			if (e.leaf) {
-				return Promise.resolve(e.key);
-			} else {
-				return flatten(e.key).then(s => s.paths);
-			}
-		}))
-	).flat();
+  if (!tree.value) {
+    return [];
+  }
+  return (
+    await Promise.all(
+      tree.value.selection.map((e) => {
+        if (e.leaf) {
+          return Promise.resolve(e.key);
+        } else {
+          return flatten(e.key).then((s) => s.paths);
+        }
+      })
+    )
+  ).flat();
 }
 
 function flattenSelectionFiltered(): string[] {
-	if (!filteredTree.value) {
-		return [];
-	}
+  if (!filteredTree.value) {
+    return [];
+  }
 
-	let tracks: string[] = [];
-	const model = filterTreeModel.value;
-	for (const node of filteredTree.value.selection) {
-		if (node.leaf) {
-			tracks.push(node.key);
-		} else {
-			const startIndex = model.findIndex(n => n.key == node.key);
-			for (let i = startIndex + 1; i > 0 && i < model.length; i++) {
-				if (model[i].depth <= model[startIndex].depth) {
-					break;
-				}
-				if (!model[i].leaf) {
-					continue;
-				}
-				tracks.push(model[i].key);
-			}
-		}
-	};
-	return tracks;
+  let tracks: string[] = [];
+  const model = filterTreeModel.value;
+  for (const node of filteredTree.value.selection) {
+    if (node.leaf) {
+      tracks.push(node.key);
+    } else {
+      const startIndex = model.findIndex((n) => n.key === node.key);
+      for (let i = startIndex + 1; i > 0 && i < model.length; i++) {
+        if (model[i].depth <= model[startIndex].depth) {
+          break;
+        }
+        if (!model[i].leaf) {
+          continue;
+        }
+        tracks.push(model[i].key);
+      }
+    }
+  }
+  return tracks;
 }
 
 function playSong(node: Node) {
-	if (node.leaf) {
-		playback.clear();
-		playback.stop();
-		playback.queueTracks([node.key]);
-	}
+  if (node.leaf) {
+    playback.clear();
+    playback.stop();
+    playback.queueTracks([node.key]);
+  }
 }
 
-const contextMenu = useTemplateRef("contextMenu");
+const contextMenu = useTemplateRef("contextMenu") as ShallowRef<
+  { show: (event: MouseEvent) => void } | undefined
+>;
 const contextMenuItems = computed(() => {
-	const items: ContextMenuItem[] = [
-		{ label: "Play", shortcut: "Enter", action: () => { sendSelectionToPlaylist(true) } },
-		{ label: "Queue", shortcut: "Shift+Enter", action: () => { sendSelectionToPlaylist(false) } },
-	];
+  const items: ContextMenuItem[] = [
+    {
+      label: "Play",
+      shortcut: "Enter",
+      action: () => {
+        sendSelectionToPlaylist(true);
+      }
+    },
+    {
+      label: "Queue",
+      shortcut: "Shift+Enter",
+      action: () => {
+        sendSelectionToPlaylist(false);
+      }
+    }
+  ];
 
-	const selection = getSelection();
-	if (selection.length == 1 && selection[0].leaf) {
-		const songURL = makeSongURL(selection[0].key);
-		items.push({ label: "File Properties", action: () => { router.push(songURL); } });
-	}
+  const selection = getSelection();
+  if (selection.length === 1 && selection[0].leaf) {
+    const songURL = makeSongURL(selection[0].key);
+    items.push({
+      label: "File Properties",
+      action: () => {
+        router.push(songURL);
+      }
+    });
+  }
 
-	return items;
+  return items;
 });
 
-function onRightClick(event: MouseEvent, node: Node) {
-	contextMenu.value?.show(event);
+function onRightClick(event: MouseEvent, _node: Node) {
+  contextMenu.value?.show(event);
 }
 
 function onDragStart(event: DragEvent, nodes: Node[]) {
-	draggedFiles.value = new DndPayloadFiles(nodes.map(n => {
-		return { path: n.key, is_directory: !n.leaf };
-	}));
-	startDrag(event, draggedFiles.value);
+  draggedFiles.value = new DndPayloadFiles(
+    nodes.map((n) => {
+      return { path: n.key, is_directory: !n.leaf };
+    })
+  );
+  startDrag(event, draggedFiles.value);
 }
 
-function onDragStartFiltered(event: DragEvent, nodes: Node[]) {
-	const selection = flattenSelectionFiltered();
-	draggedFiles.value = new DndPayloadFiles(selection.map(path => {
-		return { path, is_directory: false };
-	}));
-	startDrag(event, draggedFiles.value);
+function onDragStartFiltered(event: DragEvent, _nodes: Node[]) {
+  const selection = flattenSelectionFiltered();
+  draggedFiles.value = new DndPayloadFiles(
+    selection.map((path) => {
+      return { path, is_directory: false };
+    })
+  );
+  startDrag(event, draggedFiles.value);
 }
 
 async function sendSelectionToPlaylist(replace: boolean) {
-	const paths = await flattenSelection();
-	if (!paths.length) {
-		return;
-	}
-	if (replace) {
-		playback.clear();
-		playback.stop();
-	}
-	playback.queueTracks(paths);
+  const paths = await flattenSelection();
+  if (!paths.length) {
+    return;
+  }
+  if (replace) {
+    playback.clear();
+    playback.stop();
+  }
+  playback.queueTracks(paths);
 }
 
 function onNodesRestored() {
-	songs.request(treeModel.value.filter(n => n.leaf).map(n => n.key))
+  songs.request(treeModel.value.filter((n) => n.leaf).map((n) => n.key));
 }
 
 useHistory("files", [filterQuery]);

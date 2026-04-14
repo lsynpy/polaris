@@ -29,38 +29,37 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed } from "vue";
+import { useRouter } from "vue-router";
 
-import { Song } from '@/api/dto';
-import { formatTitle, isFakeArtist } from '@/format';
-import { makeArtistURL } from '@/router';
+import type { Song } from "@/api/dto";
+import { formatTitle, isFakeArtist } from "@/format";
+import { makeArtistURL } from "@/router";
 
 const router = useRouter();
 
 const { song } = defineProps<{
-    song: Song,
-    selected: boolean,
-    focused: boolean,
-    isLast: boolean,
+  song: Song;
+  selected: boolean;
+  focused: boolean;
+  isLast: boolean;
 }>();
 
 defineExpose({ song });
 
 const artists = computed(() => {
-    if (!song.album_artists?.length || !song.artists?.length) {
-        return [];
-    }
-    return song.artists.filter(a => !song.album_artists?.includes(a));
+  if (!song.album_artists?.length || !song.artists?.length) {
+    return [];
+  }
+  return song.artists.filter((a) => !song.album_artists?.includes(a));
 });
 
 function onArtistClicked(event: MouseEvent, name: string) {
-    if (event.ctrlKey || event.shiftKey) {
-        return;
-    }
-    if (!isFakeArtist(name)) {
-        router.push(makeArtistURL(name));
-    }
+  if (event.ctrlKey || event.shiftKey) {
+    return;
+  }
+  if (!isFakeArtist(name)) {
+    router.push(makeArtistURL(name));
+  }
 }
-
 </script>

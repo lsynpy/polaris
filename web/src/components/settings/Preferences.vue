@@ -40,44 +40,52 @@
 <script setup lang="ts">
 import { formatCss } from "culori/fn";
 import { computed } from "vue";
-
-import Button from "@/components/basic/Button.vue";
-import Select, { SelectOption } from "@/components/basic/Select.vue";
-import Section from "@/components/basic/Section.vue";
-import Slider from "@/components/basic/Slider.vue";
+import type { SelectOption } from "@/components/basic/Select.vue";
 import { usePreferencesStore } from "@/stores/preferences";
 import { computeAccentRamp, getThemeName, Theme } from "@/theming";
 
 const preferences = usePreferencesStore();
 
-const themeOptions: SelectOption<Theme>[] = Object.values(Theme).map(t => ({ label: getThemeName(t), value: t }));
+const themeOptions: SelectOption<Theme>[] = Object.values(Theme).map((t) => ({
+  label: getThemeName(t),
+  value: t
+}));
 
 const theme = computed({
-	set(option: SelectOption<Theme>) {
-		preferences.setTheme(option.value);
-	},
-	get() {
-		return themeOptions.find(o => o.value == preferences.theme) || themeOptions[0];
-	},
+  set(option: SelectOption<Theme>) {
+    preferences.setTheme(option.value);
+  },
+  get() {
+    return (
+      themeOptions.find((o) => o.value === preferences.theme) || themeOptions[0]
+    );
+  }
 });
 
 const minChromaMultiplier = 0;
 const maxChromaMultiplier = 2;
 
 const hueScale = computed(() => {
-	const stops = [];
-	for (let i = 0; i <= 100; i++) {
-		const color = computeAccentRamp(i / 100 * 360, preferences.accentChromaMultiplier)[5];
-		stops.push(`${formatCss(color)} ${i}%`);
-	}
-	return `background: linear-gradient(90deg, ${stops.join(', ')});`
+  const stops = [];
+  for (let i = 0; i <= 100; i++) {
+    const color = computeAccentRamp(
+      (i / 100) * 360,
+      preferences.accentChromaMultiplier
+    )[5];
+    stops.push(`${formatCss(color)} ${i}%`);
+  }
+  return `background: linear-gradient(90deg, ${stops.join(", ")});`;
 });
 
 const chromaScale = computed(() => {
-	const previewStop = preferences.polarity == "light" ? 6 : 7;
-	const start = computeAccentRamp(preferences.accentBaseHue, minChromaMultiplier)[previewStop];
-	const end = computeAccentRamp(preferences.accentBaseHue, maxChromaMultiplier)[previewStop];
-	return `background: linear-gradient(90deg, ${formatCss(start)} 0%, ${formatCss(end)} 100%);`
+  const previewStop = preferences.polarity === "light" ? 6 : 7;
+  const start = computeAccentRamp(
+    preferences.accentBaseHue,
+    minChromaMultiplier
+  )[previewStop];
+  const end = computeAccentRamp(preferences.accentBaseHue, maxChromaMultiplier)[
+    previewStop
+  ];
+  return `background: linear-gradient(90deg, ${formatCss(start)} 0%, ${formatCss(end)} 100%);`;
 });
-
 </script>

@@ -37,22 +37,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-import { makeThumbnailURL } from '@/api/endpoints';
-import AlbumArt from '@/components/AlbumArt.vue';
-import { isFakeArtist } from '@/format';
-import { usePlaybackStore } from '@/stores/playback';
-import { makeAlbumURLFromSong, makeArtistURL } from '@/router';
+import { makeThumbnailURL } from "@/api/endpoints";
+import { isFakeArtist } from "@/format";
+import { makeAlbumURLFromSong, makeArtistURL } from "@/router";
+import { usePlaybackStore } from "@/stores/playback";
 
 const props = defineProps<{
-    miniPlayer: boolean,
+  miniPlayer: boolean;
 }>();
 
 interface Artist {
-    name: string,
-    url?: string,
+  name: string;
+  url?: string;
 }
 
 const router = useRouter();
@@ -61,60 +60,60 @@ const playback = usePlaybackStore();
 const song = computed(() => playback.currentSong);
 
 const artworkURL = computed(() => {
-    if (!song.value?.artwork) {
-        return undefined;
-    }
-    const size = props.miniPlayer ? "large" : "small";
-    return makeThumbnailURL(song.value.artwork, size);
+  if (!song.value?.artwork) {
+    return undefined;
+  }
+  const size = props.miniPlayer ? "large" : "small";
+  return makeThumbnailURL(song.value.artwork, size);
 });
 
 const albumName = computed(() => {
-    if (!song.value) {
-        return undefined;
-    }
-    return song.value?.album || "Unknown Album";
+  if (!song.value) {
+    return undefined;
+  }
+  return song.value?.album || "Unknown Album";
 });
 
 const albumURL = computed(() => {
-    if (!song.value) {
-        return undefined;
-    }
-    return makeAlbumURLFromSong(song.value);
+  if (!song.value) {
+    return undefined;
+  }
+  return makeAlbumURLFromSong(song.value);
 });
 
 const artists = computed(() => {
-    if (!song.value) {
-        return undefined;
-    }
+  if (!song.value) {
+    return undefined;
+  }
 
-    let names: string[] = [];
-    if (song.value.album_artists?.length) {
-        names = song.value.album_artists;
-    } else if (song.value.artists?.length) {
-        names = song.value.artists;
-    }
+  let names: string[] = [];
+  if (song.value.album_artists?.length) {
+    names = song.value.album_artists;
+  } else if (song.value.artists?.length) {
+    names = song.value.artists;
+  }
 
-    if (!names.length) {
-        return [{ name: "Unknown Artist", url: undefined }];
-    }
+  if (!names.length) {
+    return [{ name: "Unknown Artist", url: undefined }];
+  }
 
-    return names.map(n => {
-        return {
-            name: n,
-            url: isFakeArtist(n) ? undefined : makeArtistURL(n),
-        };
-    });
+  return names.map((n) => {
+    return {
+      name: n,
+      url: isFakeArtist(n) ? undefined : makeArtistURL(n)
+    };
+  });
 });
 
 function onArtistClicked(artist: Artist) {
-    if (artist.url) {
-        router.push(artist.url).catch(err => { });
-    }
+  if (artist.url) {
+    router.push(artist.url).catch((_err) => {});
+  }
 }
 
 function onAlbumClicked() {
-    if (albumURL.value) {
-        router.push(albumURL.value).catch(err => { });
-    }
+  if (albumURL.value) {
+    router.push(albumURL.value).catch((_err) => {});
+  }
 }
 </script>

@@ -36,21 +36,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { watchImmediate } from '@vueuse/core';
-import { useRouter } from 'vue-router';
+import { watchImmediate } from "@vueuse/core";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 
-import { getPlaylist } from '@/api/endpoints';
-import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
-import Error from '@/components/basic/Error.vue';
-import PageHeader from '@/components/basic/PageHeader.vue';
-import Spinner from '@/components/basic/Spinner.vue';
-import Switch from '@/components/basic/Switch.vue';
-import SongList from '@/components/SongList.vue';
-import { formatLongDuration } from '@/format';
-import { usePlaybackStore } from '@/stores/playback';
-import { usePlaylistsStore } from '@/stores/playlists';
-import { usePreferencesStore } from '@/stores/preferences';
+import { getPlaylist } from "@/api/endpoints";
+import { formatLongDuration } from "@/format";
+import { usePlaybackStore } from "@/stores/playback";
+import { usePlaylistsStore } from "@/stores/playlists";
+import { usePreferencesStore } from "@/stores/preferences";
 
 const router = useRouter();
 const playback = usePlaybackStore();
@@ -60,8 +54,14 @@ const preferences = usePreferencesStore();
 const props = defineProps<{ name: string }>();
 
 const pageActions = [
-    { label: "Play All", icon: "play_arrow", action: play },
-    { label: "Delete", icon: "delete", action: deletePlaylist, danger: true, testID: "delete-playlist" },
+  { label: "Play All", icon: "play_arrow", action: play },
+  {
+    label: "Delete",
+    icon: "delete",
+    action: deletePlaylist,
+    danger: true,
+    testID: "delete-playlist"
+  }
 ];
 
 const isLoading = ref(false);
@@ -69,35 +69,38 @@ const error = ref(false);
 
 const songs = computed(() => playlist.value?.songs.paths || []);
 
-watchImmediate(() => props.name, async () => {
+watchImmediate(
+  () => props.name,
+  async () => {
     try {
-        isLoading.value = true;
-        await playlists.fetchPlaylist(props.name);
-    } catch (e) {
-        error.value = true;
+      isLoading.value = true;
+      await playlists.fetchPlaylist(props.name);
+    } catch (_e) {
+      error.value = true;
     }
     isLoading.value = false;
-});
+  }
+);
 
 const playlist = computed(() => playlists.playlists.get(props.name));
 
 async function play() {
-    const songs = await listSongs();
-    playback.clear();
-    playback.stop();
-    playback.queueTracks(songs);
-    playback.setName(props.name);
+  const songs = await listSongs();
+  playback.clear();
+  playback.stop();
+  playback.queueTracks(songs);
+  playback.setName(props.name);
 }
 
 async function deletePlaylist() {
-    await playlists.deletePlaylist(props.name);
-    router.push("/playlists");
+  await playlists.deletePlaylist(props.name);
+  router.push("/playlists");
 }
 
 async function listSongs() {
-    if (playlist.value) {
-        return playlist.value.songs.paths;
-    }
-    return (await getPlaylist(props.name)).songs.paths;
+  if (playlist.value) {
+    return playlist.value.songs.paths;
+  }
+  return (await getPlaylist(props.name)).songs.paths;
 }
 </script>

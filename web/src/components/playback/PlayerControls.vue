@@ -48,64 +48,61 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
 import { refDebounced } from "@vueuse/core";
-
-import Slider from "@/components/basic/Slider.vue";
-import Spinner from "@/components/basic/Spinner.vue";
+import { computed, ref, watch } from "vue";
 import { usePlaybackStore } from "@/stores/playback";
 
 const playback = usePlaybackStore();
 
 const props = defineProps<{
-    buffering: boolean,
-    error: string | null,
-    paused: boolean,
+  buffering: boolean;
+  error: string | null;
+  paused: boolean;
 }>();
 
-const volume = defineModel<number>("volume", { required: true, });
+const volume = defineModel<number>("volume", { required: true });
 
 const emit = defineEmits<{
-    "previous": [],
-    "next": [],
-    "pause": [],
-    "play": [],
+  previous: [];
+  next: [];
+  pause: [];
+  play: [];
 }>();
 
 const debouncedVolume = refDebounced(volume, 100);
 const savedVolume = ref(volume.value);
-const isQuiet = computed(() => volume.value == 0);
+const isQuiet = computed(() => volume.value === 0);
 
 watch(debouncedVolume, () => {
-    if (debouncedVolume.value > 0) {
-        savedVolume.value = debouncedVolume.value;
-    }
+  if (debouncedVolume.value > 0) {
+    savedVolume.value = debouncedVolume.value;
+  }
 });
 
 const bufferingRef = computed(() => props.buffering);
 const debouncedBuffering = refDebounced(bufferingRef, 100);
 
 function togglePlayback() {
-    if (props.paused) {
-        emit("play");
-    } else {
-        emit("pause");
-    }
+  if (props.paused) {
+    emit("play");
+  } else {
+    emit("pause");
+  }
 }
 
 async function skipPrevious() {
-    emit("previous");
+  emit("previous");
 }
 
 async function skipNext() {
-    emit("next");
+  emit("next");
 }
 
 function toggleMute() {
-    if (volume.value > 0) {
-        volume.value = 0;
-    } else {
-        volume.value = savedVolume.value;
-    }
+  if (volume.value > 0) {
+    volume.value = 0;
+  } else {
+    volume.value = savedVolume.value;
+  }
 }
 </script>

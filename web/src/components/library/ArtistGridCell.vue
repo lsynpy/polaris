@@ -24,22 +24,25 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 
-import { ArtistHeader } from '@/api/dto';
-import ContextMenu from '@/components/basic/ContextMenu.vue';
-import { pluralize } from '@/format';
-import { makeArtistURL } from '@/router';
+import type { ArtistHeader } from "@/api/dto";
+import { pluralize } from "@/format";
+import { makeArtistURL } from "@/router";
 
 const router = useRouter();
 
 const props = defineProps<{
-    artist: ArtistHeader,
-    size: "md" | "lg",
+  artist: ArtistHeader;
+  size: "md" | "lg";
 }>();
 
 const contextMenuItems = [
-    { label: "View Artist", action: () => { router.push(makeArtistURL(props.artist.name)) } },
+  {
+    label: "View Artist",
+    action: () => {
+      router.push(makeArtistURL(props.artist.name));
+    }
+  }
 ];
-
 </script>

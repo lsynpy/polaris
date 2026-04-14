@@ -50,46 +50,40 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { vOnClickOutside } from '@vueuse/components'
+import { computed, ref } from "vue";
 
-import { User } from '@/api/dto';
-import Button from "@/components/basic/Button.vue";
-import InputText from "@/components/basic/InputText.vue";
-import ScreenDarkening from "@/components/basic/ScreenDarkening.vue";
-import ScreenFade from "@/components/basic/ScreenFade.vue";
-import Toggle from "@/components/basic/Toggle.vue";
-import { useUserStore } from '@/stores/user';
-import { useUsersStore } from '@/stores/users';
+import type { User } from "@/api/dto";
+import { useUserStore } from "@/stores/user";
+import { useUsersStore } from "@/stores/users";
 
 const currentUser = useUserStore();
 const users = useUsersStore();
 
 const props = defineProps<{
-    user: User,
+  user: User;
 }>();
 
-const isSelf = computed(() => props.user.name == currentUser.name);
+const isSelf = computed(() => props.user.name === currentUser.name);
 
 const isAdmin = computed({
-    get: () => props.user.is_admin,
-    set: (value) => users.update(props.user.name, { new_is_admin: value }),
+  get: () => props.user.is_admin,
+  set: (value) => users.update(props.user.name, { new_is_admin: value })
 });
 
 const newPassword = ref("");
 const editingPassword = ref(false);
 
 function cancelPasswordChange() {
-    editingPassword.value = false;
-    newPassword.value = "";
+  editingPassword.value = false;
+  newPassword.value = "";
 }
 
 async function confirmPasswordChange() {
-    await users.update(props.user.name, {
-        new_password: newPassword.value,
-    });
-    editingPassword.value = false;
-    newPassword.value = "";
+  await users.update(props.user.name, {
+    new_password: newPassword.value
+  });
+  editingPassword.value = false;
+  newPassword.value = "";
 }
 </script>
 

@@ -41,18 +41,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref, toRaw, useTemplateRef, watch } from "vue";
 import { useScroll } from "@vueuse/core";
+import { computed, type Ref, ref, toRaw, useTemplateRef, watch } from "vue";
 
-import { ArtistHeader } from "@/api/dto";
-import { getArtists, ArtistSort } from "@/api/endpoints";
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
-import Error from "@/components/basic/Error.vue";
-import InputText from "@/components/basic/InputText.vue";
-import Switch from "@/components/basic/Switch.vue";
-import PageHeader, { PageViewMode } from "@/components/basic/PageHeader.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import ArtistGrid from "@/components/library/ArtistGrid.vue";
+import type { ArtistHeader } from "@/api/dto";
+import { type ArtistSort, getArtists } from "@/api/endpoints";
+import type { PageViewMode } from "@/components/basic/PageHeader.vue";
 import { saveScrollState, useHistory } from "@/history";
 
 const artists: Ref<ArtistHeader[]> = ref([]);
@@ -61,16 +55,16 @@ const isReady = ref(false);
 const error = ref(false);
 
 async function fetchArtists(sort?: ArtistSort) {
-    isLoading.value = true;
-    error.value = false;
-    try {
-        artists.value = await getArtists(sort);
-        isReady.value = true;
-    } catch (e) {
-        error.value = true;
-    } finally {
-        isLoading.value = false;
-    }
+  isLoading.value = true;
+  error.value = false;
+  try {
+    artists.value = await getArtists(sort);
+    isReady.value = true;
+  } catch (_e) {
+    error.value = true;
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 fetchArtists();
@@ -79,65 +73,76 @@ const filter = ref("");
 const sortBy = ref<ArtistSort>("alpha");
 
 watch(sortBy, (newSort) => {
-    fetchArtists(newSort);
+  fetchArtists(newSort);
 });
 
 type ArtistRole = "performer" | "composer" | "lyricist";
 const roleFilter: Ref<ArtistRole> = ref("performer");
 const roles: PageViewMode<ArtistRole>[] = [
-    { label: 'Performers', value: 'performer' },
-    { label: 'Composers', value: 'composer' },
-    { label: 'Lyricists', value: 'lyricist' },
+  { label: "Performers", value: "performer" },
+  { label: "Composers", value: "composer" },
+  { label: "Lyricists", value: "lyricist" }
 ];
 
 function isRelevant(artist: ArtistHeader) {
-    return artist.num_albums_as_performer > 0
-        || artist.num_albums_as_composer > 0
-        || artist.num_albums_as_lyricist > 0
-        || artist.num_albums_as_additional_performer > 1;
+  return (
+    artist.num_albums_as_performer > 0 ||
+    artist.num_albums_as_composer > 0 ||
+    artist.num_albums_as_lyricist > 0 ||
+    artist.num_albums_as_additional_performer > 1
+  );
 }
 
 const filtered = computed(() => {
-    const query = filter.value.toLowerCase();
-    return artists.value.filter(a => {
-        if (!isRelevant(a)) {
-            return false;
+  const query = filter.value.toLowerCase();
+  return artists.value.filter((a) => {
+    if (!isRelevant(a)) {
+      return false;
+    }
+    switch (roleFilter.value) {
+      case "performer":
+        if (
+          a.num_albums_as_performer < 1 &&
+          a.num_albums_as_additional_performer < 2
+        ) {
+          return false;
         }
-        switch (roleFilter.value) {
-            case "performer":
-                if (a.num_albums_as_performer < 1 && a.num_albums_as_additional_performer < 2) {
-                    return false;
-                }
-                break;
-            case "composer":
-                if (a.num_albums_as_composer < 1) {
-                    return false;
-                }
-                break;
-            case "lyricist":
-                if (a.num_albums_as_lyricist < 1) {
-                    return false;
-                }
-                break;
+        break;
+      case "composer":
+        if (a.num_albums_as_composer < 1) {
+          return false;
         }
-        if (!filter.value.length) {
-            return true;
+        break;
+      case "lyricist":
+        if (a.num_albums_as_lyricist < 1) {
+          return false;
         }
-        return a.name.toLowerCase().includes(query);
-    });
+        break;
+    }
+    if (!filter.value.length) {
+      return true;
+    }
+    return a.name.toLowerCase().includes(query);
+  });
 });
 
 const list = useTemplateRef("list");
-const viewport = computed(() => list.value?.$el);
+const viewport = computed(
+  () => (list.value as unknown as { $el: HTMLElement })?.$el
+);
 const { y: scrollY } = useScroll(viewport);
 
-watch(filtered, () => scrollY.value = 0);
+watch(filtered, () => (scrollY.value = 0));
 
 const saveArtists = {
-    save: () => toRaw(artists.value).filter(isRelevant),
-    restore: (v: ArtistHeader[]) => artists.value = v,
+  save: () => toRaw(artists.value).filter(isRelevant),
+  restore: (v: ArtistHeader[]) => (artists.value = v)
 };
 
-useHistory("artists", [saveArtists, filter, roleFilter, saveScrollState(viewport)]);
-
+useHistory("artists", [
+  saveArtists,
+  filter,
+  roleFilter,
+  saveScrollState(viewport)
+]);
 </script>

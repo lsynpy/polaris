@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { useInitialSetupStore } from "@/stores/initial-setup";
+
 const initialSetup = useInitialSetupStore();
 </script>
 

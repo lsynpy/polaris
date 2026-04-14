@@ -66,84 +66,101 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed } from "vue";
+import { useRouter } from "vue-router";
 
-import { AlbumHeader, ArtistAlbum } from '@/api/dto';
-import { makeThumbnailURL } from '@/api/endpoints';
-import AlbumArt from '@/components/AlbumArt.vue';
-import Draggable from '@/components/basic/Draggable.vue';
-import AlbumDragPreview from '@/components/library/AlbumDragPreview.vue';
-import { DndPayloadAlbumKey } from '@/dnd';
-import { isFakeArtist, pluralize } from '@/format';
-import { makeAlbumURL, makeArtistURL } from '@/router';
+import type { AlbumHeader, ArtistAlbum } from "@/api/dto";
+import { makeThumbnailURL } from "@/api/endpoints";
+import { DndPayloadAlbumKey } from "@/dnd";
+import { isFakeArtist, pluralize } from "@/format";
+import { makeAlbumURL, makeArtistURL } from "@/router";
 
 const router = useRouter();
 
 const props = defineProps<{
-    artist: string,
-    albums: ArtistAlbum[],
+  artist: string;
+  albums: ArtistAlbum[];
 }>();
 
 interface Event {
-    album: AlbumHeader,
-    artworkURL: string | undefined,
-    isMainRelease: boolean,
-    year: number,
-    action: string,
-    albumOwners: string[] | undefined,
-    albumCollaborators: string[] | undefined,
+  album: AlbumHeader;
+  artworkURL: string | undefined;
+  isMainRelease: boolean;
+  year: number;
+  action: string;
+  albumOwners: string[] | undefined;
+  albumCollaborators: string[] | undefined;
 }
 
 const events = computed(() => {
-    let events: Event[] = [];
-    for (const album of props.albums) {
-        const numPerformerCredits = album.contributions.filter(c => c.performer).length;
-        const numComposerCredits = album.contributions.filter(c => c.composer).length;
-        const numLyricistCredits = album.contributions.filter(c => c.lyricist).length;
-        const numContributions = album.contributions.filter(c => c.performer || c.composer || c.lyricist).length;
-        const multiRole = [numPerformerCredits, numComposerCredits, numLyricistCredits].filter(n => n > 0).length > 1;
-        const isMainArtist = album.main_artists.includes(props.artist);
-        const albumOwners = isMainArtist ? undefined : album.main_artists.filter(a => a != props.artist && !isFakeArtist(a));
-        const albumCollaborators = isMainArtist ? album.main_artists.filter(a => a != props.artist) : undefined;
-        const isMainRelease = isMainArtist || numContributions >= album.contributions.length / 2;
+  let events: Event[] = [];
+  for (const album of props.albums) {
+    const numPerformerCredits = album.contributions.filter(
+      (c) => c.performer
+    ).length;
+    const numComposerCredits = album.contributions.filter(
+      (c) => c.composer
+    ).length;
+    const numLyricistCredits = album.contributions.filter(
+      (c) => c.lyricist
+    ).length;
+    const numContributions = album.contributions.filter(
+      (c) => c.performer || c.composer || c.lyricist
+    ).length;
+    const multiRole =
+      [numPerformerCredits, numComposerCredits, numLyricistCredits].filter(
+        (n) => n > 0
+      ).length > 1;
+    const isMainArtist = album.main_artists.includes(props.artist);
+    const albumOwners = isMainArtist
+      ? undefined
+      : album.main_artists.filter(
+          (a) => a !== props.artist && !isFakeArtist(a)
+        );
+    const albumCollaborators = isMainArtist
+      ? album.main_artists.filter((a) => a !== props.artist)
+      : undefined;
+    const isMainRelease =
+      isMainArtist || numContributions >= album.contributions.length / 2;
 
-        let action = "";
+    let action = "";
 
-        if (isMainArtist || (isMainRelease && !albumOwners?.length)) {
-            action = "Released";
-        } else if (multiRole || numPerformerCredits > 0) {
-            action = `Was involved with ${numContributions} ${pluralize("song", numContributions)} on`;
-        } else if (numComposerCredits == album.contributions.length) {
-            action = `Composed`;
-        } else if (numComposerCredits > 0) {
-            action = `Composed ${numComposerCredits} ${pluralize("song", numComposerCredits)} on`;
-        } else if (numLyricistCredits == album.contributions.length) {
-            action = `Wrote lyrics on`;
-        } else if (numLyricistCredits > 0) {
-            action = `Wrote lyrics for ${numLyricistCredits} ${pluralize("song", numLyricistCredits)} on`;
-        }
-
-        events.push({
-            album,
-            artworkURL: album.artwork ? makeThumbnailURL(album.artwork, "small") : undefined,
-            year: album.year || 0,
-            isMainRelease,
-            action,
-            albumOwners,
-            albumCollaborators,
-        });
+    if (isMainArtist || (isMainRelease && !albumOwners?.length)) {
+      action = "Released";
+    } else if (multiRole || numPerformerCredits > 0) {
+      action = `Was involved with ${numContributions} ${pluralize("song", numContributions)} on`;
+    } else if (numComposerCredits === album.contributions.length) {
+      action = `Composed`;
+    } else if (numComposerCredits > 0) {
+      action = `Composed ${numComposerCredits} ${pluralize("song", numComposerCredits)} on`;
+    } else if (numLyricistCredits === album.contributions.length) {
+      action = `Wrote lyrics on`;
+    } else if (numLyricistCredits > 0) {
+      action = `Wrote lyrics for ${numLyricistCredits} ${pluralize("song", numLyricistCredits)} on`;
     }
 
-    events.reverse();
-    return events;
+    events.push({
+      album,
+      artworkURL: album.artwork
+        ? makeThumbnailURL(album.artwork, "small")
+        : undefined,
+      year: album.year || 0,
+      isMainRelease,
+      action,
+      albumOwners,
+      albumCollaborators
+    });
+  }
+
+  events.reverse();
+  return events;
 });
 
 function onArtistClicked(name: string) {
-    router.push(makeArtistURL(name));
+  router.push(makeArtistURL(name));
 }
 
 function onAlbumClicked(album: AlbumHeader) {
-    router.push(makeAlbumURL(album.main_artists, album.name)).catch(err => { });
+  router.push(makeAlbumURL(album.main_artists, album.name)).catch((_err) => {});
 }
 </script>

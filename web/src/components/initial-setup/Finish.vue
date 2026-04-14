@@ -3,5 +3,4 @@
 </template>
 
 <script setup lang="ts">
-import Step from "@/components/initial-setup/Step.vue";
 </script>

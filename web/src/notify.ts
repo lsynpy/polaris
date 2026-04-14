@@ -2,31 +2,36 @@ const recentThreshold = 5000; // in ms
 const maxRecentNotifications = 1;
 let recentNotificationTimes: number[] = [];
 
-let areWeSpammy = function () {
-	const now = Date.now();
-	recentNotificationTimes = recentNotificationTimes.filter(function (t) {
-		return now - t < recentThreshold;
-	});
-	return recentNotificationTimes.length >= maxRecentNotifications;
+const areWeSpammy = () => {
+  const now = Date.now();
+  recentNotificationTimes = recentNotificationTimes.filter(
+    (t) => now - t < recentThreshold
+  );
+  return recentNotificationTimes.length >= maxRecentNotifications;
 };
 
-export default async function (title: string, icon: string | null, body: string, throttle: boolean) {
-	if (!("Notification" in window)) {
-		return;
-	}
+export default async function (
+  title: string,
+  icon: string | null,
+  body: string,
+  throttle: boolean
+) {
+  if (!("Notification" in window)) {
+    return;
+  }
 
-	if (Notification.permission === "default") {
-		const permission = await Notification.requestPermission();
-		if (permission !== "granted") {
-			return;
-		}
-	}
+  if (Notification.permission === "default") {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      return;
+    }
+  }
 
-	if (throttle && areWeSpammy()) {
-		console.log("Ignored spammy notification: " + body);
-		return;
-	}
+  if (throttle && areWeSpammy()) {
+    console.log(`Ignored spammy notification: ${body}`);
+    return;
+  }
 
-	new Notification(title, { icon: icon || undefined, body: body });
-	recentNotificationTimes.push(Date.now());
+  new Notification(title, { icon: icon || undefined, body: body });
+  recentNotificationTimes.push(Date.now());
 }

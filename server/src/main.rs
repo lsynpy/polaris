@@ -1,4 +1,3 @@
-#![cfg_attr(all(windows, feature = "ui"), windows_subsystem = "windows")]
 #![recursion_limit = "256"]
 
 use log::{error, info};
@@ -16,7 +15,6 @@ mod paths;
 mod server;
 #[cfg(test)]
 mod test;
-mod ui;
 mod utils;
 
 #[derive(thiserror::Error, Debug)]
@@ -176,18 +174,15 @@ async fn async_main(cli_options: CLIOptions, paths: paths::Paths) -> Result<(), 
 	app.scanner.queue_scan();
 	app.ddns_manager.begin_periodic_updates();
 
-	// Start server
+	// Send readiness notification before blocking on server
+	#[cfg(unix)]
+	notify_ready()?;
+
+	// Start server (blocks forever)
 	info!("Starting up server");
 	if let Err(e) = server::launch(app).await {
 		return Err(Error::ServiceStartup(socket_address, e));
 	}
-
-	// Send readiness notification
-	#[cfg(unix)]
-	notify_ready()?;
-
-	// Run UI
-	ui::run();
 
 	info!("Shutting down server");
 	Ok(())

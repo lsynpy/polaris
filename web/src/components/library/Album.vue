@@ -4,7 +4,7 @@
 			<template #jumbo v-if="album && isTinyScreen">
 				<div class="mb-4 flex gap-4 items-start shrink-0">
 					<div class="flex flex-col basis-[105px] shrink-0">
-						<Draggable :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)" class="cursor-grab">
+						<Draggable :make-payload="() => new DndPayloadAlbum(album as Album)" class="cursor-grab">
 							<AlbumArt :url="artworkURL" />
 							<template #drag-preview>
 								<AlbumDragPreview :album="album" />
@@ -47,7 +47,7 @@
 
 			<div class="min-h-0 flex items-start gap-8">
 				<div class="basis-2/5 shrink-0 hidden xl:block">
-					<Draggable :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)" class="cursor-grab">
+					<Draggable :make-payload="() => new DndPayloadAlbum(album as Album)" class="cursor-grab">
 						<AlbumArt :url="artworkURL" rounding="rounded-lg"
 							class="shadow-lg shadow-ls-100 dark:shadow-ds-900" />
 						<template #drag-preview>
@@ -94,29 +94,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useTemplateRef, watch, } from "vue";
 import { useAsyncState, useMediaQuery } from "@vueuse/core";
+import { computed, useTemplateRef, watch } from "vue";
 import { useRouter } from "vue-router";
 
-import { Album as AlbumDTO, AlbumKey, Song } from "@/api/dto";
+import type { Album, AlbumKey, Song } from "@/api/dto";
 import { getAlbum, makeThumbnailURL } from "@/api/endpoints";
-import AlbumArt from '@/components/AlbumArt.vue';
-import Badge from '@/components/basic/Badge.vue';
-import ContextMenu, { ContextMenuItem } from '@/components/basic/ContextMenu.vue';
-import Draggable from '@/components/basic/Draggable.vue';
-import Error from '@/components/basic/Error.vue';
-import PageHeader from '@/components/basic/PageHeader.vue';
-import SectionTitle from '@/components/basic/SectionTitle.vue';
-import Spinner from '@/components/basic/Spinner.vue';
-import AlbumDragPreview from '@/components/library/AlbumDragPreview.vue';
-import AlbumSong from '@/components/library/AlbumSong.vue';
+import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
 import { DndPayloadAlbum, DndPayloadSongs } from "@/dnd";
 import { isFakeArtist } from "@/format";
 import { saveScrollState, useHistory } from "@/history";
+import useMultiselect from "@/multiselect";
 import { makeArtistURL, makeSongURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
 import { useSongsStore } from "@/stores/songs";
-import useMultiselect from "@/multiselect";
 
 const playback = usePlaybackStore();
 const songs = useSongsStore();
@@ -125,167 +116,221 @@ const router = useRouter();
 const props = defineProps<{ albumKey: AlbumKey }>();
 
 const viewport = useTemplateRef("viewport");
-const albumSongs = useTemplateRef("albumSongs");
-const contextMenu = useTemplateRef("contextMenu");
+const albumSongs =
+  useTemplateRef<{ song: Song; $el: HTMLElement }[]>("albumSongs");
+const contextMenu = useTemplateRef<{ show: (event: MouseEvent) => void }>(
+  "contextMenu"
+);
 
 const isTinyScreen = useMediaQuery("(width < 80rem)");
 
-const { state: album, isLoading, error, execute: fetchAlbum } = useAsyncState(
-	(key: AlbumKey) => getAlbum(key),
-	undefined,
-	{ immediate: false, resetOnExecute: true }
-);
+const {
+  state: album,
+  isLoading,
+  error,
+  execute: fetchAlbum
+} = useAsyncState((key: AlbumKey) => getAlbum(key), undefined, {
+  immediate: false,
+  resetOnExecute: true
+});
 
 const header = computed((): string => {
-	return props.albumKey.name || "Unknown Album";
+  return props.albumKey.name || "Unknown Album";
 });
 
 const pageActions = [
-	{ label: "Play All", icon: "play_arrow", action: play, testID: "play-all" },
-	{ label: "Queue All", icon: "playlist_add", action: queue, testID: "queue-all" },
+  { label: "Play All", icon: "play_arrow", action: play, testID: "play-all" },
+  {
+    label: "Queue All",
+    icon: "playlist_add",
+    action: queue,
+    testID: "queue-all"
+  }
 ];
 
 const contextMenuItems = computed(() => {
-	const items: ContextMenuItem[] = [
-		{ label: "Play", shortcut: "Enter", action: () => { queueSelection(true) } },
-		{ label: "Queue", shortcut: "Shift+Enter", action: () => { queueSelection(false) } },
-	];
+  const items: ContextMenuItem[] = [
+    {
+      label: "Play",
+      shortcut: "Enter",
+      action: () => {
+        queueSelection(true);
+      }
+    },
+    {
+      label: "Queue",
+      shortcut: "Shift+Enter",
+      action: () => {
+        queueSelection(false);
+      }
+    }
+  ];
 
-	if (selection.value.length == 1) {
-		const songURL = makeSongURL(selection.value[0].path);
-		items.push({ label: "File Properties", action: () => { router.push(songURL); } });
-	}
+  if (selection.value.length === 1) {
+    const songURL = makeSongURL(selection.value[0].path);
+    items.push({
+      label: "File Properties",
+      action: () => {
+        router.push(songURL);
+      }
+    });
+  }
 
-	return items;
+  return items;
 });
 
-const artworkURL = computed(() => album.value?.artwork ? makeThumbnailURL(album.value.artwork, "large") : undefined);
-
-const discs = computed(() => {
-	if (!album.value) {
-		return undefined;
-	}
-	let discs = new Map<number | undefined, Song[]>();
-	for (const song of album.value.songs) {
-		let disc = discs.get(song.disc_number);
-		if (!disc) {
-			disc = [];
-			discs.set(song.disc_number, disc);
-		}
-		disc.push(song);
-	}
-	return discs;
-});
-
-const { clickItem, selection, selectItem, selectedKeys, focusedKey, multiselect, pivotKey } = useMultiselect(
-	() => {
-		return album.value?.songs.map(s => ({ key: s.path, ...s })) || [];
-	},
-	{ onMove: snapScrolling }
+const artworkURL = computed(() =>
+  album.value?.artwork
+    ? makeThumbnailURL(album.value.artwork, "large")
+    : undefined
 );
 
-if (!useHistory("album", [album, selectedKeys, focusedKey, pivotKey, saveScrollState(viewport)])) {
-	fetchAlbum(0, props.albumKey);
-} else {
-	songs.ingest(album.value?.songs ?? []);
-}
-
-watch(() => props.albumKey, () => {
-	fetchAlbum(0, props.albumKey);
+const discs = computed(() => {
+  if (!album.value) {
+    return undefined;
+  }
+  let discs = new Map<number | undefined, Song[]>();
+  for (const song of album.value.songs) {
+    let disc = discs.get(song.disc_number);
+    if (!disc) {
+      disc = [];
+      discs.set(song.disc_number, disc);
+    }
+    disc.push(song);
+  }
+  return discs;
 });
 
+const {
+  clickItem,
+  selection,
+  selectItem,
+  selectedKeys,
+  focusedKey,
+  multiselect,
+  pivotKey
+} = useMultiselect(
+  () => {
+    return album.value?.songs.map((s) => ({ key: s.path, ...s })) || [];
+  },
+  { onMove: snapScrolling }
+);
+
+if (
+  !useHistory("album", [
+    album,
+    selectedKeys,
+    focusedKey,
+    pivotKey,
+    saveScrollState(viewport)
+  ])
+) {
+  fetchAlbum(0, props.albumKey);
+} else {
+  songs.ingest(album.value?.songs ?? []);
+}
+
+watch(
+  () => props.albumKey,
+  () => {
+    fetchAlbum(0, props.albumKey);
+  }
+);
+
 async function play() {
-	const songs = await listSongs();
-	playback.clear();
-	playback.stop();
-	playback.queueTracks(songs);
+  const songs = await listSongs();
+  playback.clear();
+  playback.stop();
+  playback.queueTracks(songs);
 }
 
 async function queue() {
-	const songs = await listSongs();
-	playback.queueTracks(songs);
+  const songs = await listSongs();
+  playback.queueTracks(songs);
 }
 
 async function listSongs() {
-	if (album.value) {
-		return album.value.songs.map(s => s.path);
-	}
-	return getAlbum(props.albumKey).then(a => a.songs.map(s => s.path));
+  if (album.value) {
+    return album.value.songs.map((s) => s.path);
+  }
+  return getAlbum(props.albumKey).then((a) => a.songs.map((s) => s.path));
 }
 
 function onArtistClicked(name: string) {
-	if (!isFakeArtist(name)) {
-		router.push(makeArtistURL(name));
-	}
+  if (!isFakeArtist(name)) {
+    router.push(makeArtistURL(name));
+  }
 }
 
 function onSongDoubleClicked(song: Song) {
-	playback.clear();
-	playback.stop();
-	playback.queueTracks([song.path]);
+  playback.clear();
+  playback.stop();
+  playback.queueTracks([song.path]);
 }
 
 function onSongRightClicked(event: MouseEvent, song: Song) {
-	if (!selectedKeys.value.has(song.path)) {
-		selectItem({ key: song.path, ...song });
-	}
-	contextMenu.value?.show(event);
+  if (!selectedKeys.value.has(song.path)) {
+    selectItem({ key: song.path, ...song });
+  }
+  contextMenu.value?.show(event);
 }
 
-function onDragStart(event: DragEvent, song: Song) {
-	if (!selectedKeys.value.has(song.path)) {
-		selectItem({ key: song.path, ...song });
-	}
+function onDragStart(_event: DragEvent, song: Song) {
+  if (!selectedKeys.value.has(song.path)) {
+    selectItem({ key: song.path, ...song });
+  }
 }
 
 function onKeyDown(event: KeyboardEvent) {
-	multiselect.onKeyDown(event);
-	if (event.code == "Enter") {
-		queueSelection(!event.shiftKey);
-	}
+  multiselect.onKeyDown(event);
+  if (event.code === "Enter") {
+    queueSelection(!event.shiftKey);
+  }
 }
 
 async function queueSelection(replace: boolean) {
-	const tracks = selection.value.map(s => s.path);
-	if (!tracks.length) {
-		return;
-	}
+  const tracks = selection.value.map((s) => s.path);
+  if (!tracks.length) {
+    return;
+  }
 
-	if (replace) {
-		playback.clear();
-		playback.stop();
-	}
-	playback.queueTracks(tracks);
+  if (replace) {
+    playback.clear();
+    playback.stop();
+  }
+  playback.queueTracks(tracks);
 }
 
 function snapScrolling() {
-	if (!viewport.value) {
-		return;
-	}
+  if (!viewport.value) {
+    return;
+  }
 
-	const songElement = albumSongs.value?.find(s => s?.song.path == focusedKey.value);
-	if (!songElement) {
-		return;
-	}
+  const songElement = albumSongs.value?.find(
+    (s) => s?.song.path === focusedKey.value
+  );
+  if (!songElement) {
+    return;
+  }
 
-	const viewportTop = viewport.value.scrollTop;
-	const viewportHeight = viewport.value.clientHeight;
-	const viewportBottom = viewportTop + viewportHeight;
+  const viewportTop = viewport.value.scrollTop;
+  const viewportHeight = viewport.value.clientHeight;
+  const viewportBottom = viewportTop + viewportHeight;
 
-	const elementTop = (songElement.$el as HTMLElement).offsetTop - viewport.value.offsetTop;
-	const elementHeight = (songElement.$el as HTMLElement).offsetHeight;
-	const elementBottom = elementTop + elementHeight;
+  const elementTop =
+    (songElement.$el as HTMLElement).offsetTop - viewport.value.offsetTop;
+  const elementHeight = (songElement.$el as HTMLElement).offsetHeight;
+  const elementBottom = elementTop + elementHeight;
 
-	const padding = 4 * elementHeight;
+  const padding = 4 * elementHeight;
 
-	let scrollY = viewportTop;
-	if (elementTop < viewportTop + padding) {
-		scrollY = Math.min(scrollY, elementTop - padding);
-	} else if (elementBottom > viewportBottom - padding) {
-		scrollY = Math.max(scrollY, elementTop - viewportHeight + padding);
-	}
+  let scrollY = viewportTop;
+  if (elementTop < viewportTop + padding) {
+    scrollY = Math.min(scrollY, elementTop - padding);
+  } else if (elementBottom > viewportBottom - padding) {
+    scrollY = Math.max(scrollY, elementTop - viewportHeight + padding);
+  }
 
-	viewport.value.scrollTo({ top: scrollY, behavior: "instant" });
+  viewport.value.scrollTo({ top: scrollY, behavior: "instant" });
 }
-
 </script>

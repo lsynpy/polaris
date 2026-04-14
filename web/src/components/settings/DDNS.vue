@@ -22,30 +22,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 
-import { getSettings, putSettings, } from "@/api/endpoints";
-import Button from "@/components/basic/Button.vue";
-import InputText from "@/components/basic/InputText.vue";
-import Section from "@/components/basic/Section.vue";
-import SectionTitle from "@/components/basic/SectionTitle.vue";
+import { getSettings, putSettings } from "@/api/endpoints";
 
 const url = ref("");
 
 const error = computed(() => {
-	if (url.value.length && !URL.canParse(url.value)) {
-		return "Not a valid URL";
-	} else {
-		return null;
-	}
+  if (url.value.length && !URL.canParse(url.value)) {
+    return "Not a valid URL";
+  } else {
+    return null;
+  }
 });
 
 onMounted(async () => {
-	url.value = (await getSettings()).ddns_update_url;
+  url.value = (await getSettings()).ddns_update_url;
 });
 
 function apply() {
-	if (!error.value && url.value !== undefined) {
-		putSettings({ ddns_update_url: url.value });
-	}
+  if (!error.value && url.value !== undefined) {
+    putSettings({ ddns_update_url: url.value });
+  }
 }
-
 </script>

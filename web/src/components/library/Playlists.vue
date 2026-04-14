@@ -51,14 +51,11 @@
 import { computed, onMounted, ref, useTemplateRef } from "vue";
 import { useRouter } from "vue-router";
 
-import { PlaylistHeader } from "@/api/dto";
-import { exportPlaylists as doExportPlaylists, getPlaylist } from "@/api/endpoints";
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
-import Button from "@/components/basic/Button.vue";
-import Error from "@/components/basic/Error.vue";
-import InputText from "@/components/basic/InputText.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import PageHeader from "@/components/basic/PageHeader.vue";
+import type { PlaylistHeader } from "@/api/dto";
+import {
+  exportPlaylists as doExportPlaylists,
+  getPlaylist
+} from "@/api/endpoints";
 import { formatLongDuration } from "@/format";
 import { saveScrollState, useHistory } from "@/history";
 import notify from "@/notify";
@@ -73,85 +70,92 @@ const isLoading = ref(false);
 const error = ref(false);
 
 onMounted(async () => {
-	try {
-		isLoading.value = true;
-		await playlists.fetchList();
-	} catch (e) {
-		error.value = true;
-	}
-	isLoading.value = false;
+  try {
+    isLoading.value = true;
+    await playlists.fetchList();
+  } catch (_e) {
+    error.value = true;
+  }
+  isLoading.value = false;
 });
 
 const viewport = useTemplateRef("viewport");
 
 const pageActions = computed(() => [
-	{ label: "Import", icon: "download", action: importPlaylists },
-	{ label: "Export", icon: "upload", action: exportPlaylists, disabled: !playlists.listing.length },
+  { label: "Import", icon: "download", action: importPlaylists },
+  {
+    label: "Export",
+    icon: "upload",
+    action: exportPlaylists,
+    disabled: !playlists.listing.length
+  }
 ]);
 
 const filter = ref("");
 
 const filtered = computed(() => {
-	if (!playlists.listing) {
-		return undefined;
-	}
-	const query = filter.value.toLowerCase();
-	return playlists.listing.filter(p => p.name.toLowerCase().includes(query));
+  if (!playlists.listing) {
+    return undefined;
+  }
+  const query = filter.value.toLowerCase();
+  return playlists.listing.filter((p) => p.name.toLowerCase().includes(query));
 });
 
 function onPlaylistClicked(playlist: PlaylistHeader) {
-	router.push("/playlists/" + encodeURIComponent(playlist.name)).catch(err => { });
+  router
+    .push(`/playlists/${encodeURIComponent(playlist.name)}`)
+    .catch((_err) => {});
 }
 
 async function play(playlist: PlaylistHeader) {
-	const songs = (await getPlaylist(playlist.name)).songs.paths;
-	playback.clear();
-	playback.stop();
-	playback.queueTracks(songs);
-	playback.setName(playlist.name);
+  const songs = (await getPlaylist(playlist.name)).songs.paths;
+  playback.clear();
+  playback.stop();
+  playback.queueTracks(songs);
+  playback.setName(playlist.name);
 }
 
 function exportPlaylists() {
-	doExportPlaylists().then(({ filename, payload }) => {
-		const link = document.createElement("a");
-		const url = window.URL.createObjectURL(payload);
-		link.href = url;
-		link.download = filename;
-		link.click();
-		URL.revokeObjectURL(url);
-	});
+  doExportPlaylists().then(({ filename, payload }) => {
+    const link = document.createElement("a");
+    const url = window.URL.createObjectURL(payload);
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  });
 }
 
 function importPlaylists() {
-	const input = document.createElement("input");
-	input.type = "file";
-	input.accept = ".m3u,.m3u8,.zip";
-	input.multiple = true;
-	input.onchange = async e => {
-		const files = [];
-		const numFiles = input.files?.length || 0;
-		for (let i = 0; i < numFiles; i++) {
-			const file = input.files?.item(i);
-			if (!file) {
-				continue;
-			}
-			const data = new Blob([await file.bytes()]);
-			files.push({
-				filename: file.name,
-				content: data,
-			});
-		}
-		try {
-			await playlists.importPlaylists(files);
-		} catch (e: any) {
-			if (e instanceof Response) {
-				const text = await e.text();
-				const throttle = false;
-				notify("Playlist Import Error", null, text, throttle);
-			}
-		}
-	}
-	input.click();
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".m3u,.m3u8,.zip";
+  input.multiple = true;
+  input.onchange = async (_e) => {
+    const files = [];
+    const numFiles = input.files?.length || 0;
+    for (let i = 0; i < numFiles; i++) {
+      const file = input.files?.item(i);
+      if (!file) {
+        continue;
+      }
+      const data = new Blob([await file.bytes()]);
+      files.push({
+        filename: file.name,
+        content: data
+      });
+    }
+    try {
+      await playlists.importPlaylists(files);
+    } catch (e: any) {
+      if (e instanceof Response) {
+        const text = await e.text();
+        const throttle = false;
+        notify("Playlist Import Error", null, text, throttle);
+      }
+    }
+  };
+  input.click();
 }
 
 useHistory("playlists", [filter, saveScrollState(viewport)]);

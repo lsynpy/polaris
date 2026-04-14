@@ -43,109 +43,151 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref, ShallowRef, toRaw, useTemplateRef, watch } from "vue";
-import { useAsyncState, useElementSize, useScroll, watchThrottled } from "@vueuse/core";
+import {
+  useAsyncState,
+  useElementSize,
+  useScroll,
+  watchThrottled
+} from "@vueuse/core";
+import {
+  computed,
+  type Ref,
+  ref,
+  type ShallowRef,
+  toRaw,
+  unref,
+  useTemplateRef,
+  watch
+} from "vue";
 
-import { AlbumHeader } from "@/api/dto";
+import type { AlbumHeader } from "@/api/dto";
 import { getAlbums, getRandomAlbums, getRecentAlbums } from "@/api/endpoints";
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
-import Error from "@/components/basic/Error.vue";
-import InputText from "@/components/basic/InputText.vue";
-import PageHeader, { PageViewMode } from "@/components/basic/PageHeader.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import AlbumGrid from "@/components/library/AlbumGrid.vue";
+import type { PageViewMode } from "@/components/basic/PageHeader.vue";
 import { saveScrollState, useHistory } from "@/history";
 
 type ViewMode = "recent" | "random" | "all";
 const viewMode: Ref<ViewMode> = ref("recent");
 const viewModes: PageViewMode<ViewMode>[] = [
-    { label: 'Recently Added', value: 'recent' },
-    { label: 'Random', value: 'random' },
-    { label: 'All', value: 'all' },
+  { label: "Recently Added", value: "recent" },
+  { label: "Random", value: "random" },
+  { label: "All", value: "all" }
 ];
 
 const albums: ShallowRef<AlbumHeader[]> = ref([]);
 const fetchedAll = ref(false);
 const seed = ref(generateSeed());
 
-const { state: fetchedAlbums, isLoading, isReady, error, execute: fetchAlbums } = useAsyncState(async () => {
+const grid = useTemplateRef("grid") as ShallowRef<
+  { numColumns: number; contentHeight: number; $el: HTMLElement } | undefined
+>;
+
+const {
+  state: fetchedAlbums,
+  isLoading,
+  isReady,
+  error,
+  execute: fetchAlbums
+} = useAsyncState(
+  async () => {
     const numColumns = grid.value?.numColumns ?? 5;
     const fetchCount = numColumns * 20;
     switch (viewMode.value) {
-        case "all":
-            return getAlbums();
-        case "recent":
-            return getRecentAlbums(albums.value.length, fetchCount);
-        case "random":
-            return getRandomAlbums(seed.value, albums.value.length, fetchCount);
+      case "all":
+        return getAlbums();
+      case "recent":
+        return getRecentAlbums(albums.value.length, fetchCount);
+      case "random":
+        return getRandomAlbums(seed.value, albums.value.length, fetchCount);
     }
-}, [], { immediate: false });
+  },
+  [],
+  { immediate: false }
+);
 
-const grid = useTemplateRef("grid");
-const viewport = computed(() => grid.value?.$el);
+const viewport = computed(() => unref(grid)?.$el as unknown as HTMLElement);
 const { y: scrollY } = useScroll(viewport);
-const { height: viewportHeight } = useElementSize(grid);
+const { height: viewportHeight } = useElementSize(viewport);
 const gridContentHeight = computed(() => grid.value?.contentHeight);
 
 const needsMoreAlbums = computed(() => {
-    if (isLoading.value || fetchedAll.value || !gridContentHeight.value || viewMode.value == "all") {
-        return false;
-    }
-    return Math.abs(scrollY.value + viewportHeight.value - gridContentHeight.value) < 100;
+  if (
+    isLoading.value ||
+    fetchedAll.value ||
+    !gridContentHeight.value ||
+    viewMode.value === "all"
+  ) {
+    return false;
+  }
+  return (
+    Math.abs(scrollY.value + viewportHeight.value - gridContentHeight.value) <
+    100
+  );
 });
 
-watchThrottled(needsMoreAlbums, () => {
+watchThrottled(
+  needsMoreAlbums,
+  () => {
     if (needsMoreAlbums.value) {
-        fetchAlbums();
+      fetchAlbums();
     }
-}, { throttle: 200 });
+  },
+  { throttle: 200 }
+);
 
 watch(fetchedAlbums, () => {
-    fetchedAll.value = !fetchedAlbums.value.length;
-    switch (viewMode.value) {
-        case "all":
-            albums.value = fetchedAlbums.value;
-            break;
-        case "recent":
-        case "random":
-            albums.value = [...toRaw(albums.value), ...fetchedAlbums.value];
-            break;
-    }
+  fetchedAll.value = !fetchedAlbums.value.length;
+  switch (viewMode.value) {
+    case "all":
+      albums.value = fetchedAlbums.value;
+      break;
+    case "recent":
+    case "random":
+      albums.value = [...toRaw(albums.value), ...fetchedAlbums.value];
+      break;
+  }
 });
 
 const filter = ref("");
 const filtered = computed(() => {
-    const query = filter.value.toLowerCase();
-    return albums.value.filter(a => {
-        if (viewMode.value != "all") {
-            return true;
-        }
-        if (!query.length) {
-            return true;
-        }
-        if (a.name.toLowerCase().includes(query)) {
-            return true;
-        }
-        for (const artist of a.main_artists) {
-            if (artist.toLowerCase().includes(query)) {
-                return true;
-            }
-        }
-        return false;
-    });
+  const query = filter.value.toLowerCase();
+  return albums.value.filter((a) => {
+    if (viewMode.value !== "all") {
+      return true;
+    }
+    if (!query.length) {
+      return true;
+    }
+    if (a.name.toLowerCase().includes(query)) {
+      return true;
+    }
+    for (const artist of a.main_artists) {
+      if (artist.toLowerCase().includes(query)) {
+        return true;
+      }
+    }
+    return false;
+  });
 });
 
 function generateSeed() {
-    return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+  return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 }
 
-if (!useHistory("albums", [albums, filter, viewMode, seed, saveScrollState(viewport)])) {
-    fetchAlbums();
+if (
+  !useHistory("albums", [
+    albums,
+    filter,
+    viewMode,
+    seed,
+    saveScrollState(viewport)
+  ])
+) {
+  fetchAlbums();
 }
 
 watch(viewMode, () => {
-    albums.value = [];
-    fetchedAll.value = false;
-    fetchAlbums();
+  albums.value = [];
+  fetchedAll.value = false;
+  fetchAlbums();
 });
 </script>

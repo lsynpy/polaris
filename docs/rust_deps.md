@@ -118,7 +118,6 @@
 |-------------------------------------|----------------------------|---------------------------|----------------------------------------------------------|
 | **daemonize**                       | 0.5.0 (unix)               | Unix daemon process       | Background server mode (`-f` flag to stay in foreground) |
 | **sd-notify**                       | 0.4.2 (unix)               | systemd socket activation | Notify systemd when server is ready                      |
-| **native-windows-gui** + **derive** | 1.0.13 (optional, windows) | Native Windows GUI        | Optional tray icon / system tray app (`--features ui`)   |
 
 ## Packaging
 

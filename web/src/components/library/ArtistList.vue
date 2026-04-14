@@ -29,34 +29,48 @@
 </template>
 
 <script setup lang="ts">
-import { computed, CSSProperties, Ref } from 'vue';
-import { useVirtualList } from '@vueuse/core';
-import { useRouter } from 'vue-router';
+import { useVirtualList } from "@vueuse/core";
+import { type CSSProperties, computed, type Ref } from "vue";
+import { useRouter } from "vue-router";
 
-import { ArtistHeader } from '@/api/dto';
-import { pluralize } from '@/format';
+import type { ArtistHeader } from "@/api/dto";
+import { pluralize } from "@/format";
 import { makeArtistURL } from "@/router";
-import { ArtistListMode, usePreferencesStore } from '@/stores/preferences';
+import { type ArtistListMode, usePreferencesStore } from "@/stores/preferences";
 
 const router = useRouter();
 const preferences = usePreferencesStore();
 
 const props = defineProps<{
-    artists: ArtistHeader[],
-    listMode: ArtistListMode,
+  artists: ArtistHeader[];
+  listMode: ArtistListMode;
 }>();
 
 const itemHeight = 73;
 const allArtists = computed(() => props.artists);
-const { list: virtualArtists, containerProps, wrapperProps } = useVirtualList(allArtists, { itemHeight });
+const {
+  list: virtualArtists,
+  containerProps,
+  wrapperProps
+} = useVirtualList(allArtists, { itemHeight });
 
-function remap(value: number, fromA: number, fromB: number, toA: number, toB: number) {
-    return toA + (toB - toA) * Math.max(0, Math.min((value - fromA) / (fromB - fromA), 1));
+function remap(
+  value: number,
+  fromA: number,
+  fromB: number,
+  toA: number,
+  toB: number
+) {
+  return (
+    toA +
+    (toB - toA) * Math.max(0, Math.min((value - fromA) / (fromB - fromA), 1))
+  );
 }
 
-const proportionalStyle: Ref<{ [key: string]: CSSProperties }> = computed(() => {
-    if (props.listMode != "proportional" || !props.artists.length) {
-        return {};
+const proportionalStyle: Ref<{ [key: string]: CSSProperties }> = computed(
+  () => {
+    if (props.listMode !== "proportional" || !props.artists.length) {
+      return {};
     }
 
     let style: { [key: string]: CSSProperties } = {};
@@ -67,18 +81,21 @@ const proportionalStyle: Ref<{ [key: string]: CSSProperties }> = computed(() => 
     let pHigh = sorted[Math.floor(sorted.length * 0.9)].num_songs;
     let pLow = sorted[Math.floor(sorted.length * 0)].num_songs;
 
-    const lowColor = preferences.polarity == "light" ? "--surface-400" : "--surface-400";
-    const highColor = preferences.polarity == "light" ? "--surface-800" : "--surface-50";
+    const lowColor =
+      preferences.polarity === "light" ? "--surface-400" : "--surface-400";
+    const highColor =
+      preferences.polarity === "light" ? "--surface-800" : "--surface-50";
 
     for (const artist of sorted) {
-        const t = remap(artist.num_songs, pLow, pHigh, 0, 1);
-        const size = remap(artist.num_songs, pLow, pHigh, 0.75, 1.75);
-        style[artist.name] = {
-            "color": `color-mix(in oklch, rgb(var(${lowColor})), rgb(var(${highColor})) ${100 * t}%)`,
-            "font-size": `${size}em`
-        };
+      const t = remap(artist.num_songs, pLow, pHigh, 0, 1);
+      const size = remap(artist.num_songs, pLow, pHigh, 0.75, 1.75);
+      style[artist.name] = {
+        color: `color-mix(in oklch, rgb(var(${lowColor})), rgb(var(${highColor})) ${100 * t}%)`,
+        "font-size": `${size}em`
+      };
     }
 
     return style;
-});
+  }
+);
 </script>

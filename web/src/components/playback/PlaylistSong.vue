@@ -11,21 +11,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
-import { PlaylistEntry, usePlaybackStore } from "@/stores/playback";
-import SongListRow from '@/components/SongListRow.vue';
+import { computed } from "vue";
+import { type PlaylistEntry, usePlaybackStore } from "@/stores/playback";
 
 const playback = usePlaybackStore();
 
 const props = defineProps<{
-    entry: PlaylistEntry,
-    height: number,
-    index: number,
-    selected: boolean,
-    focused: boolean,
-    compact: boolean,
+  entry: PlaylistEntry;
+  height: number;
+  index: number;
+  selected: boolean;
+  focused: boolean;
+  compact: boolean;
 }>();
 
-const isCurrent = computed(() => props.entry.key == playback.currentTrack?.key);
+const isCurrent = computed(
+  () => props.entry.key === playback.currentTrack?.key
+);
 </script>

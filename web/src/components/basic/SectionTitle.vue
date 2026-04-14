@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 defineProps<{
-    label: string,
-    icon?: string,
+  label: string;
+  icon?: string;
 }>();
 </script>

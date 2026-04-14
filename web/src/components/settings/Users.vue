@@ -31,53 +31,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, Ref, computed } from "vue";
+import { computed, onMounted, type Ref, ref } from "vue";
 
-import { NewUser } from "@/api/dto";
-import Button from "@/components/basic/Button.vue";
-import InputText from "@/components/basic/InputText.vue";
-import Section from "@/components/basic/Section.vue";
-import User from "@/components/settings/User.vue";
+import type { NewUser } from "@/api/dto";
 import { useUsersStore } from "@/stores/users";
 
 const users = useUsersStore();
 
 onMounted(() => {
-	users.refresh();
+  users.refresh();
 });
 
 const newUser: Ref<NewUser | undefined> = ref(undefined);
 
 const validNewUserName = computed(() => {
-	if (!newUser.value) {
-		return false;
-	}
-	const newUsername = newUser.value.name;
-	return newUsername.length && !users.listing?.some(u => u.name == newUsername);
+  if (!newUser.value) {
+    return false;
+  }
+  const newUsername = newUser.value.name;
+  return (
+    newUsername.length && !users.listing?.some((u) => u.name === newUsername)
+  );
 });
 
 const validNewUserPassword = computed(() => {
-	if (!newUser.value) {
-		return false;
-	}
-	return newUser.value.password.length;
+  if (!newUser.value) {
+    return false;
+  }
+  return newUser.value.password.length;
 });
 
-const validNewUser = computed(() => validNewUserName.value && validNewUserPassword.value);
+const validNewUser = computed(
+  () => validNewUserName.value && validNewUserPassword.value
+);
 
 function beginCreateUser() {
-	newUser.value = {
-		name: "",
-		password: "",
-		admin: false,
-	};
+  newUser.value = {
+    name: "",
+    password: "",
+    admin: false
+  };
 }
 
 async function endCreateUser() {
-	if (newUser.value) {
-		await users.create(newUser.value);
-	}
-	newUser.value = undefined;
+  if (newUser.value) {
+    await users.create(newUser.value);
+  }
+  newUser.value = undefined;
 }
-
 </script>

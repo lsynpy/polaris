@@ -65,7 +65,7 @@ impl Manager {
 			#[cfg(unix)]
 			foreground: matches.opt_present("f"),
 			#[cfg(windows)]
-			foreground: !cfg!(feature = "ui"),
+			foreground: true,
 			log_level,
 			log_file_path: matches.opt_str("log").map(PathBuf::from),
 			#[cfg(unix)]

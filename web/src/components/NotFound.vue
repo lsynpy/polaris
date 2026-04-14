@@ -9,5 +9,4 @@
 </template>
 
 <script setup lang="ts">
-import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
 </script>

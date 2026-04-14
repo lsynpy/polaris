@@ -125,21 +125,10 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, Ref, ref, watch } from "vue";
 import { useAsyncState, watchPausable } from "@vueuse/core";
+import { nextTick, onMounted, type Ref, ref, watch } from "vue";
 
-import { search } from "@/api/endpoints"
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
-import Button from "@/components/basic/Button.vue";
-import ButtonGroup from "@/components/basic/ButtonGroup.vue";
-import Error from "@/components/basic/Error.vue";
-import InputText from "@/components/basic/InputText.vue";
-import PageHeader from "@/components/basic/PageHeader.vue";
-import SectionTitle from "@/components/basic/SectionTitle.vue";
-import SidePanel from "@/components/basic/SidePanel.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import Switch from "@/components/basic/Switch.vue";
-import SongList from "@/components/SongList.vue";
+import { search } from "@/api/endpoints";
 import { pluralize } from "@/format";
 import { usePlaybackStore } from "@/stores/playback";
 import { usePreferencesStore } from "@/stores/preferences";
@@ -151,73 +140,77 @@ const query = ref("");
 
 const showHelp = ref(false);
 
-const { state: results, isLoading, error, execute: runQuery } = useAsyncState(
-	async () => {
-		if (!query.value) {
-			return Promise.resolve(undefined);
-		}
-		return search(query.value).then(r => r.paths);
-	},
-	undefined,
-	{ immediate: false, resetOnExecute: false }
+const {
+  state: results,
+  isLoading,
+  error,
+  execute: runQuery
+} = useAsyncState(
+  async () => {
+    if (!query.value) {
+      return Promise.resolve(undefined);
+    }
+    return search(query.value).then((r) => r.paths);
+  },
+  undefined,
+  { immediate: false, resetOnExecute: false }
 );
 
 const songPaths: Ref<string[]> = ref([]);
 
 watch(results, () => {
-	songPaths.value = results.value || [];
+  songPaths.value = results.value || [];
 });
 
 watch(error, (isError) => {
-	if (isError) {
-		songPaths.value = [];
-	}
+  if (isError) {
+    songPaths.value = [];
+  }
 });
 
 const queryWatch = watchPausable(query, (to, from) => {
-	if (!results.value || !to.startsWith(from)) {
-		songPaths.value = [];
-	}
-	runQuery(0);
+  if (!results.value || !to.startsWith(from)) {
+    songPaths.value = [];
+  }
+  runQuery(0);
 });
 
 function play() {
-	if (!songPaths.value) {
-		return;
-	}
-	playback.clear();
-	playback.stop();
-	playback.queueTracks(songPaths.value);
+  if (!songPaths.value) {
+    return;
+  }
+  playback.clear();
+  playback.stop();
+  playback.queueTracks(songPaths.value);
 }
 
 function queue() {
-	if (!songPaths.value) {
-		return;
-	}
-	playback.queueTracks(songPaths.value);
+  if (!songPaths.value) {
+    return;
+  }
+  playback.queueTracks(songPaths.value);
 }
 
 const historyStateKey = "search";
 
 interface State {
-	query: string,
+  query: string;
 }
 
 watch(query, async () => {
-	const state: State = {
-		query: query.value,
-	};
-	history.replaceState({ ...history.state, [historyStateKey]: state }, "");
+  const state: State = {
+    query: query.value
+  };
+  history.replaceState({ ...history.state, [historyStateKey]: state }, "");
 });
 
 onMounted(() => {
-	const state = history.state[historyStateKey] as State | undefined;
-	if (!state) {
-		return;
-	}
-	queryWatch.pause();
-	query.value = state.query;
-	nextTick(() => queryWatch.resume());
+  const state = history.state[historyStateKey] as State | undefined;
+  if (!state) {
+    return;
+  }
+  queryWatch.pause();
+  query.value = state.query;
+  nextTick(() => queryWatch.resume());
 });
-
 </script>

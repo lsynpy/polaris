@@ -77,32 +77,44 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, ref, useTemplateRef, watch } from "vue";
-import { vOnClickOutside } from '@vueuse/components'
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onMounted,
+  type Ref,
+  ref,
+  useTemplateRef,
+  watch
+} from "vue";
 import { useRouter } from "vue-router";
-
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue"
-import Button from "@/components/basic/Button.vue"
-import ContextMenu, { ContextMenuItem } from "@/components/basic/ContextMenu.vue"
-import InputText from "@/components/basic/InputText.vue"
-import PageHeader from '@/components/basic/PageHeader.vue';
-import ScreenDarkening from '@/components/basic/ScreenDarkening.vue';
-import ScreenFade from "@/components/basic/ScreenFade.vue"
-import Select, { SelectOption } from '@/components/basic/Select.vue';
-import Switch from '@/components/basic/Switch.vue';
-import OrderableList from '@/components/basic/OrderableList.vue';
-import SidePanel from '@/components/basic/SidePanel.vue';
-import PlaylistSong from '@/components/playback/PlaylistSong.vue';
-import { useDragAndDrop } from '@/dnd';
+import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
+import type { SelectOption } from "@/components/basic/Select.vue";
+import { useDragAndDrop } from "@/dnd";
 import { makeAlbumURLFromSongPaths, makeSongURL } from "@/router";
-import { usePlaybackStore, PlaylistEntry, PlaybackOrder } from '@/stores/playback';
+import {
+  type PlaybackOrder,
+  type PlaylistEntry,
+  usePlaybackStore
+} from "@/stores/playback";
 import { usePlaylistsStore } from "@/stores/playlists";
 import { usePreferencesStore } from "@/stores/preferences";
 import { useSongsStore } from "@/stores/songs";
 
-const Stats = defineAsyncComponent(() =>
-	import('@/components/playback/Stats.vue')
-)
+interface OrderableListExpose {
+  isIdle: () => boolean;
+  isSelected: (key: string | number) => boolean;
+  selectItem: (item: PlaylistEntry) => void;
+  selection: PlaylistEntry[];
+  snapScrolling: (
+    position: "center" | "top" | "bottom",
+    behavior?: ScrollBehavior
+  ) => void;
+}
+
+const _Stats = defineAsyncComponent(
+  () => import("@/components/playback/Stats.vue")
+);
 
 const playback = usePlaybackStore();
 const playlists = usePlaylistsStore();
@@ -110,39 +122,66 @@ const preferences = usePreferencesStore();
 const router = useRouter();
 const songs = useSongsStore();
 
-const orderableList = useTemplateRef("orderableList");
+const orderableList = useTemplateRef(
+  "orderableList"
+) as Ref<OrderableListExpose | null>;
 
-const compact = computed(() => preferences.playlistDisplayMode == "compact");
-const itemHeight = computed(() => compact.value ? 32 : 48);
+const compact = computed(() => preferences.playlistDisplayMode === "compact");
+const itemHeight = computed(() => (compact.value ? 32 : 48));
 
 const savingPlaylist = ref(false);
 const playlistName = computed({
-	get: () => playback.name,
-	set: (value) => playback.setName(value),
+  get: () => playback.name,
+  set: (value) => playback.setName(value)
 });
 
-const isEmpty = computed(() => playback.playlist.length == 0);
+const isEmpty = computed(() => playback.playlist.length === 0);
 
 const pageActions = computed(() => [
-	{ label: "Clear", icon: "clear", action: playback.clear, disabled: isEmpty.value, testID: "clear-playlist" },
-	{ label: "Stats", icon: "bar_chart", action: () => { showStats.value = true }, disabled: isEmpty.value, testID: "show-playlist-stats" },
-	{ label: "Save", icon: "save", action: () => { savingPlaylist.value = true }, disabled: isEmpty.value, testID: "save-playlist" },
+  {
+    label: "Clear",
+    icon: "clear",
+    action: playback.clear,
+    disabled: isEmpty.value,
+    testID: "clear-playlist"
+  },
+  {
+    label: "Stats",
+    icon: "bar_chart",
+    action: () => {
+      showStats.value = true;
+    },
+    disabled: isEmpty.value,
+    testID: "show-playlist-stats"
+  },
+  {
+    label: "Save",
+    icon: "save",
+    action: () => {
+      savingPlaylist.value = true;
+    },
+    disabled: isEmpty.value,
+    testID: "save-playlist"
+  }
 ]);
 
 const playbackOrderOptions: SelectOption<PlaybackOrder>[] = [
-	{ label: "Play Once", value: "default" },
-	{ label: "Play Randomly", value: "random" },
-	{ label: "Repeat Song", value: "repeat-track" },
-	{ label: "Repeat All", value: "repeat-all" },
+  { label: "Play Once", value: "default" },
+  { label: "Play Randomly", value: "random" },
+  { label: "Repeat Song", value: "repeat-track" },
+  { label: "Repeat All", value: "repeat-all" }
 ];
 
 const playbackOrder = computed({
-	set(option: SelectOption<PlaybackOrder>) {
-		playback.setPlaybackOrder(option.value);
-	},
-	get() {
-		return playbackOrderOptions.find(o => o.value == playback.playbackOrder) || playbackOrderOptions[0];
-	},
+  set(option: SelectOption<PlaybackOrder>) {
+    playback.setPlaybackOrder(option.value);
+  },
+  get() {
+    return (
+      playbackOrderOptions.find((o) => o.value === playback.playbackOrder) ||
+      playbackOrderOptions[0]
+    );
+  }
 });
 
 const showStats = ref(false);
@@ -150,76 +189,100 @@ const showStats = ref(false);
 const { activeDnD } = useDragAndDrop();
 
 onMounted(() => autoScroll("instant"));
-watch(() => playback.currentTrack, () => autoScroll("smooth"));
+watch(
+  () => playback.currentTrack,
+  () => autoScroll("smooth")
+);
 
 function autoScroll(scrollBehavior: ScrollBehavior) {
-	nextTick(() => {
-		if (!orderableList.value || !playback.currentTrack) {
-			return;
-		}
-		if (orderableList.value.isIdle()) {
-			orderableList.value.selectItem(playback.currentTrack);
-			orderableList.value.snapScrolling("center", scrollBehavior);
-		}
-	});
+  nextTick(() => {
+    if (!orderableList.value || !playback.currentTrack) {
+      return;
+    }
+    if (orderableList.value.isIdle()) {
+      orderableList.value.selectItem(playback.currentTrack);
+      orderableList.value.snapScrolling("center", scrollBehavior);
+    }
+  });
 }
 
 function onReorder(tracks: PlaylistEntry[], newIndex: number) {
-	playback.reorder(tracks, newIndex);
+  playback.reorder(tracks, newIndex);
 }
 
 function onKeyDown(event: KeyboardEvent) {
-	if (event.code == "Enter") {
-		const entry = orderableList.value?.selection[0];
-		if (entry) {
-			playback.play(entry);
-		}
-	}
+  if (event.code === "Enter") {
+    const entry = orderableList.value?.selection[0];
+    if (entry) {
+      playback.play(entry);
+    }
+  }
 }
 
 async function onDrop(atIndex: number) {
-	if (activeDnD.value) {
-		playback.queueTracks(await activeDnD.value.getTracks(), atIndex);
-	}
+  if (activeDnD.value) {
+    playback.queueTracks(await activeDnD.value.getTracks(), atIndex);
+  }
 }
 
 function savePlaylist() {
-	savingPlaylist.value = false;
-	playlists.save();
+  savingPlaylist.value = false;
+  playlists.save();
 }
 
 function cancelSavePlaylist() {
-	savingPlaylist.value = false;
+  savingPlaylist.value = false;
 }
 
 function onSongRightClicked(event: MouseEvent, entry: PlaylistEntry) {
-	if (!orderableList.value?.isSelected(entry.key)) {
-		orderableList.value?.selectItem(entry);
-	}
-	contextMenu.value?.show(event);
+  if (!orderableList.value?.isSelected(entry.key)) {
+    orderableList.value?.selectItem(entry);
+  }
+  contextMenu.value?.show(event);
 }
 
-const contextMenu = useTemplateRef("contextMenu");
+interface ContextMenuExpose {
+  show: (event: MouseEvent) => void;
+}
+
+const contextMenu = useTemplateRef(
+  "contextMenu"
+) as Ref<ContextMenuExpose | null>;
 const contextMenuItems = computed(() => {
-	const selection = orderableList.value?.selection || [];
-	const items: ContextMenuItem[] = [
-		{ label: "Remove", shortcut: "Del", action: () => { playback.removeTracks(selection) } },
-	];
+  const selection = orderableList.value?.selection || [];
+  const items: ContextMenuItem[] = [
+    {
+      label: "Remove",
+      shortcut: "Del",
+      action: () => {
+        playback.removeTracks(selection);
+      }
+    }
+  ];
 
-	const selectedSongs = selection.map(s => s.path);
-	const albumURL = makeAlbumURLFromSongPaths(selectedSongs);
-	if (albumURL) {
-		items.push({ label: "Album Details", action: () => { router.push(albumURL); } });
-	}
+  const selectedSongs = selection.map((s: PlaylistEntry) => s.path);
+  const albumURL = makeAlbumURLFromSongPaths(selectedSongs);
+  if (albumURL) {
+    items.push({
+      label: "Album Details",
+      action: () => {
+        router.push(albumURL);
+      }
+    });
+  }
 
-	if (selectedSongs.length == 1) {
-		const songURL = makeSongURL(selectedSongs[0]);
-		items.push({ label: "File Properties", action: () => { router.push(songURL); } });
-	}
+  if (selectedSongs.length === 1) {
+    const songURL = makeSongURL(selectedSongs[0]);
+    items.push({
+      label: "File Properties",
+      action: () => {
+        router.push(songURL);
+      }
+    });
+  }
 
-	return items;
+  return items;
 });
-
 </script>
 
 <style lang="css" scoped>

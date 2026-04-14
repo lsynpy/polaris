@@ -1,47 +1,50 @@
-import { defineStore, acceptHMRUpdate } from "pinia";
-import { ShallowRef, shallowRef } from "vue";
-
-import { createUser, deleteUser as doDeleteUser, getUsers, updateUser } from "@/api/endpoints";
-import { NewUser, User, UserUpdate } from "@/api/dto";
+import { acceptHMRUpdate, defineStore } from "pinia";
+import { type ShallowRef, shallowRef } from "vue";
+import type { NewUser, User, UserUpdate } from "@/api/dto";
+import {
+  createUser,
+  deleteUser as doDeleteUser,
+  getUsers,
+  updateUser
+} from "@/api/endpoints";
 import { useUserStore } from "@/stores/user";
 
 export const useUsersStore = defineStore("users", () => {
+  const listing: ShallowRef<User[] | undefined> = shallowRef(undefined);
 
-	const listing: ShallowRef<User[] | undefined> = shallowRef(undefined);
+  async function refresh() {
+    listing.value = await getUsers();
+  }
 
-	async function refresh() {
-		listing.value = await getUsers();
-	}
+  async function create(newUser: NewUser) {
+    await createUser(newUser);
+    if (listing.value?.length === 0) {
+      const user = useUserStore();
+      await user.login(newUser.name, newUser.password);
+    }
+    await refresh();
+  }
 
-	async function create(newUser: NewUser) {
-		await createUser(newUser);
-		if (listing.value?.length == 0) {
-			const user = useUserStore();
-			await user.login(newUser.name, newUser.password);
-		}
-		await refresh();
-	}
+  async function update(username: string, userUpdate: UserUpdate) {
+    await updateUser(username, userUpdate);
+    await refresh();
+  }
 
-	async function update(username: string, userUpdate: UserUpdate) {
-		await updateUser(username, userUpdate);
-		await refresh();
-	}
+  async function deleteUser(username: string) {
+    await doDeleteUser(username);
+    await refresh();
+  }
 
-	async function deleteUser(username: string) {
-		await doDeleteUser(username);
-		await refresh();
-	}
+  return {
+    listing,
 
-	return {
-		listing,
-
-		create,
-		deleteUser,
-		refresh,
-		update,
-	};
+    create,
+    deleteUser,
+    refresh,
+    update
+  };
 });
 
 if (import.meta.hot) {
-	import.meta.hot.accept(acceptHMRUpdate(useUsersStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useUsersStore, import.meta.hot));
 }

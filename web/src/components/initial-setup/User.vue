@@ -15,10 +15,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-
-import Button from "@/components/basic/Button.vue";
-import InputText from "@/components/basic/InputText.vue";
-import Step from "@/components/initial-setup/Step.vue";
 import { useUsersStore } from "@/stores/users";
 
 const users = useUsersStore();
@@ -28,15 +24,27 @@ const password = ref("");
 const passwordConfirm = ref("");
 
 const passwordMismatch = computed(() => {
-	return password.value && passwordConfirm.value && password.value !== passwordConfirm.value;
+  return (
+    password.value &&
+    passwordConfirm.value &&
+    password.value !== passwordConfirm.value
+  );
 });
 
 function validate() {
-	return !!username.value && !!password.value && password.value === passwordConfirm.value;
+  return (
+    !!username.value &&
+    !!password.value &&
+    password.value === passwordConfirm.value
+  );
 }
 
 function proceed() {
-	const newUser = { name: username.value, password: password.value, admin: true };
-	users.create(newUser);
+  const newUser = {
+    name: username.value,
+    password: password.value,
+    admin: true
+  };
+  users.create(newUser);
 }
 </script>

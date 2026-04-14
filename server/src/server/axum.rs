@@ -42,9 +42,7 @@ pub async fn launch(app: App) -> Result<(), std::io::Error> {
 	let router = make_router(app);
 	let make_service = ServiceExt::<axum::extract::Request>::into_make_service(router);
 	let listener = tokio::net::TcpListener::bind(socket_address).await?;
-	tokio::spawn(async {
-		axum::serve(listener, make_service).await.unwrap();
-	});
+	axum::serve(listener, make_service).await?;
 	Ok(())
 }
 

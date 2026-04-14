@@ -1,4 +1,4 @@
-.PHONY: help prepare deploy prepare-deploy dev serve watch
+.PHONY: help prepare deploy prepare-deploy dev serve watch test test_server test_web test_e2e
 
 SHELL := /usr/bin/env bash
 DEPLOY_DIR := $(shell pwd)/deploy
@@ -27,6 +27,12 @@ help:
 	@echo "  dev    Build web and start server (static)"
 	@echo "  serve  Polaris API server only"
 	@echo "  watch  Vue dev server with HMR"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test          Run all tests (server + web + e2e)"
+	@echo "  test_server   Run Rust unit/integration tests"
+	@echo "  test_web      Run web build (type check)"
+	@echo "  test_e2e      Run Playwright end-to-end tests"
 	@echo ""
 	@echo "Options:"
 	@echo "  IMAGE_TAG=...  Override auto-generated image tag"
@@ -67,3 +73,18 @@ serve:
 
 watch:
 	cd web && npm run dev
+
+# ===================================================================
+# Test targets
+# ===================================================================
+test: test_server test_web test_e2e
+
+test_server:
+	cd server && cargo test
+
+test_web:
+	cd web && npm run build
+
+test_e2e:
+	-cd web && npx playwright test
+	open web/playwright-report/index.html

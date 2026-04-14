@@ -24,6 +24,30 @@ repos:
         pass_filenames: false
         args: [--manifest-path, server/Cargo.toml, --, -D, warnings]
 
+      # TypeScript type checking
+      - id: vue-tsc
+        name: vue-tsc
+        entry: bash -c 'cd web && npx vue-tsc --noEmit'
+        language: system
+        files: '^web/.*\.(ts|tsx|vue)$'
+        pass_filenames: false
+
+      # Biome formatting
+      - id: biome-format
+        name: biome format
+        entry: bash -c 'cd web && npx @biomejs/biome format --write'
+        language: system
+        files: '^web/.*\.(ts|tsx|vue|js|jsx|json)$'
+        pass_filenames: false
+
+      # Biome linting
+      - id: biome-lint
+        name: biome lint
+        entry: bash -c 'cd web && npx @biomejs/biome lint --write'
+        language: system
+        files: '^web/.*\.(ts|tsx|vue|js|jsx)$'
+        pass_filenames: false
+
       # Config file validation
       - id: check-yaml
         name: check yaml

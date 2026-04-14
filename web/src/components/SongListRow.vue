@@ -42,84 +42,87 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
-import { Song } from "@/api/dto";
+import type { Song } from "@/api/dto";
 import { makeThumbnailURL } from "@/api/endpoints";
-import AlbumArt from '@/components/AlbumArt.vue';
-import { formatArtists, formatDuration, formatTitle } from '@/format';
-import { useSongsStore } from '@/stores/songs';
+import { formatArtists, formatDuration, formatTitle } from "@/format";
+import { useSongsStore } from "@/stores/songs";
 
 const songs = useSongsStore();
 
 const props = defineProps<{
-    path: string,
-    index: number,
-    compact: boolean,
-    selected: boolean,
-    focused: boolean,
-    isCurrent?: boolean,
+  path: string;
+  index: number;
+  compact: boolean;
+  selected: boolean;
+  focused: boolean;
+  isCurrent?: boolean;
 }>();
 
 const song = computed(() => songs.cache.get(props.path));
 
-const artworkURL = computed(() => song.value?.artwork ? makeThumbnailURL(song.value.artwork, "tiny") : undefined);
+const artworkURL = computed(() =>
+  song.value?.artwork ? makeThumbnailURL(song.value.artwork, "tiny") : undefined
+);
 
 const rowClass = computed(() => {
+  const isOdd = props.index % 2 === 1;
 
-    const isOdd = props.index % 2 == 1;
-
-    let background;
-    if (props.selected) {
-        background = "bg-accent-100 dark:bg-accent-900";
-    } else if (props.compact) {
-        background = isOdd ? "bg-ls-50 hover:bg-ls-100 dark:bg-ds-800/30 dark:hover:bg-ds-700/30" : "bg-ls-0 hover:bg-ls-100 dark:bg-ds-900/30 dark:hover:bg-ds-700/30";
-    } else {
-        background = [
-            "bg-gradient-to-r from-ls-0/0 dark:from-ds-900/0 to-[50px] hover:to-ls-100 dark:hover:to-ds-700/20",
-            isOdd ? "to-ls-50 dark:to-ds-800/20" : "to-ls-0 dark:to-ds-900/20",
-        ];
-    }
-
-    let text;
-    if (props.isCurrent && props.selected) {
-        text = "text-accent-700 dark:text-accent-100";
-    } else if (props.selected) {
-        text = "text-accent-700 dark:text-accent-200";
-    } else if (props.isCurrent) {
-        text = "text-ls-700 dark:text-ds-0";
-    } else {
-        text = "text-ls-700 dark:text-ds-400";
-    }
-
-    return [
-        text,
-        background,
-        props.isCurrent ? "font-semibold" : "",
-        props.compact ? "px-3" : "pr-2",
-        !props.compact && props.selected ? "-ml-2 pl-2" : "",
-        props.focused ? "outline-1 outline-dotted outline-accent-500 -outline-offset-1" : "",
+  let background: string | string[];
+  if (props.selected) {
+    background = "bg-accent-100 dark:bg-accent-900";
+  } else if (props.compact) {
+    background = isOdd
+      ? "bg-ls-50 hover:bg-ls-100 dark:bg-ds-800/30 dark:hover:bg-ds-700/30"
+      : "bg-ls-0 hover:bg-ls-100 dark:bg-ds-900/30 dark:hover:bg-ds-700/30";
+  } else {
+    background = [
+      "bg-gradient-to-r from-ls-0/0 dark:from-ds-900/0 to-[50px] hover:to-ls-100 dark:hover:to-ds-700/20",
+      isOdd ? "to-ls-50 dark:to-ds-800/20" : "to-ls-0 dark:to-ds-900/20"
     ];
+  }
 
+  let text: string;
+  if (props.isCurrent && props.selected) {
+    text = "text-accent-700 dark:text-accent-100";
+  } else if (props.selected) {
+    text = "text-accent-700 dark:text-accent-200";
+  } else if (props.isCurrent) {
+    text = "text-ls-700 dark:text-ds-0";
+  } else {
+    text = "text-ls-700 dark:text-ds-400";
+  }
+
+  return [
+    text,
+    background,
+    props.isCurrent ? "font-semibold" : "",
+    props.compact ? "px-3" : "pr-2",
+    !props.compact && props.selected ? "-ml-2 pl-2" : "",
+    props.focused
+      ? "outline-1 outline-dotted outline-accent-500 -outline-offset-1"
+      : ""
+  ];
 });
 
 function formatTrackDuration(song: Song) {
-    if (!song.duration || isNaN(song.duration)) {
-        return "??:??";
-    }
-    return formatDuration(song.duration);
+  if (!song.duration || Number.isNaN(song.duration)) {
+    return "??:??";
+  }
+  return formatDuration(song.duration);
 }
 
 function formatTrackShort(song: Song) {
-    let formatted = "";
-    if (song.album_artists) {
-        formatted += formatArtists(song.album_artists);
-    } else if (song.artists) {
-        formatted += formatArtists(song.artists);
-    } else {
-        formatted += "Unknown Artist";
-    }
-    formatted += ` - ${formatTitle(song)}`;
-    return formatted;
+  let formatted = "";
+  if (song.album_artists) {
+    formatted += formatArtists(song.album_artists);
+  } else if (song.artists) {
+    formatted += formatArtists(song.artists);
+  } else {
+    formatted += "Unknown Artist";
+  }
+  formatted += ` - ${formatTitle(song)}`;
+  return formatted;
 }
 </script>

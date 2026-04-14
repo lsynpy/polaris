@@ -1,20 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 
-const defaultTheme = require('tailwindcss/defaultTheme')
+const defaultTheme = require("tailwindcss/defaultTheme");
 
 module.exports = {
-  darkMode: ['selector', '[data-polaris-theme-polarity="dark"]'],
-  content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
-  ],
+  darkMode: ["selector", '[data-polaris-theme-polarity="dark"]'],
+  content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['InterVariable', ...defaultTheme.fontFamily.sans],
+        sans: ["InterVariable", ...defaultTheme.fontFamily.sans]
       },
       colors: {
-        "accent": {
+        accent: {
           0: "rgb(var(--accent-0) / <alpha-value>)",
           50: "rgb(var(--accent-50) / <alpha-value>)",
           100: "rgb(var(--accent-100) / <alpha-value>)",
@@ -26,9 +23,9 @@ module.exports = {
           700: "rgb(var(--accent-700) / <alpha-value>)",
           800: "rgb(var(--accent-800) / <alpha-value>)",
           900: "rgb(var(--accent-900) / <alpha-value>)",
-          950: "rgb(var(--accent-950) / <alpha-value>)",
+          950: "rgb(var(--accent-950) / <alpha-value>)"
         },
-        "ls": {
+        ls: {
           0: "rgb(var(--surface-0) / <alpha-value>)",
           50: "rgb(var(--surface-50) / <alpha-value>)",
           100: "rgb(var(--surface-100) / <alpha-value>)",
@@ -40,9 +37,9 @@ module.exports = {
           700: "rgb(var(--surface-700) / <alpha-value>)",
           800: "rgb(var(--surface-800) / <alpha-value>)",
           900: "rgb(var(--surface-900) / <alpha-value>)",
-          950: "rgb(var(--surface-950) / <alpha-value>)",
+          950: "rgb(var(--surface-950) / <alpha-value>)"
         },
-        "ds": {
+        ds: {
           0: "rgb(var(--surface-0) / <alpha-value>)",
           50: "rgb(var(--surface-50) / <alpha-value>)",
           100: "rgb(var(--surface-100) / <alpha-value>)",
@@ -54,16 +51,14 @@ module.exports = {
           700: "rgb(var(--surface-700) / <alpha-value>)",
           800: "rgb(var(--surface-800) / <alpha-value>)",
           900: "rgb(var(--surface-900) / <alpha-value>)",
-          950: "rgb(var(--surface-950) / <alpha-value>)",
+          950: "rgb(var(--surface-950) / <alpha-value>)"
         }
       },
       screens: {
-        "lg": "60rem",
-        "3xl": "120rem",
-      },
-    },
+        lg: "60rem",
+        "3xl": "120rem"
+      }
+    }
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-  ],
-}
+  plugins: [require("@tailwindcss/forms")]
+};

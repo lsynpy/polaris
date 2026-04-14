@@ -3,8 +3,8 @@
         <div v-if="label" class="block mb-2 text-sm font-medium leading-6 text-ls-900 dark:text-ds-0">
             {{ label }}
         </div>
-        <div ref="root" @click="snapToCursor" @keydown="onKeyDown" tabindex="-1"
-            class="cursor-pointer group relative rounded-full bg-ls-300 dark:bg-ds-700" :class="sizes[size]">
+        <div ref="root" @click="snapToCursor" @keydown="_onKeyDown" tabindex="-1"
+            class="cursor-pointer group relative rounded-full bg-ls-300 dark:bg-ds-700" :class="_sizes[size]">
             <slot name="fill">
                 <div class="absolute h-full rounded-full bg-accent-600 dark:bg-accent-700"
                     :style="`width: ${100 * unscale(model)}%`" />
@@ -22,60 +22,71 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, useTemplateRef, watch, } from 'vue';
-import { useMouseInElement, useMousePressed, watchPausable } from '@vueuse/core';
+import {
+  useMouseInElement,
+  useMousePressed,
+  watchPausable
+} from "@vueuse/core";
+import { onMounted, useTemplateRef, watch } from "vue";
 
 const model = defineModel<number>({ required: true });
 
-const { min = 0, max = 1, size = "base" } = defineProps<{
-    min?: number,
-    max?: number
-    label?: string,
-    size?: "base" | "lg",
+const {
+  min = 0,
+  max = 1,
+  size = "base"
+} = defineProps<{
+  min?: number;
+  max?: number;
+  label?: string;
+  size?: "base" | "lg";
 }>();
 
 const root = useTemplateRef("root");
 
 const { elementX: mouseX, elementWidth: width } = useMouseInElement(root);
-const { pressed } = useMousePressed({ target: root })
-const { pause: endDrag, resume: beginDrag } = watchPausable(mouseX, snapToCursor);
+const { pressed } = useMousePressed({ target: root });
+const { pause: endDrag, resume: beginDrag } = watchPausable(
+  mouseX,
+  snapToCursor
+);
 
 onMounted(endDrag);
 
 watch(pressed, (down) => {
-    if (down) {
-        beginDrag();
-    } else {
-        endDrag();
-    }
+  if (down) {
+    beginDrag();
+  } else {
+    endDrag();
+  }
 });
 
-const sizes = {
-    base: "h-1.5",
-    lg: "h-3.5",
+const _sizes = {
+  base: "h-1.5",
+  lg: "h-3.5"
 };
 
 function scale(value: number) {
-    return min + (max - min) * Math.max(0, Math.min(value, 1));
+  return min + (max - min) * Math.max(0, Math.min(value, 1));
 }
 
 function unscale(value: number) {
-    return (value - min) / (max - min);
+  return (value - min) / (max - min);
 }
 
-function onKeyDown(event: KeyboardEvent) {
-    switch (event.code) {
-        case 'ArrowLeft':
-            model.value = scale(unscale(model.value) - 0.02);
-            break;
-        case 'ArrowRight':
-            model.value = scale(unscale(model.value) + 0.02);
-            break;
-    }
+function _onKeyDown(event: KeyboardEvent) {
+  switch (event.code) {
+    case "ArrowLeft":
+      model.value = scale(unscale(model.value) - 0.02);
+      break;
+    case "ArrowRight":
+      model.value = scale(unscale(model.value) + 0.02);
+      break;
+  }
 }
 
 function snapToCursor() {
-    model.value = scale(mouseX.value / width.value);
-    root.value?.focus();
+  model.value = scale(mouseX.value / width.value);
+  root.value?.focus();
 }
 </script>

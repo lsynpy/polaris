@@ -8,7 +8,7 @@
 				shadow-lg shadow-accent-800/20 dark:shadow-accent-900/20">
 				<div v-for="item in items"
 					class="group cursor-pointer flex justify-between gap-8 px-3 py-1.5 rounded-sm hover:bg-accent-100 dark:hover:bg-accent-900"
-					@click="execute(item)">
+					@click="_execute(item)">
 					<div v-text="item.label"
 						class="font-medium text-ls-700 dark:text-ds-300 group-hover:text-accent-700 dark:group-hover:text-accent-200" />
 					<div v-if="items.find(s => s.shortcut)" v-text="item.shortcut"
@@ -20,34 +20,33 @@
 </template>
 
 <script setup lang="ts">
-import { Ref, ref, useTemplateRef } from "vue";
-import FloatingWidget from "@/components/basic/FloatingWidget.vue";
+import { type Ref, ref, useTemplateRef } from "vue";
 
 export type ContextMenuItem = {
-	label: string,
-	shortcut?: string,
-	action: () => void,
+  label: string;
+  shortcut?: string;
+  action: () => void;
 };
 
 defineProps<{
-	items: ContextMenuItem[],
+  items: ContextMenuItem[];
 }>();
 
 const open = ref(false);
 
-const el = useTemplateRef("el");
+const el = useTemplateRef<{ open: () => void; close: () => void }>("el");
 const position: Ref<[number, number]> = ref([0, 0] as [number, number]);
 
 defineExpose({ show });
 
 function show(event: MouseEvent) {
-	open.value = true;
-	el.value?.open();
-	position.value = [event.clientX, event.clientY];
+  open.value = true;
+  el.value?.open();
+  position.value = [event.clientX, event.clientY];
 }
 
-function execute(item: ContextMenuItem) {
-	item.action();
-	el.value?.close();
+function _execute(item: ContextMenuItem) {
+  item.action();
+  el.value?.close();
 }
 </script>

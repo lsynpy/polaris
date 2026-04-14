@@ -25,16 +25,15 @@
 </template>
 
 <script setup lang="ts">
-import { formatHex, modeRgb, useMode } from 'culori/fn';
-import { computed, getCurrentInstance, Ref, ref } from 'vue';
+import { useCssVar, watchImmediate } from "@vueuse/core";
+import { formatHex, modeRgb, useMode } from "culori/fn";
+import { computed, getCurrentInstance, type Ref, ref } from "vue";
 import VueApexCharts from "vue3-apexcharts";
-import { useCssVar, watchImmediate } from '@vueuse/core';
 
-import { Song } from '@/api/dto';
-import SectionTitle from '@/components/basic/SectionTitle.vue';
-import { usePlaybackStore } from '@/stores/playback';
-import { useSongsStore } from '@/stores/songs';
-import { usePreferencesStore } from '@/stores/preferences';
+import type { Song } from "@/api/dto";
+import { usePlaybackStore } from "@/stores/playback";
+import { usePreferencesStore } from "@/stores/preferences";
+import { useSongsStore } from "@/stores/songs";
 
 getCurrentInstance()?.appContext.app.use(VueApexCharts);
 
@@ -44,14 +43,14 @@ const preferences = usePreferencesStore();
 const songs = useSongsStore();
 
 const playlistSongs = computed(() => {
-    let out: Song[] = [];
-    return playback.playlist.reduce(function (r, entry) {
-        const song = songs.cache.get(entry.path);
-        if (song) {
-            r.push(song);
-        }
-        return r;
-    }, out);
+  let out: Song[] = [];
+  return playback.playlist.reduce((r, entry) => {
+    const song = songs.cache.get(entry.path);
+    if (song) {
+      r.push(song);
+    }
+    return r;
+  }, out);
 });
 
 const yearData: Ref<[string, number][]> = ref([]);
@@ -59,116 +58,127 @@ const duration = ref(0);
 const durationUnit = ref("");
 
 watchImmediate(playlistSongs, () => {
-    let songsByYear = new Map<number, number>();
-    let seconds = 0;
+  let songsByYear = new Map<number, number>();
+  let seconds = 0;
 
-    for (const song of playlistSongs.value) {
-        if (song.year) {
-            songsByYear.set(song.year, 1 + (songsByYear.get(song.year) || 0));
-        }
-        seconds += song.duration || 0;
+  for (const song of playlistSongs.value) {
+    if (song.year) {
+      songsByYear.set(song.year, 1 + (songsByYear.get(song.year) || 0));
     }
+    seconds += song.duration || 0;
+  }
 
-    {
-        let minYear = 9999;
-        let maxYear = 0;
-        for (let [year, _] of songsByYear.entries()) {
-            minYear = Math.min(year, minYear);
-            maxYear = Math.max(year, maxYear);
-        }
-        let years: [string, number][] = [];
-        for (let y = minYear; y <= maxYear; y++) {
-            years.push([`${y}-01-01`, songsByYear.get(y) || 0]);
-        }
-        yearData.value = years;
+  {
+    let minYear = 9999;
+    let maxYear = 0;
+    for (let [year, _] of songsByYear.entries()) {
+      minYear = Math.min(year, minYear);
+      maxYear = Math.max(year, maxYear);
     }
+    let years: [string, number][] = [];
+    for (let y = minYear; y <= maxYear; y++) {
+      years.push([`${y}-01-01`, songsByYear.get(y) || 0]);
+    }
+    yearData.value = years;
+  }
 
-    const minutes = seconds / 60;
-    const hours = minutes / 60;
-    const days = hours / 24;
-    if (hours < 2) {
-        duration.value = Math.floor(seconds / 60);
-        durationUnit.value = "mins";
-    } else if (days < 2) {
-        duration.value = Math.floor(10 * hours) / 10;
-        durationUnit.value = "hours";
-    } else {
-        duration.value = Math.floor(10 * days) / 10;
-        durationUnit.value = "days";
-    }
+  const minutes = seconds / 60;
+  const hours = minutes / 60;
+  const days = hours / 24;
+  if (hours < 2) {
+    duration.value = Math.floor(seconds / 60);
+    durationUnit.value = "mins";
+  } else if (days < 2) {
+    duration.value = Math.floor(10 * hours) / 10;
+    durationUnit.value = "hours";
+  } else {
+    duration.value = Math.floor(10 * days) / 10;
+    durationUnit.value = "days";
+  }
 });
 
 const yearSeries = computed(() => [{ data: yearData.value }]);
 
-const lightMode = computed(() => preferences.polarity == "light");
-const accent600 = useCssVar(() => lightMode.value ? "--accent-600" : "--accent-700");
-const surface0 = useCssVar(() => lightMode.value ? "--surface-0" : "--surface-900");
-const surface50 = useCssVar(() => lightMode.value ? "--surface-50" : "--surface-800");
-const surface200 = useCssVar(() => lightMode.value ? "--surface-200" : "--surface-700");
-const surface400 = useCssVar(() => lightMode.value ? "--surface-400" : "--surface-600");
+const lightMode = computed(() => preferences.polarity === "light");
+const accent600 = useCssVar(() =>
+  lightMode.value ? "--accent-600" : "--accent-700"
+);
+const _surface0 = useCssVar(() =>
+  lightMode.value ? "--surface-0" : "--surface-900"
+);
+const _surface50 = useCssVar(() =>
+  lightMode.value ? "--surface-50" : "--surface-800"
+);
+const surface200 = useCssVar(() =>
+  lightMode.value ? "--surface-200" : "--surface-700"
+);
+const surface400 = useCssVar(() =>
+  lightMode.value ? "--surface-400" : "--surface-600"
+);
 const surface500 = useCssVar("--surface-500");
-const surface700 = useCssVar(() => lightMode.value ? "--surface-700" : "--surface-300");
+const _surface700 = useCssVar(() =>
+  lightMode.value ? "--surface-700" : "--surface-300"
+);
 
 function toHex(color: string) {
-    return formatHex(rgb(`rgb(${color})`));
+  return formatHex(rgb(`rgb(${color})`));
 }
 
 const yearChartOptions = {
-    chart: {
-        animations: { enabled: false },
-        redrawOnParentResize: true,
-        toolbar: { show: false },
-        zoom: { enabled: false },
+  chart: {
+    animations: { enabled: false },
+    redrawOnParentResize: true,
+    toolbar: { show: false },
+    zoom: { enabled: false }
+  },
+  colors: [toHex(accent600.value)],
+  dataLabels: { enabled: false },
+  grid: { show: false },
+  fill: {
+    type: "gradient",
+    gradient: {
+      type: "vertical",
+      colorStops: [
+        { offset: 0, color: toHex(accent600.value), opacity: 1 },
+        { offset: 100, color: toHex(accent600.value), opacity: 0.2 }
+      ]
+    }
+  },
+  stroke: { curve: "smooth" },
+  tooltip: { enabled: false },
+  xaxis: {
+    axisBorder: { color: toHex(surface200.value) },
+    axisTicks: {
+      color: toHex(surface400.value)
     },
-    colors: [toHex(accent600.value)],
-    dataLabels: { enabled: false },
-    grid: { show: false, },
-    fill: {
-        type: "gradient",
-        gradient: {
-            type: "vertical",
-            colorStops: [
-                { offset: 0, color: toHex(accent600.value), opacity: 1 },
-                { offset: 100, color: toHex(accent600.value), opacity: 0.2 },
-            ]
-        }
+    decimalsInFloat: 0,
+    labels: {
+      rotateAlways: true,
+      style: {
+        colors: toHex(surface500.value),
+        fontSize: "12px",
+        fontFamily: "InterVariable"
+      }
     },
-    stroke: { curve: "smooth" },
-    tooltip: { enabled: false },
-    xaxis: {
-        axisBorder: { color: toHex(surface200.value) },
-        axisTicks: {
-            color: toHex(surface400.value),
-        },
-        decimalsInFloat: 0,
-        labels: {
-            rotateAlways: true,
-            style: {
-                colors: toHex(surface500.value),
-                fontSize: "12px",
-                fontFamily: "InterVariable",
-            },
-        },
-        type: "datetime",
+    type: "datetime"
+  },
+  yaxis: {
+    axisBorder: {
+      show: true,
+      color: toHex(surface400.value)
     },
-    yaxis: {
-        axisBorder: {
-            show: true,
-            color: toHex(surface400.value),
-        },
-        axisTicks: {
-            show: true,
-            color: toHex(surface400.value),
-        },
-        tickAmount: 4,
-        labels: {
-            style: {
-                colors: toHex(surface500.value),
-                fontSize: "12px",
-                fontFamily: "InterVariable",
-            },
-        },
+    axisTicks: {
+      show: true,
+      color: toHex(surface400.value)
     },
+    tickAmount: 4,
+    labels: {
+      style: {
+        colors: toHex(surface500.value),
+        fontSize: "12px",
+        fontFamily: "InterVariable"
+      }
+    }
+  }
 };
-
 </script>

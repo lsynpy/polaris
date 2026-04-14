@@ -28,30 +28,26 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import Button from '@/components/basic/Button.vue';
-import SwitchText from '@/components/basic/SwitchText.vue';
-
 export type PageAction = {
-    label?: string,
-    icon?: string,
-    disabled?: boolean,
-    danger?: boolean,
-    testID?: string,
-    action: () => void,
+  label?: string;
+  icon?: string;
+  disabled?: boolean;
+  danger?: boolean;
+  testID?: string;
+  action: () => void;
 };
 
 export type PageViewMode<T> = {
-    label: string,
-    value: T,
+  label: string;
+  value: T;
 };
 
 defineProps<{
-    title: string,
-    caption?: string,
-    actions?: PageAction[],
-    viewModes?: PageViewMode<T>[],
+  title: string;
+  caption?: string;
+  actions?: PageAction[];
+  viewModes?: PageViewMode<T>[];
 }>();
 
-const viewMode = defineModel<T>("viewMode", { required: false, });
-
+const _viewMode = defineModel<T>("viewMode", { required: false });
 </script>

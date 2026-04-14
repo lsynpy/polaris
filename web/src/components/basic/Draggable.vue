@@ -13,28 +13,33 @@
 </template>
 
 <script setup lang="ts" generic="T extends DnDPayload">
-import { Ref, ref } from 'vue';
+import { type Ref, ref } from "vue";
 
-import { DnDPayload, useDragAndDrop } from '@/dnd';
+import { type DnDPayload, useDragAndDrop } from "@/dnd";
 
-const { allowPointerEventsInside = false, disabled = false, ...props } = defineProps<{
-    makePayload: () => T;
-    // Prevents wild jank when dragging anything that involves <img> tags
-    allowPointerEventsInside?: boolean,
-    disabled?: boolean,
+const {
+  allowPointerEventsInside = false,
+  disabled = false,
+  ...props
+} = defineProps<{
+  makePayload: () => T;
+  // Prevents wild jank when dragging anything that involves <img> tags
+  allowPointerEventsInside?: boolean;
+  disabled?: boolean;
 }>();
 
-const emits = defineEmits<{
-    (event: "draggableStart", mouseEvent: DragEvent): void
-}>();
+const emits =
+  defineEmits<(event: "draggableStart", mouseEvent: DragEvent) => void>();
 
-const { activeDnD, startDrag, updateDrag, endDrag, dragPreview } = useDragAndDrop();
+const { activeDnD, startDrag, updateDrag, endDrag, dragPreview } =
+  useDragAndDrop();
 
 const draggablePayload: Ref<T | null> = ref(null);
 
 function onDragStart(event: DragEvent) {
-    emits("draggableStart", event);
-    draggablePayload.value = props.makePayload();
-    startDrag(event, draggablePayload.value);
+  emits("draggableStart", event);
+  const payload = props.makePayload();
+  draggablePayload.value = payload;
+  startDrag(event, payload);
 }
 </script>

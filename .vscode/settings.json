@@ -15,6 +15,9 @@
     "**/polaris.toml": true,
     "**/polaris.log": true,
     "**/polaris.pid": true,
+    "**/.tmp": true,
+    "**/dist": true,
+    "**/node_modules": true,
     "**/test-output": true
   }
 }

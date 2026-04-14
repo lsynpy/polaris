@@ -15,23 +15,23 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 
 export interface FieldValue {
-    text: string,
-    link?: string,
-};
+  text: string;
+  link?: string;
+}
 
 defineProps<{
-    label: string,
-    values: FieldValue[],
+  label: string;
+  values: FieldValue[];
 }>();
 
 function onValueClicked(value: FieldValue) {
-    if (value.link) {
-        router.push(value.link);
-    }
+  if (value.link) {
+    router.push(value.link);
+  }
 }
 </script>

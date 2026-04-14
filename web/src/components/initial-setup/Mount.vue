@@ -17,28 +17,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, Ref } from "vue";
+import { type Ref, ref } from "vue";
 
-import { MountDir } from "@/api/dto";
-import Button from "@/components/basic/Button.vue";
-import InputText from "@/components/basic/InputText.vue";
-import Step from "@/components/initial-setup/Step.vue";
-import { useMountDirsStore } from "@/stores/mount-dirs";
+import type { MountDir } from "@/api/dto";
 import { triggerIndex } from "@/api/endpoints";
+import { useMountDirsStore } from "@/stores/mount-dirs";
 
 const mountDirs = useMountDirsStore();
 
 const mountDir: Ref<MountDir> = ref({
-	name: "",
-	source: "",
+  name: "",
+  source: ""
 });
 
 function validate(): boolean {
-	return !!mountDir.value.name && !!mountDir.value.source;
+  return !!mountDir.value.name && !!mountDir.value.source;
 }
 
 async function proceed() {
-	await mountDirs.overwrite([mountDir.value]);
-	triggerIndex();
+  await mountDirs.overwrite([mountDir.value]);
+  triggerIndex();
 }
 </script>

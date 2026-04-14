@@ -26,10 +26,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, Ref, ref } from "vue";
+import { computed, type Ref, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-
-import SidebarItem from "@/components/SidebarItem.vue";
 import { useUserStore } from "@/stores/user";
 
 const route = useRoute();
@@ -38,26 +36,64 @@ const user = useUserStore();
 
 const currentURL = computed(() => route.path);
 
-const navigateTo = (url: string) => { return () => router.push(url).catch(err => { }); };
+const navigateTo = (url: string) => {
+  return () => router.push(url).catch((_err) => {});
+};
 
 interface Item {
-	label: string,
-	icon: string,
-	pattern?: RegExp,
-	testID?: string,
-	action: () => void,
+  label: string;
+  icon: string;
+  pattern?: RegExp;
+  testID?: string;
+  action: () => void;
 }
 
 function isCurrent(item: Item) {
-	return !!item.pattern?.test(currentURL.value);
+  return !!item.pattern?.test(currentURL.value);
 }
 
 const navigation: Ref<Item[]> = ref([
-	{ label: "Files", icon: "folder", pattern: new RegExp("^/files"), testID: "files", action: navigateTo("/files") },
-	{ label: "Artists", icon: "person", pattern: new RegExp("^/artists"), testID: "artists", action: navigateTo("/artists") },
-	{ label: "Albums", icon: "library_music", pattern: new RegExp("^/albums"), testID: "albums", action: navigateTo("/albums") },
-	{ label: "Playlists", icon: "playlist_play", pattern: new RegExp("^/playlist"), testID: "playlists", action: navigateTo("/playlists") },
-	{ label: "Search", icon: "search", pattern: new RegExp("^/search"), testID: "search", action: navigateTo("/search") },
-	{ label: "Settings", icon: "settings", pattern: new RegExp("^/settings"), testID: "settings", action: navigateTo("/settings/preferences") },
+  {
+    label: "Files",
+    icon: "folder",
+    pattern: /^\/files/,
+    testID: "files",
+    action: navigateTo("/files")
+  },
+  {
+    label: "Artists",
+    icon: "person",
+    pattern: /^\/artists/,
+    testID: "artists",
+    action: navigateTo("/artists")
+  },
+  {
+    label: "Albums",
+    icon: "library_music",
+    pattern: /^\/albums/,
+    testID: "albums",
+    action: navigateTo("/albums")
+  },
+  {
+    label: "Playlists",
+    icon: "playlist_play",
+    pattern: /^\/playlist/,
+    testID: "playlists",
+    action: navigateTo("/playlists")
+  },
+  {
+    label: "Search",
+    icon: "search",
+    pattern: /^\/search/,
+    testID: "search",
+    action: navigateTo("/search")
+  },
+  {
+    label: "Settings",
+    icon: "settings",
+    pattern: /^\/settings/,
+    testID: "settings",
+    action: navigateTo("/settings/preferences")
+  }
 ]);
 </script>

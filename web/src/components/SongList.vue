@@ -21,141 +21,177 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue';
-import { useElementSize, useScroll, useVirtualList } from '@vueuse/core';
-import { useRouter } from 'vue-router';
-
-import { DndPayloadPaths } from '@/dnd';
-import useMultiselect from '@/multiselect';
-import ContextMenu, { ContextMenuItem } from '@/components/basic/ContextMenu.vue';
-import Draggable from '@/components/basic/Draggable.vue';
-import SongListRow from '@/components/SongListRow.vue';
-import { saveScrollState, useHistory } from '@/history';
-import { usePlaybackStore } from '@/stores/playback';
-import { useSongsStore } from '@/stores/songs';
-import { makeAlbumURLFromSongPaths, makeSongURL } from '@/router';
+import { useElementSize, useScroll, useVirtualList } from "@vueuse/core";
+import { computed, nextTick, onMounted, useTemplateRef, watch } from "vue";
+import { useRouter } from "vue-router";
+import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
+import { DndPayloadPaths } from "@/dnd";
+import { saveScrollState, useHistory } from "@/history";
+import useMultiselect from "@/multiselect";
+import { makeAlbumURLFromSongPaths, makeSongURL } from "@/router";
+import { usePlaybackStore } from "@/stores/playback";
+import { useSongsStore } from "@/stores/songs";
 
 const playback = usePlaybackStore();
 const router = useRouter();
 const songs = useSongsStore();
 
 const props = defineProps<{
-    compact: boolean,
-    invertStripes?: boolean,
+  compact: boolean;
+  invertStripes?: boolean;
 }>();
 
 const paths = defineModel<string[]>({ required: true });
 
-const items = computed(() => paths.value.map(p => ({ key: p })));
+const items = computed(() => paths.value.map((p) => ({ key: p })));
 
-
-const itemHeight = computed(() => props.compact ? 32 : 64);
+const itemHeight = computed(() => (props.compact ? 32 : 64));
 
 const overscan = 1;
-const { list: virtualItems, containerProps, wrapperProps, scrollTo } = useVirtualList(items, { itemHeight: () => itemHeight.value, overscan });
+const {
+  list: virtualItems,
+  containerProps,
+  wrapperProps,
+  scrollTo
+} = useVirtualList(items, { itemHeight: () => itemHeight.value, overscan });
 const viewport = computed(() => containerProps.ref.value);
 const { y: scrollY } = useScroll(viewport);
 const { height: viewportHeight } = useElementSize(viewport);
 
-const { clickItem, focusedKey, multiselect, pivotKey, selectedKeys, selectItem, selection } = useMultiselect(
-    items,
-    { onMove: snapScrolling }
-);
+const {
+  clickItem,
+  focusedKey,
+  multiselect,
+  pivotKey,
+  selectedKeys,
+  selectItem,
+  selection
+} = useMultiselect(items, { onMove: snapScrolling });
 
 watch(itemHeight, (to, from) => {
-    const halfHeight = viewportHeight.value / 2;
-    const y = (scrollY.value + halfHeight) * to / from - halfHeight;
-    nextTick(() => {
-        scrollY.value = y;
-    });
+  const halfHeight = viewportHeight.value / 2;
+  const y = ((scrollY.value + halfHeight) * to) / from - halfHeight;
+  nextTick(() => {
+    scrollY.value = y;
+  });
 });
 
 watch(paths, () => {
-    scrollY.value = 0;
+  scrollY.value = 0;
 });
 
 function snapScrolling() {
-    const focusedIndex = items.value.findIndex(n => n.key == focusedKey.value);
-    if (focusedIndex < 0) {
-        return;
-    }
+  const focusedIndex = items.value.findIndex((n) => n.key === focusedKey.value);
+  if (focusedIndex < 0) {
+    return;
+  }
 
-    const padding = 4 + overscan;
-    const nodes = virtualItems.value;
-    const first = nodes[0].index;
-    const last = nodes[nodes.length - 1].index;
+  const padding = 4 + overscan;
+  const nodes = virtualItems.value;
+  const first = nodes[0].index;
+  const last = nodes[nodes.length - 1].index;
 
-    if (focusedIndex <= first + padding) {
-        scrollTo(Math.max(0, focusedIndex - padding));
-    } else if (focusedIndex >= last - padding) {
-        scrollTo(focusedIndex - (last - first) + padding);
-    }
+  if (focusedIndex <= first + padding) {
+    scrollTo(Math.max(0, focusedIndex - padding));
+  } else if (focusedIndex >= last - padding) {
+    scrollTo(focusedIndex - (last - first) + padding);
+  }
 }
 
 function onKeyDown(event: KeyboardEvent) {
-    multiselect.onKeyDown(event);
-    if (event.code == "Enter") {
-        queueSelection(!event.shiftKey);
-    }
+  multiselect.onKeyDown(event);
+  if (event.code === "Enter") {
+    queueSelection(!event.shiftKey);
+  }
 }
 
 async function queueSelection(replace: boolean) {
-    const tracks = selection.value.map(s => s.key);
-    if (!tracks.length) {
-        return;
-    }
+  const tracks = selection.value.map((s) => s.key);
+  if (!tracks.length) {
+    return;
+  }
 
-    if (replace) {
-        playback.clear();
-        playback.stop();
-    }
-    playback.queueTracks(tracks);
+  if (replace) {
+    playback.clear();
+    playback.stop();
+  }
+  playback.queueTracks(tracks);
 }
 
-function onDragStart(event: DragEvent, path: string) {
-    if (!selectedKeys.value.has(path)) {
-        selectItem({ key: path });
-    }
+function onDragStart(_event: DragEvent, path: string) {
+  if (!selectedKeys.value.has(path)) {
+    selectItem({ key: path });
+  }
 }
 
 function onSongDoubleClicked(path: string) {
-    playback.clear();
-    playback.stop();
-    playback.queueTracks([path]);
+  playback.clear();
+  playback.stop();
+  playback.queueTracks([path]);
 }
 
 function onSongRightClicked(e: MouseEvent, path: string) {
-    if (!selectedKeys.value.has(path)) {
-        selectItem({ key: path });
-    }
-    contextMenu.value?.show(e);
+  if (!selectedKeys.value.has(path)) {
+    selectItem({ key: path });
+  }
+  contextMenu.value?.show(e);
 }
 
-const contextMenu = useTemplateRef("contextMenu");
+const contextMenu = useTemplateRef<{ show: (event: MouseEvent) => void }>(
+  "contextMenu"
+);
 const contextMenuItems = computed(() => {
-    const items: ContextMenuItem[] = [
-        { label: "Play", shortcut: "Enter", action: () => { queueSelection(true) } },
-        { label: "Queue", shortcut: "Shift+Enter", action: () => { queueSelection(false) } },
-    ];
-
-    const selectedSongs = selection.value.map(s => s.key);
-
-    const albumURL = makeAlbumURLFromSongPaths(selectedSongs);
-    if (albumURL) {
-        items.push({ label: "Album Details", action: () => { router.push(albumURL); } });
+  const items: ContextMenuItem[] = [
+    {
+      label: "Play",
+      shortcut: "Enter",
+      action: () => {
+        queueSelection(true);
+      }
+    },
+    {
+      label: "Queue",
+      shortcut: "Shift+Enter",
+      action: () => {
+        queueSelection(false);
+      }
     }
+  ];
 
-    if (selectedSongs.length == 1) {
-        const songURL = makeSongURL(selectedSongs[0]);
-        items.push({ label: "File Properties", action: () => { router.push(songURL); } });
-    }
+  const selectedSongs = selection.value.map((s) => s.key);
 
-    return items;
+  const albumURL = makeAlbumURLFromSongPaths(selectedSongs);
+  if (albumURL) {
+    items.push({
+      label: "Album Details",
+      action: () => {
+        router.push(albumURL);
+      }
+    });
+  }
+
+  if (selectedSongs.length === 1) {
+    const songURL = makeSongURL(selectedSongs[0]);
+    items.push({
+      label: "File Properties",
+      action: () => {
+        router.push(songURL);
+      }
+    });
+  }
+
+  return items;
 });
 
-useHistory("song-list", [paths, selectedKeys, focusedKey, pivotKey, saveScrollState(viewport)]);
+useHistory("song-list", [
+  paths,
+  selectedKeys,
+  focusedKey,
+  pivotKey,
+  saveScrollState(viewport)
+]);
 
 onMounted(() => {
-    songs.request(paths.value);
-})
+  songs.request(paths.value);
+});
 </script>

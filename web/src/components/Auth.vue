@@ -19,9 +19,6 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-
-import Button from "@/components/basic/Button.vue";
-import InputText from "@/components/basic/InputText.vue";
 import { useUserStore } from "@/stores/user";
 
 const user = useUserStore();
@@ -30,16 +27,16 @@ const username = ref("");
 const password = ref("");
 const badCredentials = ref(false);
 
-async function doLogin(event: Event) {
-	badCredentials.value = false;
-	try {
-		await user.login(username.value, password.value);
-	} catch (e) {
-		if (e instanceof Response) {
-			if (e.status == 401) {
-				badCredentials.value = true;
-			}
-		}
-	}
+async function doLogin(_event: Event) {
+  badCredentials.value = false;
+  try {
+    await user.login(username.value, password.value);
+  } catch (e) {
+    if (e instanceof Response) {
+      if (e.status === 401) {
+        badCredentials.value = true;
+      }
+    }
+  }
 }
 </script>
