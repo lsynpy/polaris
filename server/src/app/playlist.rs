@@ -136,20 +136,35 @@ impl Manager {
 		.map_err(Error::NativeDatabase)
 	}
 
+	pub async fn remove_track(&self, name: &str, owner: &str, track: PathBuf) -> Result<(), Error> {
+		let mut playlist = self.read_playlist(name, owner).await?;
+		playlist.songs.retain(|t| t != &track);
+		self.save_playlist(name, owner, playlist.songs).await
+	}
+
+	pub async fn add_track(&self, name: &str, owner: &str, track: PathBuf) -> Result<(), Error> {
+		let mut playlist = self.read_playlist(name, owner).await?;
+		playlist.songs.push(track);
+		self.save_playlist(name, owner, playlist.songs).await
+	}
+
 	pub async fn save_playlist(
 		&self,
 		name: &str,
 		owner: &str,
 		virtual_paths: Vec<PathBuf>,
 	) -> Result<(), Error> {
-		let unique_paths: std::collections::HashSet<_> = virtual_paths.iter().collect();
-		if unique_paths.len() != virtual_paths.len() {
-			return Err(Error::DuplicateTrackInPlaylist);
+		let mut unique_paths = Vec::new();
+		let mut seen_paths = std::collections::HashSet::new();
+		for path in virtual_paths {
+			if seen_paths.insert(path.clone()) {
+				unique_paths.push(path);
+			}
 		}
 
 		let songs = self
 			.index_manager
-			.get_songs(virtual_paths)
+			.get_songs(unique_paths)
 			.await
 			.into_iter()
 			.filter_map(|s| s.ok())

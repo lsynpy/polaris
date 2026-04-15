@@ -1,16 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("Cannot save playlist with duplicate tracks", async ({ page }) => {
-  // Mock Notification API
-  await page.addInitScript(() => {
-    const mockNotification = function (this: any, title: string, options: any) {
-      (window as any).__lastNotification = { title, options };
-    };
-    (mockNotification as any).permission = "granted";
-    (mockNotification as any).requestPermission = async () => "granted";
-    (window as any).Notification = mockNotification as any;
-  });
-
+test("Silently ignores duplicate tracks when saving", async ({ page }) => {
   await page.goto("/");
 
   await page.getByTestId("sidebar").getByTestId("albums").click();
@@ -20,9 +10,9 @@ test("Cannot save playlist with duplicate tracks", async ({ page }) => {
     .getByTestId("album-art")
     .click({ force: true });
 
-  // Play All (5 songs)
+  // Play All (5 unique songs)
   await page.getByTestId("play-all").click();
-  // Queue All (+5 songs = 10 total, with duplicates)
+  // Queue All (+5 songs = 10 total, all duplicates of the first 5)
   await page.getByTestId("queue-all").click();
 
   // Try to save
@@ -30,16 +20,20 @@ test("Cannot save playlist with duplicate tracks", async ({ page }) => {
   await page.getByLabel("Playlist Name").fill("Duplicate Test Playlist");
   await page.getByTestId("submit-save-playlist").click();
 
-  // Check for notification
-  await expect
-    .poll(async () => {
-      return await page.evaluate(() => (window as any).__lastNotification);
-    })
-    .toEqual({
-      title: "Duplicate Track",
-      options: {
-        body: "Playlist contains duplicate tracks",
-        icon: undefined
-      }
-    });
+  // Verify successful save: wait for dialog to close and check playlist contents
+  await expect(page.locator("form")).not.toBeVisible();
+
+  await page.getByTestId("sidebar").getByTestId("playlists").click();
+  await page
+    .getByTestId("saved-playlist")
+    .getByText("Duplicate Test Playlist")
+    .click();
+
+  // Verify only 5 unique songs were saved
+  await expect(
+    page
+      .getByTestId("saved-playlist-songs")
+      .getByTestId("song")
+      .locator("visible=true")
+  ).toHaveCount(5);
 });

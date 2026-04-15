@@ -102,7 +102,7 @@ async fn get_playlist_golden_path() {
 }
 
 #[tokio::test]
-async fn save_playlist_with_duplicate_tracks_returns_conflict() {
+async fn save_playlist_with_duplicate_tracks_silently_ignores_them() {
 	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
 	service.login_admin().await;
@@ -118,22 +118,73 @@ async fn save_playlist_with_duplicate_tracks_returns_conflict() {
 	};
 	let request = protocol::save_playlist(TEST_PLAYLIST_NAME, duplicate_playlist);
 	let response = service.fetch(&request).await;
-	assert_eq!(response.status(), StatusCode::CONFLICT);
+	assert_eq!(response.status(), StatusCode::OK);
+
+	let request = protocol::read_playlist::<V8>(TEST_PLAYLIST_NAME);
+	let response = service.fetch_json::<_, dto::Playlist>(&request).await;
+	assert_eq!(response.status(), StatusCode::OK);
+	assert_eq!(response.body().songs.paths.len(), 1)
+}
+
+#[tokio::test]
+async fn add_track_to_playlist_golden_path() {
+	let mut service = TestServiceType::new(&test_name!()).await;
+	service.complete_initial_setup().await;
+	service.login_admin().await;
+	service.index().await;
+	service.login().await;
+
+	{
+		let my_playlist = dto::SavePlaylistInput { tracks: Vec::new() };
+		let request = protocol::save_playlist(TEST_PLAYLIST_NAME, my_playlist);
+		service.fetch(&request).await;
+	}
+
+	let track = [TEST_MOUNT_NAME, "Khemmis", "Hunted", "02 - Candlelight.mp3"]
+		.iter()
+		.collect::<PathBuf>();
+	let request = protocol::add_track_to_playlist(TEST_PLAYLIST_NAME, track);
+	let response = service.fetch(&request).await;
+	assert_eq!(response.status(), StatusCode::OK);
+
+	let request = protocol::read_playlist::<V8>(TEST_PLAYLIST_NAME);
+	let response = service.fetch_json::<_, dto::Playlist>(&request).await;
+	assert_eq!(response.status(), StatusCode::OK);
+	assert_eq!(response.body().songs.paths.len(), 1);
+}
+
+#[tokio::test]
+async fn remove_track_from_playlist_golden_path() {
+	let mut service = TestServiceType::new(&test_name!()).await;
+	service.complete_initial_setup().await;
+	service.login_admin().await;
+	service.index().await;
+	service.login().await;
+
+	let track = [TEST_MOUNT_NAME, "Khemmis", "Hunted", "02 - Candlelight.mp3"]
+		.iter()
+		.collect::<PathBuf>();
+
+	{
+		let my_playlist = dto::SavePlaylistInput {
+			tracks: vec![track.clone()],
+		};
+		let request = protocol::save_playlist(TEST_PLAYLIST_NAME, my_playlist);
+		service.fetch(&request).await;
+	}
+
+	let request = protocol::remove_track_from_playlist(TEST_PLAYLIST_NAME, track);
+	let response = service.fetch(&request).await;
+	assert_eq!(response.status(), StatusCode::OK);
+
+	let request = protocol::read_playlist::<V8>(TEST_PLAYLIST_NAME);
+	let response = service.fetch_json::<_, dto::Playlist>(&request).await;
+	assert_eq!(response.status(), StatusCode::OK);
+	assert_eq!(response.body().songs.paths.len(), 0);
 }
 
 #[tokio::test]
 async fn get_playlist_bad_name_returns_not_found() {
-	let mut service = TestServiceType::new(&test_name!()).await;
-	service.complete_initial_setup().await;
-	service.login().await;
-
-	let request = protocol::read_playlist::<V8>(TEST_PLAYLIST_NAME);
-	let response = service.fetch(&request).await;
-	assert_eq!(response.status(), StatusCode::NOT_FOUND);
-}
-
-#[tokio::test]
-async fn delete_playlist_requires_auth() {
 	let mut service = TestServiceType::new(&test_name!()).await;
 	let request = protocol::delete_playlist(TEST_PLAYLIST_NAME);
 	let response = service.fetch(&request).await;

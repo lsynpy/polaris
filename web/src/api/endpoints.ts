@@ -250,6 +250,29 @@ export async function getPlaylist(name: string): Promise<Playlist> {
   });
 }
 
+export async function addTrackToPlaylist(
+  name: string,
+  track: string
+): Promise<void> {
+  await request(`/playlist/${encodeURIComponent(name)}/add`, {
+    method: "POST",
+    body: JSON.stringify({ track: track }),
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+export async function removeTrackFromPlaylist(
+  name: string,
+  track: string
+): Promise<void> {
+  await request(
+    `/playlist/${encodeURIComponent(name)}/remove/${encodeURIComponent(track)}`,
+    {
+      method: "DELETE"
+    }
+  );
+}
+
 export async function putPlaylist(
   name: string,
   tracks: string[]

@@ -56,7 +56,6 @@ impl IntoResponse for APIError {
 			APIError::UserNotFound => StatusCode::NOT_FOUND,
 			APIError::RealPathNotFound(_) => StatusCode::NOT_FOUND,
 			APIError::VirtualPathNotFound(_) => StatusCode::NOT_FOUND,
-			APIError::DuplicateTrackInPlaylist => StatusCode::CONFLICT,
 		};
 
 		(status_code, message).into_response()

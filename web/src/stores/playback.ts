@@ -7,10 +7,15 @@ import {
   shallowRef,
   watch
 } from "vue";
-import { recordPlay } from "@/api/endpoints";
+import {
+  addTrackToPlaylist,
+  recordPlay,
+  removeTrackFromPlaylist
+} from "@/api/endpoints";
 import { loadUserValue, saveUserValue } from "@/storage";
 import { useSongsStore } from "@/stores/songs";
 import { useUserStore } from "@/stores/user";
+import { usePlaylistsStore } from "./playlists";
 
 let next_key = 0;
 
@@ -174,6 +179,11 @@ export const usePlaybackStore = defineStore("playback", () => {
     const removeKeys = new Set(entriesToRemove.map((e) => e.key));
     playlist.value = playlist.value.filter((e) => !removeKeys.has(e.key));
     savePlaylist();
+    if (name.value) {
+      entriesToRemove.forEach((e) =>
+        removeTrackFromPlaylist(name.value, e.path)
+      );
+    }
   }
 
   function enqueue(tracks: string[], index: number) {
@@ -193,6 +203,10 @@ export const usePlaybackStore = defineStore("playback", () => {
     playlist.value = newPlaylist;
     if (playbackFinished || !playbackStarted) {
       next();
+    }
+    savePlaylist();
+    if (name.value) {
+      tracks.forEach((t) => addTrackToPlaylist(name.value, t));
     }
   }
 

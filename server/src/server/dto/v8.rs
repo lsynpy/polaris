@@ -123,6 +123,12 @@ pub struct SavePlaylistInput {
 	pub tracks: Vec<PathBuf>,
 }
 
+#[derive(Clone, Serialize, Deserialize, ToSchema)]
+pub struct PlaylistAddTrackInput {
+	#[schema(value_type = String, examples("my_music/destiny.mp3"))]
+	pub track: PathBuf,
+}
+
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct User {
 	#[schema(examples("alice"))]

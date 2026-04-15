@@ -60,6 +60,10 @@ pub fn router() -> OpenApiRouter<App> {
 		// Playlist management
 		.routes(routes!(get_playlists))
 		.routes(routes!(put_playlist, get_playlist, delete_playlist))
+		.routes(routes!(
+			post_add_track_to_playlist,
+			delete_remove_track_from_playlist
+		))
 		.routes(routes!(export_playlists))
 		.routes(routes!(import_playlists))
 		// Media
@@ -876,6 +880,55 @@ async fn put_playlist(
 ) -> Result<(), APIError> {
 	playlist_manager
 		.save_playlist(&name, auth.get_username(), playlist.tracks.clone())
+		.await?;
+	Ok(())
+}
+
+#[utoipa::path(
+	post,
+	path = "/playlist/{name}/add",
+	tag = "Playlists",
+	description = "Adds a track to a playlist owned by the current user.",
+	security(
+		("auth_token" = []),
+		("auth_query_param" = []),
+	),
+	params(("name", example = "Chill Jazz")),
+	request_body = dto::PlaylistAddTrackInput,
+)]
+async fn post_add_track_to_playlist(
+	auth: Auth,
+	State(playlist_manager): State<playlist::Manager>,
+	Path(name): Path<String>,
+	Json(input): Json<dto::PlaylistAddTrackInput>,
+) -> Result<(), APIError> {
+	playlist_manager
+		.add_track(&name, auth.get_username(), input.track)
+		.await?;
+	Ok(())
+}
+
+#[utoipa::path(
+	delete,
+	path = "/playlist/{name}/remove/{*track}",
+	tag = "Playlists",
+	description = "Removes a track from a playlist owned by the current user.",
+	security(
+		("auth_token" = []),
+		("auth_query_param" = []),
+	),
+	params(
+		("name", example = "Chill Jazz"),
+		("track", allow_reserved, example = "my_music/destiny.mp3"),
+	),
+)]
+async fn delete_remove_track_from_playlist(
+	auth: Auth,
+	State(playlist_manager): State<playlist::Manager>,
+	Path((name, track)): Path<(String, PathBuf)>,
+) -> Result<(), APIError> {
+	playlist_manager
+		.remove_track(&name, auth.get_username(), track)
 		.await?;
 	Ok(())
 }

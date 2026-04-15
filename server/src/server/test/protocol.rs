@@ -1,7 +1,7 @@
 use http::{Method, Request};
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::server::dto;
 use crate::server::dto::ThumbnailSize;
@@ -270,6 +270,29 @@ pub fn read_playlist<VERSION: ProtocolVersion>(name: &str) -> Request<()> {
 
 pub fn delete_playlist(name: &str) -> Request<()> {
 	let endpoint = format!("/api/playlist/{}", url_encode(name));
+	Request::builder()
+		.method(Method::DELETE)
+		.uri(&endpoint)
+		.body(())
+		.unwrap()
+}
+
+pub fn add_track_to_playlist(name: &str, track: PathBuf) -> Request<dto::PlaylistAddTrackInput> {
+	let endpoint = format!("/api/playlist/{}/add", url_encode(name));
+	let input = dto::PlaylistAddTrackInput { track };
+	Request::builder()
+		.method(Method::POST)
+		.uri(&endpoint)
+		.body(input)
+		.unwrap()
+}
+
+pub fn remove_track_from_playlist(name: &str, track: PathBuf) -> Request<()> {
+	let endpoint = format!(
+		"/api/playlist/{}/remove/{}",
+		url_encode(name),
+		url_encode(&track.to_string_lossy())
+	);
 	Request::builder()
 		.method(Method::DELETE)
 		.uri(&endpoint)
