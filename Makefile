@@ -1,4 +1,4 @@
-.PHONY: help prepare deploy prepare-deploy dev serve watch test test_server test_web test_e2e
+.PHONY: help deploy dev serve watch test test_server test_web test_e2e
 
 SHELL := /usr/bin/env bash
 DEPLOY_DIR := $(shell pwd)/deploy
@@ -17,11 +17,9 @@ IMAGE_TAG := $(REGISTRY)/$(ALIYUN_NAMESPACE)/polaris:$(TAG_DATE)-$(TAG_SHA)
 help:
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "Deploy (2-step):"
-	@echo "  prepare                  Build web, download binary, build & push image"
-	@echo "  deploy ENV=local         Deploy to local Docker"
-	@echo "  deploy ENV=jdc           Deploy to JDC"
-	@echo "  prepare-deploy           Both steps in one go"
+	@echo "Deploy:"
+	@echo "  deploy ENV=local         Build, push, and deploy to local Docker"
+	@echo "  deploy ENV=jdc           Build, push, and deploy to JDC"
 	@echo ""
 	@echo "Development:"
 	@echo "  dev    Build web and start server (static)"
@@ -40,26 +38,15 @@ help:
 default: help
 
 # ===================================================================
-# Step 1: Prepare image
-# ===================================================================
-prepare:
-	@ENV=$${ENV:-local}; \
-	bash $(DEPLOY_DIR)/prepare-image.sh "$$ENV"
-
-# ===================================================================
-# Step 2: Deploy
+# Deploy (build, push, deploy)
 # ===================================================================
 deploy:
 	@if [ -z "$(ENV)" ]; then \
 		echo "Error: ENV required. Usage: make deploy ENV=local|jdc"; \
 		exit 1; \
 	fi
-	@bash $(DEPLOY_DIR)/deploy.sh $(ENV) "$(IMAGE_TAG)"
-
-# ===================================================================
-# Convenience: both steps
-# ===================================================================
-prepare-deploy: prepare deploy
+	@bash $(DEPLOY_DIR)/prepare-image.sh "$(ENV)" && \
+	bash $(DEPLOY_DIR)/deploy.sh $(ENV) "$(IMAGE_TAG)"
 
 # ===================================================================
 # Dev targets

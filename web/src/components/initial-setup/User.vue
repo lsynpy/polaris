@@ -15,6 +15,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+
+import Button from "@/components/basic/Button.vue";
+import InputText from "@/components/basic/InputText.vue";
+import Step from "@/components/initial-setup/Step.vue";
 import { useUsersStore } from "@/stores/users";
 
 const users = useUsersStore();

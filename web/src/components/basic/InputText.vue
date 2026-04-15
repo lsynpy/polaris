@@ -9,13 +9,13 @@
             </div>
             <input ref="input" v-focus="autofocus" v-model="model" :id="id" :type="password ? 'password' : 'text'"
                 :placeholder="placeholder" :autocomplete="autocomplete" :autofocus="autofocus" :required="required"
-                :class="_inputClass" class="w-full rounded-md border-0 py-2 pr-8 shadow-sm text-sm leading-6
+                :class="inputClass" class="w-full rounded-md border-0 py-2 pr-8 shadow-sm text-sm leading-6
                 ring-1 ring-inset focus:ring-2 focus:ring-inset
                 dark:bg-white/5
                 text-ls-900 dark:text-ds-0
                 placeholder:text-ls-400 dark:placeholder:text-ls-400
                 ring-ls-300 dark:ring-white/10 focus:ring-accent-600 dark:focus:ring-accent-600" />
-            <div v-if="clearable && model" @click="_clear"
+            <div v-if="clearable && model" @click="clear"
                 class="absolute cursor-pointer inset-y-0 right-2 flex items-center text-ls-400 hover:text-ls-700 dark:text-ds-400 dark:hover:text-ds-200">
                 <span class="material-icons-round" v-text="'close'" />
             </div>
@@ -31,7 +31,7 @@ import { computed, useTemplateRef } from "vue";
 
 const input = useTemplateRef("input");
 
-const _vFocus = {
+const vFocus = {
   mounted: (el: HTMLElement, binding: { value: any }) => {
     if (binding.value) {
       el.focus();
@@ -54,12 +54,12 @@ const props = defineProps<{
 
 const model = defineModel<string>({ required: true });
 
-function _clear() {
+function clear() {
   model.value = "";
   input.value?.focus();
 }
 
-const _inputClass = computed(() => {
+const inputClass = computed(() => {
   return [
     props.error
       ? `text-red-600 dark:text-red-100

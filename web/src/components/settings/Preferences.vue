@@ -40,7 +40,11 @@
 <script setup lang="ts">
 import { formatCss } from "culori/fn";
 import { computed } from "vue";
-import type { SelectOption } from "@/components/basic/Select.vue";
+
+import Button from "@/components/basic/Button.vue";
+import Section from "@/components/basic/Section.vue";
+import Select, { type SelectOption } from "@/components/basic/Select.vue";
+import Slider from "@/components/basic/Slider.vue";
 import { usePreferencesStore } from "@/stores/preferences";
 import { computeAccentRamp, getThemeName, Theme } from "@/theming";
 

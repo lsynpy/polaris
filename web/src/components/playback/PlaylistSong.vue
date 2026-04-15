@@ -12,6 +12,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import SongListRow from "@/components/SongListRow.vue";
 import { type PlaylistEntry, usePlaybackStore } from "@/stores/playback";
 
 const playback = usePlaybackStore();

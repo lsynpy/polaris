@@ -1,6 +1,6 @@
 <template>
     <div class="absolute h-full w-full pointer-events-none">
-        <div v-show="open" class="h-full w-full pointer-events-auto" @click="_dismiss" @click.right="_dismiss">
+        <div v-show="open" class="h-full w-full pointer-events-auto" @click="dismiss" @click.right="dismiss">
             <div id="floating-widget" />
         </div>
     </div>
@@ -25,7 +25,7 @@ bus.on((event) => {
   }
 });
 
-function _dismiss() {
+function dismiss() {
   bus.emit("CLOSE_WIDGET");
 }
 </script>

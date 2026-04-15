@@ -17,9 +17,10 @@
 
 <script setup lang="ts">
 import { useElementSize, useMediaQuery, useScroll } from "@vueuse/core";
-import { computed, ref, unref, useTemplateRef } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 
 import type { ArtistHeader } from "@/api/dto";
+import ArtistGridCell from "@/components/library/ArtistGridCell.vue";
 
 const props = defineProps<{
   artists: ArtistHeader[];
@@ -35,8 +36,7 @@ const numColumns = computed(() =>
 );
 const cellSize = computed(() => (numColumns.value <= 3 ? "lg" : "md"));
 
-const viewportEl = useTemplateRef("viewport");
-const viewport = computed(() => unref(viewportEl) as unknown as HTMLElement);
+const viewport = useTemplateRef("viewport");
 const { width: viewportWidth, height: viewportHeight } =
   useElementSize(viewport);
 const { y: scrollY } = useScroll(viewport);
@@ -47,7 +47,7 @@ const itemWidth = computed(
     (viewportWidth.value - (numColumns.value - 1) * gapSize.value) /
     numColumns.value
 );
-const { height: itemHeight } = useElementSize(sampleCell as any);
+const { height: itemHeight } = useElementSize(sampleCell);
 
 const trimmedArtists = computed(() => {
   if (props.maxRows) {

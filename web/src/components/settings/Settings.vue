@@ -11,7 +11,9 @@
 <script setup lang="ts">
 import { type ComputedRef, computed } from "vue";
 import { useRouter } from "vue-router";
-import type { TabItem } from "@/components/basic/Tabs.vue";
+
+import PageHeader from "@/components/basic/PageHeader.vue";
+import Tabs, { type TabItem } from "@/components/basic/Tabs.vue";
 import { useUserStore } from "@/stores/user";
 
 type Category = "preferences" | "collection" | "users" | "ddns";

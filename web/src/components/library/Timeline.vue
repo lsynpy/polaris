@@ -71,6 +71,9 @@ import { useRouter } from "vue-router";
 
 import type { AlbumHeader, ArtistAlbum } from "@/api/dto";
 import { makeThumbnailURL } from "@/api/endpoints";
+import AlbumArt from "@/components/AlbumArt.vue";
+import Draggable from "@/components/basic/Draggable.vue";
+import AlbumDragPreview from "@/components/library/AlbumDragPreview.vue";
 import { DndPayloadAlbumKey } from "@/dnd";
 import { isFakeArtist, pluralize } from "@/format";
 import { makeAlbumURL, makeArtistURL } from "@/router";

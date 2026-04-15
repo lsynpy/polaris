@@ -50,9 +50,15 @@
 </template>
 
 <script setup lang="ts">
+import { vOnClickOutside } from "@vueuse/components";
 import { computed, ref } from "vue";
 
 import type { User } from "@/api/dto";
+import Button from "@/components/basic/Button.vue";
+import InputText from "@/components/basic/InputText.vue";
+import ScreenDarkening from "@/components/basic/ScreenDarkening.vue";
+import ScreenFade from "@/components/basic/ScreenFade.vue";
+import Toggle from "@/components/basic/Toggle.vue";
 import { useUserStore } from "@/stores/user";
 import { useUsersStore } from "@/stores/users";
 

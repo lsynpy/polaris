@@ -27,6 +27,7 @@
 import { useRouter } from "vue-router";
 
 import type { ArtistHeader } from "@/api/dto";
+import ContextMenu from "@/components/basic/ContextMenu.vue";
 import { pluralize } from "@/format";
 import { makeArtistURL } from "@/router";
 

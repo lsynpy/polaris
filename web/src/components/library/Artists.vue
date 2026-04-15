@@ -46,7 +46,15 @@ import { computed, type Ref, ref, toRaw, useTemplateRef, watch } from "vue";
 
 import type { ArtistHeader } from "@/api/dto";
 import { type ArtistSort, getArtists } from "@/api/endpoints";
-import type { PageViewMode } from "@/components/basic/PageHeader.vue";
+import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
+import Error from "@/components/basic/Error.vue";
+import InputText from "@/components/basic/InputText.vue";
+import PageHeader, {
+  type PageViewMode
+} from "@/components/basic/PageHeader.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import Switch from "@/components/basic/Switch.vue";
+import ArtistGrid from "@/components/library/ArtistGrid.vue";
 import { saveScrollState, useHistory } from "@/history";
 
 const artists: Ref<ArtistHeader[]> = ref([]);
@@ -60,7 +68,7 @@ async function fetchArtists(sort?: ArtistSort) {
   try {
     artists.value = await getArtists(sort);
     isReady.value = true;
-  } catch (_e) {
+  } catch (e) {
     error.value = true;
   } finally {
     isLoading.value = false;
@@ -127,9 +135,7 @@ const filtered = computed(() => {
 });
 
 const list = useTemplateRef("list");
-const viewport = computed(
-  () => (list.value as unknown as { $el: HTMLElement })?.$el
-);
+const viewport = computed(() => list.value?.$el);
 const { y: scrollY } = useScroll(viewport);
 
 watch(filtered, () => (scrollY.value = 0));

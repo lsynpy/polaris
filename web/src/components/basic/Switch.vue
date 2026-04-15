@@ -1,8 +1,8 @@
 <template>
     <div class="flex gap-2">
-        <div v-for="item of items" @click="_onItemClicked(item)">
+        <div v-for="item of items" @click="onItemClicked(item)">
             <div class="flex flex-1 p-1.5 items-center justify-center rounded-md font-semibold"
-                :class="_itemClass(item)">
+                :class="itemClass(item)">
                 <span v-text="item.icon" class="material-icons-round" />
             </div>
         </div>
@@ -24,7 +24,7 @@ function isSelected(item: SwitchItem) {
   return item.value === model.value;
 }
 
-function _itemClass(item: SwitchItem) {
+function itemClass(item: SwitchItem) {
   if (item.disabled) {
     return;
   }
@@ -37,7 +37,7 @@ function _itemClass(item: SwitchItem) {
   ];
 }
 
-function _onItemClicked(item: SwitchItem) {
+function onItemClicked(item: SwitchItem) {
   model.value = item.value;
 }
 </script>

@@ -77,19 +77,32 @@
 </template>
 
 <script setup lang="ts">
+import { vOnClickOutside } from "@vueuse/components";
 import {
   computed,
   defineAsyncComponent,
   nextTick,
   onMounted,
-  type Ref,
   ref,
   useTemplateRef,
   watch
 } from "vue";
 import { useRouter } from "vue-router";
-import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
-import type { SelectOption } from "@/components/basic/Select.vue";
+
+import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
+import Button from "@/components/basic/Button.vue";
+import ContextMenu, {
+  type ContextMenuItem
+} from "@/components/basic/ContextMenu.vue";
+import InputText from "@/components/basic/InputText.vue";
+import OrderableList from "@/components/basic/OrderableList.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import ScreenDarkening from "@/components/basic/ScreenDarkening.vue";
+import ScreenFade from "@/components/basic/ScreenFade.vue";
+import Select, { type SelectOption } from "@/components/basic/Select.vue";
+import SidePanel from "@/components/basic/SidePanel.vue";
+import Switch from "@/components/basic/Switch.vue";
+import PlaylistSong from "@/components/playback/PlaylistSong.vue";
 import { useDragAndDrop } from "@/dnd";
 import { makeAlbumURLFromSongPaths, makeSongURL } from "@/router";
 import {
@@ -101,18 +114,7 @@ import { usePlaylistsStore } from "@/stores/playlists";
 import { usePreferencesStore } from "@/stores/preferences";
 import { useSongsStore } from "@/stores/songs";
 
-interface OrderableListExpose {
-  isIdle: () => boolean;
-  isSelected: (key: string | number) => boolean;
-  selectItem: (item: PlaylistEntry) => void;
-  selection: PlaylistEntry[];
-  snapScrolling: (
-    position: "center" | "top" | "bottom",
-    behavior?: ScrollBehavior
-  ) => void;
-}
-
-const _Stats = defineAsyncComponent(
+const Stats = defineAsyncComponent(
   () => import("@/components/playback/Stats.vue")
 );
 
@@ -122,9 +124,7 @@ const preferences = usePreferencesStore();
 const router = useRouter();
 const songs = useSongsStore();
 
-const orderableList = useTemplateRef(
-  "orderableList"
-) as Ref<OrderableListExpose | null>;
+const orderableList = useTemplateRef("orderableList");
 
 const compact = computed(() => preferences.playlistDisplayMode === "compact");
 const itemHeight = computed(() => (compact.value ? 32 : 48));
@@ -241,13 +241,7 @@ function onSongRightClicked(event: MouseEvent, entry: PlaylistEntry) {
   contextMenu.value?.show(event);
 }
 
-interface ContextMenuExpose {
-  show: (event: MouseEvent) => void;
-}
-
-const contextMenu = useTemplateRef(
-  "contextMenu"
-) as Ref<ContextMenuExpose | null>;
+const contextMenu = useTemplateRef("contextMenu");
 const contextMenuItems = computed(() => {
   const selection = orderableList.value?.selection || [];
   const items: ContextMenuItem[] = [
@@ -260,7 +254,7 @@ const contextMenuItems = computed(() => {
     }
   ];
 
-  const selectedSongs = selection.map((s: PlaylistEntry) => s.path);
+  const selectedSongs = selection.map((s) => s.path);
   const albumURL = makeAlbumURLFromSongPaths(selectedSongs);
   if (albumURL) {
     items.push({

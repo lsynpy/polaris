@@ -21,6 +21,7 @@ import { useElementSize, useMediaQuery, useScroll } from "@vueuse/core";
 import { computed, ref, useTemplateRef } from "vue";
 
 import type { AlbumHeader } from "@/api/dto";
+import AlbumGridCell from "@/components/library/AlbumGridCell.vue";
 
 const props = defineProps<{
   albums: AlbumHeader[];
@@ -42,13 +43,13 @@ const { width: viewportWidth, height: viewportHeight } =
   useElementSize(viewport);
 const { y: scrollY } = useScroll(viewport);
 
-const sampleCell = useTemplateRef<{ $el: HTMLElement }>("sampleCell");
+const sampleCell = useTemplateRef("sampleCell");
 const itemWidth = computed(
   () =>
     (viewportWidth.value - (numColumns.value - 1) * gapSize.value) /
     numColumns.value
 );
-const { height: itemHeight } = useElementSize(sampleCell as any);
+const { height: itemHeight } = useElementSize(sampleCell);
 
 const trimmedAlbums = computed(() => {
   if (props.maxRows) {

@@ -1,7 +1,7 @@
 <template>
     <div class="leading-7 flex gap-x-8 text-sm font-semibold">
-        <div v-for="item of items" @click="_onItemClicked(item)" class="cursor-pointer">
-            <span v-text="item.label" :class="_itemClass(item)" />
+        <div v-for="item of items" @click="onItemClicked(item)" class="cursor-pointer">
+            <span v-text="item.label" :class="itemClass(item)" />
         </div>
     </div>
 </template>
@@ -20,7 +20,7 @@ function isSelected(item: SwitchTextItem) {
   return item.value === model.value;
 }
 
-function _itemClass(item: SwitchTextItem) {
+function itemClass(item: SwitchTextItem) {
   if (isSelected(item)) {
     return "text-accent-600 dark:text-accent-700";
   } else {
@@ -28,7 +28,7 @@ function _itemClass(item: SwitchTextItem) {
   }
 }
 
-function _onItemClicked(item: SwitchTextItem) {
+function onItemClicked(item: SwitchTextItem) {
   model.value = item.value;
 }
 </script>

@@ -31,6 +31,7 @@ import { computed, getCurrentInstance, type Ref, ref } from "vue";
 import VueApexCharts from "vue3-apexcharts";
 
 import type { Song } from "@/api/dto";
+import SectionTitle from "@/components/basic/SectionTitle.vue";
 import { usePlaybackStore } from "@/stores/playback";
 import { usePreferencesStore } from "@/stores/preferences";
 import { useSongsStore } from "@/stores/songs";
@@ -103,10 +104,10 @@ const lightMode = computed(() => preferences.polarity === "light");
 const accent600 = useCssVar(() =>
   lightMode.value ? "--accent-600" : "--accent-700"
 );
-const _surface0 = useCssVar(() =>
+const surface0 = useCssVar(() =>
   lightMode.value ? "--surface-0" : "--surface-900"
 );
-const _surface50 = useCssVar(() =>
+const surface50 = useCssVar(() =>
   lightMode.value ? "--surface-50" : "--surface-800"
 );
 const surface200 = useCssVar(() =>
@@ -116,7 +117,7 @@ const surface400 = useCssVar(() =>
   lightMode.value ? "--surface-400" : "--surface-600"
 );
 const surface500 = useCssVar("--surface-500");
-const _surface700 = useCssVar(() =>
+const surface700 = useCssVar(() =>
   lightMode.value ? "--surface-700" : "--surface-300"
 );
 

@@ -66,6 +66,11 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import { makeThumbnailURL } from "@/api/endpoints";
+import AlbumArt from "@/components/AlbumArt.vue";
+import Draggable from "@/components/basic/Draggable.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import SongField from "@/components/library/SongField.vue";
 import { DndPayloadAlbumKey } from "@/dnd";
 import { formatLongDuration, isFakeArtist } from "@/format";
 import { makeAlbumURLFromSong, makeArtistURL } from "@/router";

@@ -41,6 +41,12 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { getPlaylist } from "@/api/endpoints";
+import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
+import Error from "@/components/basic/Error.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import Switch from "@/components/basic/Switch.vue";
+import SongList from "@/components/SongList.vue";
 import { formatLongDuration } from "@/format";
 import { usePlaybackStore } from "@/stores/playback";
 import { usePlaylistsStore } from "@/stores/playlists";
@@ -75,7 +81,7 @@ watchImmediate(
     try {
       isLoading.value = true;
       await playlists.fetchPlaylist(props.name);
-    } catch (_e) {
+    } catch (e) {
       error.value = true;
     }
     isLoading.value = false;

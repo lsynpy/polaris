@@ -24,7 +24,11 @@
 import { useElementSize, useScroll, useVirtualList } from "@vueuse/core";
 import { computed, nextTick, onMounted, useTemplateRef, watch } from "vue";
 import { useRouter } from "vue-router";
-import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
+import ContextMenu, {
+  type ContextMenuItem
+} from "@/components/basic/ContextMenu.vue";
+import Draggable from "@/components/basic/Draggable.vue";
+import SongListRow from "@/components/SongListRow.vue";
 import { DndPayloadPaths } from "@/dnd";
 import { saveScrollState, useHistory } from "@/history";
 import useMultiselect from "@/multiselect";
@@ -137,9 +141,7 @@ function onSongRightClicked(e: MouseEvent, path: string) {
   contextMenu.value?.show(e);
 }
 
-const contextMenu = useTemplateRef<{ show: (event: MouseEvent) => void }>(
-  "contextMenu"
-);
+const contextMenu = useTemplateRef("contextMenu");
 const contextMenuItems = computed(() => {
   const items: ContextMenuItem[] = [
     {

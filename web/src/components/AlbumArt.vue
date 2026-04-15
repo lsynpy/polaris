@@ -20,6 +20,10 @@
 </template>
 
 <script setup lang="ts">
+import { UseImage } from "@vueuse/components";
+
+import Spinner from "@/components/basic/Spinner.vue";
+
 const { rounding = "rounded-md", ...props } = defineProps<{
   url: string | undefined;
   rounding?: string;

@@ -4,7 +4,7 @@
 			<template #jumbo v-if="album && isTinyScreen">
 				<div class="mb-4 flex gap-4 items-start shrink-0">
 					<div class="flex flex-col basis-[105px] shrink-0">
-						<Draggable :make-payload="() => new DndPayloadAlbum(album as Album)" class="cursor-grab">
+						<Draggable :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)" class="cursor-grab">
 							<AlbumArt :url="artworkURL" />
 							<template #drag-preview>
 								<AlbumDragPreview :album="album" />
@@ -47,7 +47,7 @@
 
 			<div class="min-h-0 flex items-start gap-8">
 				<div class="basis-2/5 shrink-0 hidden xl:block">
-					<Draggable :make-payload="() => new DndPayloadAlbum(album as Album)" class="cursor-grab">
+					<Draggable :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)" class="cursor-grab">
 						<AlbumArt :url="artworkURL" rounding="rounded-lg"
 							class="shadow-lg shadow-ls-100 dark:shadow-ds-900" />
 						<template #drag-preview>
@@ -98,9 +98,20 @@ import { useAsyncState, useMediaQuery } from "@vueuse/core";
 import { computed, useTemplateRef, watch } from "vue";
 import { useRouter } from "vue-router";
 
-import type { Album, AlbumKey, Song } from "@/api/dto";
+import { Album as AlbumDTO, type AlbumKey, type Song } from "@/api/dto";
 import { getAlbum, makeThumbnailURL } from "@/api/endpoints";
-import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
+import AlbumArt from "@/components/AlbumArt.vue";
+import Badge from "@/components/basic/Badge.vue";
+import ContextMenu, {
+  type ContextMenuItem
+} from "@/components/basic/ContextMenu.vue";
+import Draggable from "@/components/basic/Draggable.vue";
+import Error from "@/components/basic/Error.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import SectionTitle from "@/components/basic/SectionTitle.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import AlbumDragPreview from "@/components/library/AlbumDragPreview.vue";
+import AlbumSong from "@/components/library/AlbumSong.vue";
 import { DndPayloadAlbum, DndPayloadSongs } from "@/dnd";
 import { isFakeArtist } from "@/format";
 import { saveScrollState, useHistory } from "@/history";
@@ -116,11 +127,8 @@ const router = useRouter();
 const props = defineProps<{ albumKey: AlbumKey }>();
 
 const viewport = useTemplateRef("viewport");
-const albumSongs =
-  useTemplateRef<{ song: Song; $el: HTMLElement }[]>("albumSongs");
-const contextMenu = useTemplateRef<{ show: (event: MouseEvent) => void }>(
-  "contextMenu"
-);
+const albumSongs = useTemplateRef("albumSongs");
+const contextMenu = useTemplateRef("contextMenu");
 
 const isTinyScreen = useMediaQuery("(width < 80rem)");
 

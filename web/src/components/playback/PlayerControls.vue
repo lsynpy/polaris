@@ -50,6 +50,9 @@
 <script setup lang="ts">
 import { refDebounced } from "@vueuse/core";
 import { computed, ref, watch } from "vue";
+
+import Slider from "@/components/basic/Slider.vue";
+import Spinner from "@/components/basic/Spinner.vue";
 import { usePlaybackStore } from "@/stores/playback";
 
 const playback = usePlaybackStore();

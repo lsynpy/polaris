@@ -1,6 +1,6 @@
 <template>
 	<Teleport defer to="#floating-widget">
-		<div class="absolute" :style="_positionStyle">
+		<div class="absolute" :style="positionStyle">
 			<slot />
 		</div>
 	</Teleport>
@@ -38,7 +38,7 @@ bus.on((event) => {
   }
 });
 
-const _positionStyle = computed(() => {
+const positionStyle = computed(() => {
   return {
     left: `${props.position[0]}px`,
     top: `${props.position[1]}px`

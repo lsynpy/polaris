@@ -24,6 +24,9 @@ import {
   watch
 } from "vue";
 import { makeAudioURL, makeThumbnailURL } from "@/api/endpoints";
+import PlayerAlbum from "@/components/playback/PlayerAlbum.vue";
+import PlayerControls from "@/components/playback/PlayerControls.vue";
+import PlayerSong from "@/components/playback/PlayerSong.vue";
 import { formatSong } from "@/format";
 import notify from "@/notify";
 import { usePlaybackStore } from "@/stores/playback";
@@ -104,7 +107,7 @@ function playFromStart() {
     try {
       await htmlAudio.value.play();
       htmlAudio.value.currentTime = 0;
-    } catch (_e) {
+    } catch (e) {
       // https://developer.chrome.com/blog/play-request-was-interrupted/
       // This .play() promise will be rejected if we skip to a different
       // song while it is in progress.

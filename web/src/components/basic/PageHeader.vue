@@ -28,6 +28,9 @@
 </template>
 
 <script setup lang="ts" generic="T">
+import Button from "@/components/basic/Button.vue";
+import SwitchText from "@/components/basic/SwitchText.vue";
+
 export type PageAction = {
   label?: string;
   icon?: string;
@@ -49,5 +52,5 @@ defineProps<{
   viewModes?: PageViewMode<T>[];
 }>();
 
-const _viewMode = defineModel<T>("viewMode", { required: false });
+const viewMode = defineModel<T>("viewMode", { required: false });
 </script>

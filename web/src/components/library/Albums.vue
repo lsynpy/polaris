@@ -55,14 +55,20 @@ import {
   ref,
   type ShallowRef,
   toRaw,
-  unref,
   useTemplateRef,
   watch
 } from "vue";
 
 import type { AlbumHeader } from "@/api/dto";
 import { getAlbums, getRandomAlbums, getRecentAlbums } from "@/api/endpoints";
-import type { PageViewMode } from "@/components/basic/PageHeader.vue";
+import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
+import Error from "@/components/basic/Error.vue";
+import InputText from "@/components/basic/InputText.vue";
+import PageHeader, {
+  type PageViewMode
+} from "@/components/basic/PageHeader.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import AlbumGrid from "@/components/library/AlbumGrid.vue";
 import { saveScrollState, useHistory } from "@/history";
 
 type ViewMode = "recent" | "random" | "all";
@@ -76,10 +82,6 @@ const viewModes: PageViewMode<ViewMode>[] = [
 const albums: ShallowRef<AlbumHeader[]> = ref([]);
 const fetchedAll = ref(false);
 const seed = ref(generateSeed());
-
-const grid = useTemplateRef("grid") as ShallowRef<
-  { numColumns: number; contentHeight: number; $el: HTMLElement } | undefined
->;
 
 const {
   state: fetchedAlbums,
@@ -104,9 +106,10 @@ const {
   { immediate: false }
 );
 
-const viewport = computed(() => unref(grid)?.$el as unknown as HTMLElement);
+const grid = useTemplateRef("grid");
+const viewport = computed(() => grid.value?.$el);
 const { y: scrollY } = useScroll(viewport);
-const { height: viewportHeight } = useElementSize(viewport);
+const { height: viewportHeight } = useElementSize(grid);
 const gridContentHeight = computed(() => grid.value?.contentHeight);
 
 const needsMoreAlbums = computed(() => {

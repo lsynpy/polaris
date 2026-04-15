@@ -1,17 +1,17 @@
 <template>
     <div class="relative min-h-0">
-        <div :list="visibleNodes" v-bind="containerProps" @keydown="_onKeyDown" class="h-full">
+        <div :list="visibleNodes" v-bind="containerProps" @keydown="onKeyDown" class="h-full">
             <div v-bind="wrapperProps" ref="virtualList" tabindex="-1" class="outline-none">
                 <VirtualTreeNode v-for="node in virtualNodes" :style="`height: ${itemHeight}px`" :node="node.data"
                     tabindex="-1" @node-toggle="toggleNode" @click="clickNode($event, node.data)"
-                    @contextmenu="_onNodeRightClick($event, node.data)" @dblclick="_onNodeDoubleClick($event, node.data)"
-                    draggable="true" @dragstart="_onDragStart($event, node.data)" @drag="_onDrag($event)"
-                    @dragend="_onDragEnd($event)" :expanded="expandedKeys.has(node.data.key)"
+                    @contextmenu="onNodeRightClick($event, node.data)" @dblclick="onNodeDoubleClick($event, node.data)"
+                    draggable="true" @dragstart="onDragStart($event, node.data)" @drag="onDrag($event)"
+                    @dragend="onDragEnd($event)" :expanded="expandedKeys.has(node.data.key)"
                     :focused="focusedKey == node.data.key" :selected="selectedKeys.has(node.data.key)">
                 </VirtualTreeNode>
             </div>
         </div>
-        <div v-if="findQuery.length" class="absolute right-0 bottom-0" v-on-click-outside="_clearFindQuery">
+        <div v-if="findQuery.length" class="absolute right-0 bottom-0" v-on-click-outside="clearFindQuery">
             <div class="relative text-ls-900 dark:text-ds-400">
                 <label
                     class="absolute -top-2 left-2 rounded-sm bg-ls-50 dark:bg-ds-900 px-1 text-xs font-medium">Find</label>
@@ -24,8 +24,11 @@
 </template>
 
 <script setup lang="ts" generic="T extends Node">
+import { vOnClickOutside } from "@vueuse/components";
 import { useVirtualList } from "@vueuse/core";
 import { computed, ref, useTemplateRef, watch } from "vue";
+
+import VirtualTreeNode from "@/components/basic/VirtualTreeNode.vue";
 import { saveScrollState, useHistory } from "@/history";
 import useMultiselect from "@/multiselect";
 
@@ -126,7 +129,7 @@ watch(findMatch, () => {
   }
 });
 
-function _clearFindQuery() {
+function clearFindQuery() {
   findQuery.value = "";
 }
 
@@ -143,36 +146,36 @@ function toggleNode(node: T) {
   virtualList.value?.focus();
 }
 
-function _onNodeDoubleClick(_event: MouseEvent, node: T) {
+function onNodeDoubleClick(_event: MouseEvent, node: T) {
   if (!node.leaf) {
     toggleNode(node);
   }
   emit("node-double-click", node);
 }
 
-function _onNodeRightClick(event: MouseEvent, node: T) {
+function onNodeRightClick(event: MouseEvent, node: T) {
   if (!selectedKeys.value.has(node.key)) {
     selectNode(node);
   }
   emit("node-right-click", event, node);
 }
 
-function _onDragStart(event: DragEvent, node: T) {
+function onDragStart(event: DragEvent, node: T) {
   if (!selectedKeys.value.has(node.key)) {
     selectNode(node);
   }
   emit("nodes-drag-start", event, selection.value);
 }
 
-function _onDrag(event: DragEvent) {
+function onDrag(event: DragEvent) {
   emit("nodes-drag", event);
 }
 
-function _onDragEnd(event: DragEvent) {
+function onDragEnd(event: DragEvent) {
   emit("nodes-drag-end", event);
 }
 
-function _onKeyDown(event: KeyboardEvent) {
+function onKeyDown(event: KeyboardEvent) {
   const isPrintable = event.key.length === 1 && !event.ctrlKey;
   if (isPrintable) {
     findQuery.value += event.key;

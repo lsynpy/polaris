@@ -19,6 +19,10 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useMountDirsStore } from "@/stores/mount-dirs";
 import { useUsersStore } from "@/stores/users";
+import Finish from "./Finish.vue";
+import Mount from "./Mount.vue";
+import User from "./User.vue";
+import Welcome from "./Welcome.vue";
 
 type Step = "welcome" | "mount" | "user" | "finish";
 

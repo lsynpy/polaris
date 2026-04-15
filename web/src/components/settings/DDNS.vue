@@ -23,6 +23,10 @@
 import { computed, onMounted, ref } from "vue";
 
 import { getSettings, putSettings } from "@/api/endpoints";
+import Button from "@/components/basic/Button.vue";
+import InputText from "@/components/basic/InputText.vue";
+import Section from "@/components/basic/Section.vue";
+import SectionTitle from "@/components/basic/SectionTitle.vue";
 
 const url = ref("");
 

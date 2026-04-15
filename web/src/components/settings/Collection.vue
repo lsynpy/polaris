@@ -49,6 +49,12 @@ import {
   putSettings,
   triggerIndex
 } from "@/api/endpoints";
+import Button from "@/components/basic/Button.vue";
+import InputText from "@/components/basic/InputText.vue";
+import Section from "@/components/basic/Section.vue";
+import SectionTitle from "@/components/basic/SectionTitle.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import IndexStatus from "@/components/settings/IndexStatus.vue";
 import { useMountDirsStore } from "@/stores/mount-dirs";
 
 const mountDirs = useMountDirsStore();
@@ -73,7 +79,7 @@ const albumArtPatternError = computed(() => {
       new RegExp(settings.value.album_art_pattern);
     }
     return false;
-  } catch (_e) {
+  } catch (e) {
     return true;
   }
 });

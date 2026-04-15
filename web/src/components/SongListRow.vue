@@ -46,6 +46,7 @@ import { computed } from "vue";
 
 import type { Song } from "@/api/dto";
 import { makeThumbnailURL } from "@/api/endpoints";
+import AlbumArt from "@/components/AlbumArt.vue";
 import { formatArtists, formatDuration, formatTitle } from "@/format";
 import { useSongsStore } from "@/stores/songs";
 
@@ -69,7 +70,7 @@ const artworkURL = computed(() =>
 const rowClass = computed(() => {
   const isOdd = props.index % 2 === 1;
 
-  let background: string | string[];
+  let background;
   if (props.selected) {
     background = "bg-accent-100 dark:bg-accent-900";
   } else if (props.compact) {
@@ -83,7 +84,7 @@ const rowClass = computed(() => {
     ];
   }
 
-  let text: string;
+  let text;
   if (props.isCurrent && props.selected) {
     text = "text-accent-700 dark:text-accent-100";
   } else if (props.selected) {

@@ -60,7 +60,6 @@ import {
   computed,
   type Ref,
   ref,
-  type ShallowRef,
   shallowRef,
   useTemplateRef,
   watch
@@ -69,8 +68,16 @@ import { useRouter } from "vue-router";
 
 import type { BrowserEntry } from "@/api/dto";
 import { browse, flatten, search } from "@/api/endpoints";
-import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
+import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
+import ContextMenu, {
+  type ContextMenuItem
+} from "@/components/basic/ContextMenu.vue";
+import Error from "@/components/basic/Error.vue";
+import InputText from "@/components/basic/InputText.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import Spinner from "@/components/basic/Spinner.vue";
 import type { Node } from "@/components/basic/VirtualTree.vue";
+import VirtualTree from "@/components/basic/VirtualTree.vue";
 import { DndPayloadFiles, useDragAndDrop } from "@/dnd";
 import { getPathTail } from "@/format";
 import { useHistory } from "@/history";
@@ -139,11 +146,9 @@ watch(filterResults, () => {
 
   for (let path of filterResults.value || []) {
     let depth = 0;
-    let match: RegExpExecArray | null;
+    let match;
     let skippedRoot = false;
-    while (true) {
-      match = separator.exec(path);
-      if (match === null) break;
+    while ((match = separator.exec(path)) !== null) {
       const directory = path.substring(0, match.index);
       if (!skippedRoot && treeModel.value[0].key !== directory) {
         skippedRoot = true;
@@ -173,12 +178,8 @@ watch(filterResults, () => {
   filterTreeModel.value = nodes;
 });
 
-const tree = useTemplateRef("tree") as ShallowRef<
-  { selection: Node[] } | undefined
->;
-const filteredTree = useTemplateRef("filteredTree") as ShallowRef<
-  { selection: Node[] } | undefined
->;
+const tree = useTemplateRef("tree");
+const filteredTree = useTemplateRef("filteredTree");
 const draggedFiles: Ref<DndPayloadFiles | null> = ref(null);
 
 async function openDirectory(node: Node) {
@@ -194,7 +195,7 @@ async function openDirectory(node: Node) {
   let children;
   try {
     children = await browse(node.key || "").then((f) => makeTreeNodes(f, node));
-  } catch (_e) {}
+  } catch (e) {}
 
   {
     let parentIndex = treeModel.value.findIndex((n) => n.key === node.key);
@@ -290,9 +291,7 @@ function playSong(node: Node) {
   }
 }
 
-const contextMenu = useTemplateRef("contextMenu") as ShallowRef<
-  { show: (event: MouseEvent) => void } | undefined
->;
+const contextMenu = useTemplateRef("contextMenu");
 const contextMenuItems = computed(() => {
   const items: ContextMenuItem[] = [
     {

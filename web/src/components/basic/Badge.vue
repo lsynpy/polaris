@@ -5,8 +5,8 @@
         ring-1 ring-inset
         ring-ls-200 dark:ring-white/10
         hover:bg-ls-100 hover:dark:bg-ds-700
-        " :class="_sizes[size]">
-        <svg class="h-1.5 w-1.5" viewBox="0 0 6 6" :class="_palette">
+        " :class="sizes[size]">
+        <svg class="h-1.5 w-1.5" viewBox="0 0 6 6" :class="palette">
             <circle cx="3" cy="3" r="3" />
         </svg>
         {{ label }}
@@ -62,7 +62,7 @@ const palettes = {
   rose: "fill-rose-500 dark:fill-rose-600"
 };
 
-const _sizes = {
+const sizes = {
   md: "gap-x-1.5 px-2 py-1 font-medium text-xs",
   lg: "gap-x-2 px-3 py-1.5 font-medium text-sm"
 };
@@ -78,7 +78,7 @@ function hash(s: string): number {
   );
 }
 
-const _palette = computed(() => {
+const palette = computed(() => {
   let palette = palettes[props.color || "red"];
   if (props.autoColor) {
     const tints = Object.keys(palettes);

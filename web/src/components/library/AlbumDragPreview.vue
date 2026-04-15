@@ -10,6 +10,7 @@
 <script setup lang="ts">
 import type { AlbumHeader } from "@/api/dto";
 import { makeThumbnailURL } from "@/api/endpoints";
+import AlbumArt from "@/components/AlbumArt.vue";
 
 defineProps<{ album: AlbumHeader }>();
 </script>

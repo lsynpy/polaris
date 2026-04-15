@@ -129,6 +129,17 @@ import { useAsyncState, watchPausable } from "@vueuse/core";
 import { nextTick, onMounted, type Ref, ref, watch } from "vue";
 
 import { search } from "@/api/endpoints";
+import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
+import Button from "@/components/basic/Button.vue";
+import ButtonGroup from "@/components/basic/ButtonGroup.vue";
+import Error from "@/components/basic/Error.vue";
+import InputText from "@/components/basic/InputText.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import SectionTitle from "@/components/basic/SectionTitle.vue";
+import SidePanel from "@/components/basic/SidePanel.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import Switch from "@/components/basic/Switch.vue";
+import SongList from "@/components/SongList.vue";
 import { pluralize } from "@/format";
 import { usePlaybackStore } from "@/stores/playback";
 import { usePreferencesStore } from "@/stores/preferences";

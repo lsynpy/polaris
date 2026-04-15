@@ -16,7 +16,7 @@
                 class="cursor-pointer hover:underline hover:text-accent-600 overflow-hidden text-ellipsis">
                 <span>{{ formatTitle(song) }}</span>
                 <span class="text-ls-400 dark:text-ds-500"
-                    v-if="miniPlayer && song.artists && song.album_artists && !arraysEqual(song.artists, song.album_artists)">
+                    v-if="miniPlayer && song.artists && song.album_artists && !equals(song.artists, song.album_artists)">
                     ({{ formatArtists(song.artists) }})
                 </span>
             </span>
@@ -24,9 +24,9 @@
         </div>
         <div class="flex grow items-center gap-4 text-xs text-ls-700 dark:text-ds-400">
             <div class="w-10 text-right">
-                {{ currentTrack ? formatDuration($props.secondsPlayed) : "-:--" }}
+                {{ currentTrack ? formatDuration(props.secondsPlayed) : "-:--" }}
             </div>
-            <Waveform :path="currentTrack?.path" :duration="duration" :progress="progress" @seek="(s: number) => $emit('seek', s)"
+            <Waveform :path="currentTrack?.path" :duration="duration" :progress="progress" @seek="s => emit('seek', s)"
                 class="grow h-8" />
             <div class="w-10">
                 {{ song && song.duration ? formatDuration(song.duration) : "-:--" }}
@@ -36,8 +36,11 @@
 </template>
 
 <script setup lang="ts">
+import equals from "array-equal";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
+
+import Waveform from "@/components/playback/Waveform.vue";
 import {
   formatArtists,
   formatDuration,
@@ -97,10 +100,5 @@ function onArtistClicked(artist: Artist) {
   if (artist.url) {
     router.push(artist.url).catch((_err) => {});
   }
-}
-
-function arraysEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((val, i) => val === b[i]);
 }
 </script>

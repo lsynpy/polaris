@@ -56,6 +56,12 @@ import {
   exportPlaylists as doExportPlaylists,
   getPlaylist
 } from "@/api/endpoints";
+import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
+import Button from "@/components/basic/Button.vue";
+import Error from "@/components/basic/Error.vue";
+import InputText from "@/components/basic/InputText.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import Spinner from "@/components/basic/Spinner.vue";
 import { formatLongDuration } from "@/format";
 import { saveScrollState, useHistory } from "@/history";
 import notify from "@/notify";
@@ -73,7 +79,7 @@ onMounted(async () => {
   try {
     isLoading.value = true;
     await playlists.fetchList();
-  } catch (_e) {
+  } catch (e) {
     error.value = true;
   }
   isLoading.value = false;

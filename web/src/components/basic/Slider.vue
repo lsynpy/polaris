@@ -3,8 +3,8 @@
         <div v-if="label" class="block mb-2 text-sm font-medium leading-6 text-ls-900 dark:text-ds-0">
             {{ label }}
         </div>
-        <div ref="root" @click="snapToCursor" @keydown="_onKeyDown" tabindex="-1"
-            class="cursor-pointer group relative rounded-full bg-ls-300 dark:bg-ds-700" :class="_sizes[size]">
+        <div ref="root" @click="snapToCursor" @keydown="onKeyDown" tabindex="-1"
+            class="cursor-pointer group relative rounded-full bg-ls-300 dark:bg-ds-700" :class="sizes[size]">
             <slot name="fill">
                 <div class="absolute h-full rounded-full bg-accent-600 dark:bg-accent-700"
                     :style="`width: ${100 * unscale(model)}%`" />
@@ -61,7 +61,7 @@ watch(pressed, (down) => {
   }
 });
 
-const _sizes = {
+const sizes = {
   base: "h-1.5",
   lg: "h-3.5"
 };
@@ -74,7 +74,7 @@ function unscale(value: number) {
   return (value - min) / (max - min);
 }
 
-function _onKeyDown(event: KeyboardEvent) {
+function onKeyDown(event: KeyboardEvent) {
   switch (event.code) {
     case "ArrowLeft":
       model.value = scale(unscale(model.value) - 0.02);

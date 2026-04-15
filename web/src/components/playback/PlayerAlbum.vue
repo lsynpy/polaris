@@ -41,6 +41,7 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import { makeThumbnailURL } from "@/api/endpoints";
+import AlbumArt from "@/components/AlbumArt.vue";
 import { isFakeArtist } from "@/format";
 import { makeAlbumURLFromSong, makeArtistURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";

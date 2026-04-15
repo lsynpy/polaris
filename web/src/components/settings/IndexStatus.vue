@@ -31,6 +31,9 @@ import { useRafFn, useTimeAgo } from "@vueuse/core";
 import { computed, ref } from "vue";
 
 import type { IndexStatus as Status } from "@/api/dto";
+import Button from "@/components/basic/Button.vue";
+import SectionTitle from "@/components/basic/SectionTitle.vue";
+import { pluralize } from "@/format";
 
 const props = defineProps<{ status: Status }>();
 
@@ -103,8 +106,4 @@ const timing = computed(() => {
       return `Scanned ${end.value}`;
   }
 });
-
-function pluralize(word: string, count: number) {
-  return count === 1 ? word : `${word}s`;
-}
 </script>

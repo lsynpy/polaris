@@ -19,6 +19,9 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+
+import Button from "@/components/basic/Button.vue";
+import InputText from "@/components/basic/InputText.vue";
 import { useUserStore } from "@/stores/user";
 
 const user = useUserStore();

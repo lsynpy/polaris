@@ -1,13 +1,13 @@
 <template>
-    <div ref="viewport" class="overflow-y-auto overflow-x-hidden" tabindex="-1" @keydown="_onKeyDown" @dragenter.prevent
-        @dragover.prevent @drop="_onDrop">
+    <div ref="viewport" class="overflow-y-auto overflow-x-hidden" tabindex="-1" @keydown="onKeyDown" @dragenter.prevent
+        @dragover.prevent @drop="onDrop">
         <div ref="wrapper" class="relative min-h-full divide-ls-200 dark:border-ds-700" :class="{ 'divide-y': divider }"
             :style="{ height: `${props.items.length * rowHeight}px` }">
             <TransitionGroup :name="isReordering ? 'reorder' : 'drop'" :css="isReordering">
                 <div v-for="item, index of virtualItems" @click="e => clickItem(e, item)" :key="item.key"
-                    :draggable="true" @dragstart="e => _onDragStart(e, item)" @dragend="_onDragEnd"
+                    :draggable="true" @dragstart="e => onDragStart(e, item)" @dragend="onDragEnd"
                     class="absolute w-full"
-                    :style="{ translate: `0 ${_rowOffset(firstVirtualIndex + index)}px`, height: `${itemHeight}px` }">
+                    :style="{ translate: `0 ${rowOffset(firstVirtualIndex + index)}px`, height: `${itemHeight}px` }">
 
                     <slot name="drop-preview" v-if="item.isDropPreview">
                         <div :style="{ height: itemHeight + 'px' }">Drop Preview</div>
@@ -79,7 +79,7 @@ const mouseLastPressed = useLastChanged(mousePressed, { initialValue: 0 });
 const dividerHeight = computed(() => (divider ? 1 : 0));
 const rowHeight = computed(() => props.itemHeight + dividerHeight.value);
 
-function _rowOffset(index: number) {
+function rowOffset(index: number) {
   return index * rowHeight.value - (index > 0 ? dividerHeight.value : 0);
 }
 
@@ -200,7 +200,7 @@ function isSelected(key: string | number) {
   return selectedKeys.value.has(key);
 }
 
-function _onDragStart(event: DragEvent, item: T) {
+function onDragStart(event: DragEvent, item: T) {
   isReordering.value = true;
   event.dataTransfer?.setDragImage(blankImage, 0, 0);
   if (!selectedKeys.value.has(item.key)) {
@@ -208,18 +208,18 @@ function _onDragStart(event: DragEvent, item: T) {
   }
 }
 
-function _onDragEnd() {
+function onDragEnd() {
   isReordering.value = false;
   if (dropIndex.value !== undefined) {
     emit("list-reorder", selection.value, dropIndex.value);
   }
 }
 
-function _onDrop() {
+function onDrop() {
   emit("list-drop", dropIndex.value || 0);
 }
 
-function _onKeyDown(event: KeyboardEvent) {
+function onKeyDown(event: KeyboardEvent) {
   multiselect.onKeyDown(event);
   switch (event.code) {
     case "Delete":

@@ -34,9 +34,12 @@ import { useRouter } from "vue-router";
 
 import type { AlbumHeader, AlbumKey } from "@/api/dto";
 import { getAlbum, makeThumbnailURL } from "@/api/endpoints";
+import AlbumArt from "@/components/AlbumArt.vue";
+import ContextMenu from "@/components/basic/ContextMenu.vue";
+import Draggable from "@/components/basic/Draggable.vue";
 import AlbumDragPreview from "@/components/library/AlbumDragPreview.vue";
 import { DndPayloadAlbumKey } from "@/dnd";
-import { isFakeArtist, pluralize } from "@/format";
+import { isFakeArtist } from "@/format";
 import { makeAlbumURL, makeArtistURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
 

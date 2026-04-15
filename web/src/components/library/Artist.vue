@@ -57,6 +57,15 @@ import { useRouter } from "vue-router";
 
 import type { AlbumHeader, AlbumKey } from "@/api/dto";
 import { getAlbum, getArtist } from "@/api/endpoints";
+import Button from "@/components/basic/Button.vue";
+import ButtonGroup from "@/components/basic/ButtonGroup.vue";
+import Error from "@/components/basic/Error.vue";
+import PageHeader from "@/components/basic/PageHeader.vue";
+import SectionTitle from "@/components/basic/SectionTitle.vue";
+import Spinner from "@/components/basic/Spinner.vue";
+import Switch from "@/components/basic/Switch.vue";
+import AlbumGrid from "@/components/library/AlbumGrid.vue";
+import Timeline from "@/components/library/Timeline.vue";
 import { saveScrollState, useHistory } from "@/history";
 import { usePlaybackStore } from "@/stores/playback";
 import { usePreferencesStore } from "@/stores/preferences";

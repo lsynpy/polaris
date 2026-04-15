@@ -1,7 +1,7 @@
 <template>
-    <button type="button" :class="_buttonClass" :disabled="disabled"
+    <button type="button" :class="buttonClass" :disabled="disabled"
         class="inline-flex items-center justify-center gap-x-1.5 rounded-md text-sm font-semibold whitespace-nowrap">
-        <span v-if="icon" class="material-icons-round" :class="_iconClass">
+        <span v-if="icon" class="material-icons-round" :class="iconClass">
             {{ icon }}
         </span>
         <span v-if="label?.length" v-text="label" />
@@ -63,7 +63,7 @@ let sizes = {
   xl: "px-3.5 py-2.5"
 };
 
-const _buttonClass = computed(() => {
+const buttonClass = computed(() => {
   const palette = props.disabled ? palettes.disabled : palettes[severity];
   return [
     props.disabled
@@ -74,7 +74,7 @@ const _buttonClass = computed(() => {
   ];
 });
 
-const _iconClass = computed(() => {
+const iconClass = computed(() => {
   if (props.disabled) {
     return "text-ls-200 dark:text-ds-500";
   } else if (severity === "tertiary") {

@@ -66,6 +66,10 @@
           "correctness": {
             "noUnusedVariables": "off",
             "noUnusedImports": "off"
+          },
+          "suspicious": {
+            "noShadowRestrictedNames": "off",
+            "noAssignInExpressions": "warn"
           }
         }
       }

@@ -28,6 +28,8 @@
 <script setup lang="ts">
 import { computed, type Ref, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+
+import SidebarItem from "@/components/SidebarItem.vue";
 import { useUserStore } from "@/stores/user";
 
 const route = useRoute();

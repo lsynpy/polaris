@@ -14,4 +14,9 @@
 </template>
 
 <script setup lang="ts">
+import FloatingWidgetSetup from "@/components/basic/FloatingWidgetSetup.vue";
+import SidePanelSetup from "@/components/basic/SidePanelSetup.vue";
+import Player from "@/components/playback/Player.vue";
+import Playlist from "@/components/playback/Playlist.vue";
+import Sidebar from "@/components/Sidebar.vue";
 </script>

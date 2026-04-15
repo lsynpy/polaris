@@ -94,7 +94,7 @@ watch(
       loading.value = true;
       try {
         peaks.value = await get_peaks(props.path);
-      } catch (_e) {
+      } catch (e) {
         peaks.value = null;
       }
       loading.value = false;

@@ -34,6 +34,10 @@
 import { computed, onMounted, type Ref, ref } from "vue";
 
 import type { NewUser } from "@/api/dto";
+import Button from "@/components/basic/Button.vue";
+import InputText from "@/components/basic/InputText.vue";
+import Section from "@/components/basic/Section.vue";
+import User from "@/components/settings/User.vue";
 import { useUsersStore } from "@/stores/users";
 
 const users = useUsersStore();

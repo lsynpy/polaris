@@ -15,7 +15,7 @@
 <script setup lang="ts" generic="T extends DnDPayload">
 import { type Ref, ref } from "vue";
 
-import { type DnDPayload, useDragAndDrop } from "@/dnd";
+import { DnDPayload, useDragAndDrop } from "@/dnd";
 
 const {
   allowPointerEventsInside = false,
@@ -38,8 +38,7 @@ const draggablePayload: Ref<T | null> = ref(null);
 
 function onDragStart(event: DragEvent) {
   emits("draggableStart", event);
-  const payload = props.makePayload();
-  draggablePayload.value = payload;
-  startDrag(event, payload);
+  draggablePayload.value = props.makePayload();
+  startDrag(event, draggablePayload.value);
 }
 </script>

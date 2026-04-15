@@ -21,6 +21,9 @@ import { type Ref, ref } from "vue";
 
 import type { MountDir } from "@/api/dto";
 import { triggerIndex } from "@/api/endpoints";
+import Button from "@/components/basic/Button.vue";
+import InputText from "@/components/basic/InputText.vue";
+import Step from "@/components/initial-setup/Step.vue";
 import { useMountDirsStore } from "@/stores/mount-dirs";
 
 const mountDirs = useMountDirsStore();
