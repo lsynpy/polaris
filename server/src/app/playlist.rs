@@ -142,6 +142,11 @@ impl Manager {
 		owner: &str,
 		virtual_paths: Vec<PathBuf>,
 	) -> Result<(), Error> {
+		let unique_paths: std::collections::HashSet<_> = virtual_paths.iter().collect();
+		if unique_paths.len() != virtual_paths.len() {
+			return Err(Error::DuplicateTrackInPlaylist);
+		}
+
 		let songs = self
 			.index_manager
 			.get_songs(virtual_paths)

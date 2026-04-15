@@ -147,6 +147,8 @@ pub enum Error {
 	AuthorizationTokenEncoding,
 	#[error("Failed to encode Branca token")]
 	BrancaTokenEncoding,
+	#[error("Duplicate track in playlist")]
+	DuplicateTrackInPlaylist,
 }
 
 #[derive(Clone)]

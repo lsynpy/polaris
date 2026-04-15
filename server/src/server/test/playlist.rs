@@ -58,7 +58,7 @@ async fn save_playlist_large() {
 	service.login().await;
 
 	let tracks = (0..100_000)
-		.map(|_| Path::new("My Super Cool Song").to_owned())
+		.map(|i| Path::new(&format!("My Super Cool Song {i}")).to_owned())
 		.collect();
 	let my_playlist = dto::SavePlaylistInput { tracks };
 	let request = protocol::save_playlist(TEST_PLAYLIST_NAME, my_playlist);
@@ -99,6 +99,26 @@ async fn get_playlist_golden_path() {
 	let response = service.fetch_json::<_, dto::Playlist>(&request).await;
 	assert_eq!(response.status(), StatusCode::OK);
 	assert_eq!(response.body().songs.paths.len(), 2)
+}
+
+#[tokio::test]
+async fn save_playlist_with_duplicate_tracks_returns_conflict() {
+	let mut service = TestServiceType::new(&test_name!()).await;
+	service.complete_initial_setup().await;
+	service.login_admin().await;
+	service.index().await;
+	service.login().await;
+
+	let duplicate_playlist = dto::SavePlaylistInput {
+		#[rustfmt::skip]
+		tracks: vec![
+			[TEST_MOUNT_NAME, "Khemmis", "Hunted", "02 - Candlelight.mp3"].iter().collect(),
+			[TEST_MOUNT_NAME, "Khemmis", "Hunted", "02 - Candlelight.mp3"].iter().collect(),
+		],
+	};
+	let request = protocol::save_playlist(TEST_PLAYLIST_NAME, duplicate_playlist);
+	let response = service.fetch(&request).await;
+	assert_eq!(response.status(), StatusCode::CONFLICT);
 }
 
 #[tokio::test]

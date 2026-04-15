@@ -95,6 +95,8 @@ pub enum APIError {
 	VirtualPathNotFound(PathBuf),
 	#[error("Could not map virtual->real file path: `{0}`")]
 	RealPathNotFound(PathBuf),
+	#[error("Duplicate track in playlist")]
+	DuplicateTrackInPlaylist,
 }
 
 impl From<app::Error> for APIError {
@@ -166,6 +168,7 @@ impl From<app::Error> for APIError {
 			app::Error::PasswordHashing => APIError::PasswordHashing,
 			app::Error::AuthorizationTokenEncoding => APIError::AuthorizationTokenEncoding,
 			app::Error::BrancaTokenEncoding => APIError::BrancaTokenEncoding,
+			app::Error::DuplicateTrackInPlaylist => APIError::DuplicateTrackInPlaylist,
 		}
 	}
 }
