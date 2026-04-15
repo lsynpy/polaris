@@ -12,8 +12,9 @@ test("Can save, retrieve, delete playlist", async ({ page }) => {
       .click({ force: true });
     await page.getByTestId("play-all").click();
     await page.getByTestId("save-playlist").click();
-    await page.getByLabel("playlist name").fill(name);
+    await page.getByLabel("Playlist Name").fill(name);
     await page.getByTestId("submit-save-playlist").click();
+    await expect(page.locator("form")).not.toBeVisible();
 
     await page.getByTestId("sidebar").getByTestId("playlists").click();
     await page.getByTestId("saved-playlist").getByText(name).click();
