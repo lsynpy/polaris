@@ -1,5 +1,5 @@
 <template>
-    <div data-pw="album-art" class="w-full h-full">
+    <div :data-pw="testID || 'album-art'" class="w-full h-full">
         <UseImage :src="url || ''" class="w-full h-full object-cover" :class="rounding">
             <template #loading>
                 <div class="bg-ls-200 text-ls-400 dark:bg-ds-950/30 dark:text-ds-600 w-full h-full aspect-square flex items-center justify-center"
@@ -27,5 +27,6 @@ import Spinner from "@/components/basic/Spinner.vue";
 const { rounding = "rounded-md", ...props } = defineProps<{
   url: string | undefined;
   rounding?: string;
+  testID?: string;
 }>();
 </script>

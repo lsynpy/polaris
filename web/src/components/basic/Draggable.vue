@@ -1,6 +1,6 @@
 <template>
     <div class="w-full h-full">
-        <div class="w-full h-full" :draggable="!disabled" @dragstart="onDragStart" @drag="updateDrag"
+        <div class="w-full h-full" :data-pw="testId" :draggable="!disabled" @dragstart="onDragStart" @drag="updateDrag"
             @dragend="endDrag">
             <div class="w-full h-full" :class="{ 'pointer-events-none': !allowPointerEventsInside }">
                 <slot />
@@ -26,6 +26,7 @@ const {
   // Prevents wild jank when dragging anything that involves <img> tags
   allowPointerEventsInside?: boolean;
   disabled?: boolean;
+  testId?: string;
 }>();
 
 const emits =

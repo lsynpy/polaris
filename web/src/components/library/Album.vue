@@ -4,7 +4,8 @@
 			<template #jumbo v-if="album && isTinyScreen">
 				<div class="mb-4 flex gap-4 items-start shrink-0">
 					<div class="flex flex-col basis-[105px] shrink-0">
-						<Draggable :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)" class="cursor-grab">
+						<Draggable test-id="album-detail-art" :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)"
+							class="cursor-grab">
 							<AlbumArt :url="artworkURL" />
 							<template #drag-preview>
 								<AlbumDragPreview :album="album" />
@@ -47,7 +48,8 @@
 
 			<div class="min-h-0 flex items-start gap-8">
 				<div class="basis-2/5 shrink-0 hidden xl:block">
-					<Draggable :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)" class="cursor-grab">
+					<Draggable test-id="album-detail-art" :make-payload="() => new DndPayloadAlbum(album as AlbumDTO)"
+						class="cursor-grab">
 						<AlbumArt :url="artworkURL" rounding="rounded-lg"
 							class="shadow-lg shadow-ls-100 dark:shadow-ds-900" />
 						<template #drag-preview>

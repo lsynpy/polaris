@@ -9,17 +9,18 @@ export default defineConfig({
   },
   timeout: 10_000,
   testDir: "./tests",
-  globalSetup: "./tests/wipe-polaris-config",
+  globalSetup: "./tests/e2e.global-setup",
+  globalTeardown: "./tests/e2e.global-teardown",
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: [["list"], ["html", { open: "never" }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: "http://localhost:5050",
+    baseURL: "http://localhost:5051",
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
     defaultBrowserType: "firefox",
@@ -28,10 +29,13 @@ export default defineConfig({
   },
 
   projects: [
-    // Perform initial setup
+    // Perform initial setup (isolated on port 5051)
     {
       name: "initial-setup",
-      testMatch: "**/initial-setup.spec.ts"
+      testMatch: "**/initial-setup.spec.ts",
+      use: {
+        baseURL: "http://localhost:5051"
+      }
     },
     // Perform regular usage tests
     {
@@ -40,6 +44,7 @@ export default defineConfig({
       testMatch: "**/user.*.spec.ts",
       fullyParallel: true,
       use: {
+        baseURL: "http://localhost:5051",
         storageState: "playwright/.auth/user.json"
       }
     },
@@ -49,6 +54,7 @@ export default defineConfig({
       dependencies: ["user"],
       testMatch: "**/admin.spec.ts",
       use: {
+        baseURL: "http://localhost:5051",
         storageState: "playwright/.auth/user.json"
       }
     }

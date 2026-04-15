@@ -100,7 +100,7 @@ async function play() {
 
 async function deletePlaylist() {
   await playlists.deletePlaylist(props.name);
-  router.push("/playlists");
+  await router.push("/playlists").catch((_err) => {});
 }
 
 async function listSongs() {

@@ -86,8 +86,10 @@ test("can drag and drop album art to playlist", async ({ page }) => {
     .filter({ hasText: "Hunted" })
     .getByTestId("album-art")
     .click({ force: true });
+  await expect(page.getByText("Hunted (2016)")).toBeVisible();
+  await expect(page.locator(".cursor-grab").first()).toBeVisible();
   await page
-    .getByTestId("album-art")
+    .locator(".cursor-grab")
     .first()
     .dragTo(page.getByTestId("playlist-songs"), { force: true });
   await expect(page.getByTestId("playlist-song")).toHaveCount(5);

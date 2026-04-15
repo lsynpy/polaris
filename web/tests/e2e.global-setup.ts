@@ -6,9 +6,20 @@ import type { FullConfig } from "@playwright/test";
 
 const E2E_PORT = 5051;
 
-async function waitForServer(port: number, timeoutMs = 120_000): Promise<void> {
+async function waitForServer(
+  port: number,
+  stderrLogPath?: string,
+  timeoutMs = 120_000
+): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
+    if (stderrLogPath && fs.existsSync(stderrLogPath)) {
+      const stderr = fs.readFileSync(stderrLogPath, "utf-8");
+      if (stderr.includes("[ERROR]")) {
+        throw new Error(readLogTail(stderrLogPath));
+      }
+    }
+
     try {
       await new Promise<void>((resolve, reject) => {
         http
@@ -27,6 +38,12 @@ async function waitForServer(port: number, timeoutMs = 120_000): Promise<void> {
   throw new Error(`Server did not start on port ${port} within ${timeoutMs}ms`);
 }
 
+function readLogTail(filePath: string, maxChars = 4_000): string {
+  if (!fs.existsSync(filePath)) return "";
+  const content = fs.readFileSync(filePath, "utf-8");
+  return content.slice(-maxChars).trim();
+}
+
 export default async function globalSetup(_config: FullConfig) {
   const projectRoot = path.resolve(__dirname, "../..");
   const tmpDir = path.join(
@@ -40,6 +57,8 @@ export default async function globalSetup(_config: FullConfig) {
 
   // Create empty config file so server starts with no users (triggers setup wizard)
   fs.writeFileSync(path.join(tmpDir, "polaris.toml"), "");
+  const stdoutLog = path.join(tmpDir, "server.stdout.log");
+  const stderrLog = path.join(tmpDir, "server.stderr.log");
 
   // Start Polaris server on port 5051 with its own isolated data and config
   const serverDir = path.join(projectRoot, "server");
@@ -61,12 +80,36 @@ export default async function globalSetup(_config: FullConfig) {
     {
       cwd: serverDir,
       stdio: ["ignore", "pipe", "pipe"],
+      detached: true,
       env: { ...process.env }
     }
   );
 
+  server.stdout?.pipe(fs.createWriteStream(stdoutLog));
+  server.stderr?.pipe(fs.createWriteStream(stderrLog));
+
   // Write PID inside the temp dir so teardown can find it
   fs.writeFileSync(path.join(tmpDir, "pid"), String(server.pid));
 
-  await waitForServer(E2E_PORT);
+  let earlyExit: { code: number | null; signal: NodeJS.Signals | null } | null =
+    null;
+  server.once("exit", (code, signal) => {
+    earlyExit = { code, signal };
+  });
+
+  try {
+    await waitForServer(E2E_PORT, stderrLog);
+  } catch (error) {
+    if (earlyExit) {
+      const stdoutTail = readLogTail(stdoutLog);
+      const stderrTail = readLogTail(stderrLog);
+      const details = [stdoutTail, stderrTail].filter(Boolean).join("\n\n");
+      throw new Error(
+        `Polaris exited before becoming ready on port ${E2E_PORT} ` +
+          `(code=${earlyExit.code}, signal=${earlyExit.signal}).` +
+          (details ? `\n\n${details}` : "")
+      );
+    }
+    throw error;
+  }
 }

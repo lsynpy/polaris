@@ -24,8 +24,7 @@ test("Can save, retrieve, delete playlist", async ({ page }) => {
         .locator("visible=true")
     ).toHaveCount(5);
     await page.getByTestId("delete-playlist").click();
-
-    await page.getByTestId("sidebar").getByTestId("playlists").click();
+    await expect(page).toHaveURL(/\/playlists$/);
     await expect(
       page.getByTestId("saved-playlist").getByText(name)
     ).toHaveCount(0);
