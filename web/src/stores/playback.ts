@@ -7,6 +7,7 @@ import {
   shallowRef,
   watch
 } from "vue";
+import notify from "@/notify";
 import {
   addTrackToPlaylist,
   recordPlay,
@@ -192,11 +193,19 @@ export const usePlaybackStore = defineStore("playback", () => {
       !!currentTrack.value &&
       elapsedSeconds.value >= duration.value &&
       !hasNext();
+
+    const newTracks = tracks.filter(t => !playlist.value.some(e => e.path === t));
+    if (newTracks.length < tracks.length) {
+      notify("Duplicate Tracks", null, "Some tracks were already in the playlist and were ignored", true);
+    }
+
+    if (newTracks.length === 0) return;
+
     const newPlaylist = [...playlist.value];
     newPlaylist.splice(
       index,
       0,
-      ...tracks.map((s) => {
+      ...newTracks.map((s) => {
         return { key: make_key(), path: s };
       })
     );
@@ -206,7 +215,7 @@ export const usePlaybackStore = defineStore("playback", () => {
     }
     savePlaylist();
     if (name.value) {
-      tracks.forEach((t) => addTrackToPlaylist(name.value, t));
+      newTracks.forEach((t) => addTrackToPlaylist(name.value, t));
     }
   }
 

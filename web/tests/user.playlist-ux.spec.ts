@@ -19,10 +19,14 @@ test.describe("Playlist duplicate handling", () => {
   test.beforeEach(async ({ page }) => {
     await setupNotificationMock(page);
     await page.goto("/");
+    // Wait for the app to be ready
+    await expect(page.getByText("Albums")).toBeVisible();
   });
 
   test("Scenario 1: Unsaved playlist duplicate handling", async ({ page }) => {
-    // 1. Clear current playlist
+    // 1. Clear current playlist: ensure playlist is not empty first
+    await page.getByText("Albums").click();
+    await page.getByTestId("album").first().getByTestId("play-all").click();
     await page.getByText("Playlists").click();
     const clearBtn = page.getByTestId("clear-playlist");
     await expect(clearBtn).toBeEnabled();
@@ -36,7 +40,9 @@ test.describe("Playlist duplicate handling", () => {
 
     // 2. Navigate to albums and queue an album
     await page.getByText("Albums").click();
-    const huntAlbum = page.locator("div").filter({ hasText: /^Hunted Khemmis$/ });
+    const huntAlbum = page
+      .locator("div")
+      .filter({ hasText: /^Hunted Khemmis$/ });
     await huntAlbum.getByTestId("queue-all").click();
 
     // 3. Enqueue same album again
@@ -46,7 +52,9 @@ test.describe("Playlist duplicate handling", () => {
     expect(apiCalls.length).toBe(0); // No API calls
 
     // Verify notification
-    const notification = await page.evaluate(() => (window as any).__lastNotification);
+    const notification = await page.evaluate(
+      () => (window as any).__lastNotification
+    );
     expect(notification.title).toBe("Duplicate Tracks");
 
     // Verify local queue count
@@ -81,11 +89,13 @@ test.describe("Playlist duplicate handling", () => {
 
     // Asserts
     expect(apiCalls.length).toBeGreaterThan(0); // API calls were made
-    
+
     // Verify notification on failure (triggered by duplicate add)
-    const notification = await page.evaluate(() => (window as any).__lastNotification);
+    const notification = await page.evaluate(
+      () => (window as any).__lastNotification
+    );
     expect(notification.title).toBe("Duplicate Tracks");
-    
+
     // Verify playlist count
     await page.getByTestId("sidebar").getByTestId("playback").click();
     await expect(page.getByTestId("song").first()).toBeVisible();
