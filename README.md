@@ -21,6 +21,16 @@ for personal use with ARM64 deployment.
 | `deploy/` | Deployment scripts                |
 | `docs/`   | Documentation                     |
 
+## Development Workflow
+
+Follow this workflow for all changes:
+
+1. **Design docs** - Write design documentation in `docs/` for significant changes
+2. **Coding** - Implement the changes
+3. **Test & fix bugs** - Run `prek run -a` for linting, then `make test` for tests
+4. **Commit** - Commit with conventional commits (`feat:`, `fix:`, `chore:`, etc.)
+5. **Deploy to local** - Run `make deploy ENV=local` to test in Docker
+
 ## Build & Run
 
 ### Server (Rust)

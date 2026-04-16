@@ -1,29 +1,29 @@
 <template>
 	<div
 		v-if="visible"
-		class="fixed bottom-4 right-4 z-50 flex max-w-sm flex-col gap-2"
+		class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex max-w-md flex-col gap-2 items-center"
 	>
 		<div
 			v-for="(notification, index) in notifications"
 			:key="notification.id"
-			class="rounded-md bg-ls-800 dark:bg-ds-700 px-4 py-3 shadow-lg transition-all duration-300"
-			:class="index === 0 ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'"
+			class="rounded-lg bg-ls-900 dark:bg-ds-800 border border-ls-200 dark:border-ds-700 px-5 py-3 shadow-xl transition-all duration-300 backdrop-blur-sm bg-opacity-95"
+			:class="index === 0 ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-2 opacity-0 scale-95'"
 		>
-			<div class="flex items-start gap-3">
-				<span v-if="notification.icon" class="material-icons-round text-lg">
+			<div class="flex items-center gap-3">
+				<span v-if="notification.icon" class="material-icons-round text-xl text-ls-500 dark:text-ds-400">
 					{{ notification.icon }}
 				</span>
-				<div class="flex-1">
-					<div v-if="notification.title" class="font-semibold text-sm">
+				<div class="flex-1 text-center">
+					<div v-if="notification.title" class="font-semibold text-sm text-ls-100 dark:text-ds-200">
 						{{ notification.title }}
 					</div>
-					<div v-if="notification.body" class="text-sm text-ls-400 dark:text-ds-400">
+					<div v-if="notification.body" class="text-sm text-ls-300 dark:text-ds-500">
 						{{ notification.body }}
 					</div>
 				</div>
 				<button
 					v-if="notification.dismissible"
-					class="text-ls-400 hover:text-ls-600 dark:text-ds-500 dark:hover:text-ds-300"
+					class="text-ls-400 hover:text-ls-200 dark:text-ds-600 dark:hover:text-ds-400 transition-colors"
 					@click="remove(notification.id)"
 				>
 					<span class="material-icons-round text-sm">close</span>
