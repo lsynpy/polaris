@@ -1,8 +1,4 @@
 {
-  "files.watcherExclude": {
-    "**/target/**": true,
-    "**/test-output/**": true
-  },
   "files.exclude": {
     "**/target": true,
     "**/.deploy-tmp": true,
@@ -17,6 +13,7 @@
     "**/polaris.pid": true,
     "**/.tmp": true,
     "**/dist": true,
+    "**/.claude": true,
     "**/node_modules": true,
     "**/test-results": true,
     "**/test-output": true
