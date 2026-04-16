@@ -18,6 +18,7 @@
     "**/.tmp": true,
     "**/dist": true,
     "**/node_modules": true,
+    "**/test-results": true,
     "**/test-output": true
   },
   "diffEditor.renderSideBySide": true

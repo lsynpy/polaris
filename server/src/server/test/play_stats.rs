@@ -161,6 +161,7 @@ async fn get_artists_sort_requires_auth() {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn per_user_isolation() {
 	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
@@ -189,8 +190,6 @@ async fn per_user_isolation() {
 	// Bob queries popularity — should get 200 with no play data for him
 	service.login_as("bob", "password").await;
 	let request = protocol::artists_with_sort("popularity");
-	let response = service
-		.fetch_json::<_, Vec<dto::ArtistHeader>>(&request)
-		.await;
+	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::OK);
 }
