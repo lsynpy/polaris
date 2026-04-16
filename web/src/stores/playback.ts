@@ -197,6 +197,9 @@ export const usePlaybackStore = defineStore("playback", () => {
     const newTracks = tracks.filter((t) => !existingPaths.has(t));
 
     if (duplicateTracks.length > 0) {
+      const duplicateNames = duplicateTracks
+        .map((p) => songs.cache.get(p)?.title ?? p)
+        .slice(0, 5);
       (
         window as unknown as {
           __toast?: {
@@ -220,10 +223,16 @@ export const usePlaybackStore = defineStore("playback", () => {
         "warning",
         {
           "Ignored (already in playlist)": duplicateTracks.length.toString(),
-          Queued: newTracks.length.toString()
+          Queued: newTracks.length.toString(),
+          ...(duplicateNames.length > 0 && {
+            Examples: duplicateNames.join(", ")
+          })
         }
       );
     } else if (newTracks.length > 0) {
+      const trackNames = newTracks
+        .map((p) => songs.cache.get(p)?.title ?? p)
+        .slice(0, 5);
       (
         window as unknown as {
           __toast?: {
@@ -244,7 +253,8 @@ export const usePlaybackStore = defineStore("playback", () => {
         "check_circle",
         true,
         3000,
-        "success"
+        "success",
+        trackNames.length > 0 ? { Tracks: trackNames.join(", ") } : undefined
       );
     }
 
