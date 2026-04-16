@@ -1,29 +1,46 @@
 <template>
 	<div
 		v-if="visible"
-		class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex max-w-md flex-col gap-2 items-center"
+		class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex max-w-lg flex-col gap-2 items-center"
 	>
 		<div
 			v-for="(notification, index) in notifications"
 			:key="notification.id"
-			class="rounded-lg bg-ls-900 dark:bg-ds-800 border border-ls-200 dark:border-ds-700 px-5 py-3 shadow-xl transition-all duration-300 backdrop-blur-sm bg-opacity-95"
-			:class="index === 0 ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-2 opacity-0 scale-95'"
+			class="rounded-lg px-5 py-4 shadow-xl transition-all duration-300 border"
+			:class="[
+				notification.type === 'warning'
+					? 'bg-amber-500/90 dark:bg-amber-600/90 border-amber-400/50 dark:border-amber-500/50'
+					: 'bg-blue-500/90 dark:bg-blue-600/90 border-blue-400/50 dark:border-blue-500/50',
+				index === 0 ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-2 opacity-0 scale-95'
+			]"
 		>
-			<div class="flex items-center gap-3">
-				<span v-if="notification.icon" class="material-icons-round text-xl text-ls-500 dark:text-ds-400">
+			<div class="flex items-start gap-3">
+				<span
+					v-if="notification.icon"
+					class="material-icons-round text-xl shrink-0 text-white/90"
+				>
 					{{ notification.icon }}
 				</span>
-				<div class="flex-1 text-center">
-					<div v-if="notification.title" class="font-semibold text-sm text-ls-100 dark:text-ds-200">
+				<div class="flex-1 min-w-0">
+					<div v-if="notification.title" class="font-semibold text-sm text-white mb-1">
 						{{ notification.title }}
 					</div>
-					<div v-if="notification.body" class="text-sm text-ls-300 dark:text-ds-500">
+					<div v-if="notification.body" class="text-sm text-white/90 mb-2">
 						{{ notification.body }}
+					</div>
+					<div
+						v-if="notification.details"
+						class="text-xs text-white/80 bg-white/10 rounded p-2 max-h-24 overflow-y-auto"
+					>
+						<div v-for="(list, key) in notification.details" :key="key" class="mb-1 last:mb-0">
+							<span class="font-medium">{{ key }}:</span>
+							<span class="ml-2">{{ list }}</span>
+						</div>
 					</div>
 				</div>
 				<button
 					v-if="notification.dismissible"
-					class="text-ls-400 hover:text-ls-200 dark:text-ds-600 dark:hover:text-ds-400 transition-colors"
+					class="text-white/70 hover:text-white transition-colors shrink-0"
 					@click="remove(notification.id)"
 				>
 					<span class="material-icons-round text-sm">close</span>
@@ -36,6 +53,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 
+interface ToastDetail {
+  [demand: string]: string;
+}
+
 interface ToastNotification {
   id: number;
   title?: string;
@@ -43,6 +64,8 @@ interface ToastNotification {
   icon?: string;
   dismissible?: boolean;
   duration?: number;
+  type?: "info" | "warning" | "success";
+  details?: ToastDetail;
 }
 
 interface ToastApi {
@@ -51,7 +74,9 @@ interface ToastApi {
     body: string,
     icon?: string,
     dismissible?: boolean,
-    duration?: number
+    duration?: number,
+    type?: "info" | "warning" | "success",
+    details?: ToastDetail
   ) => void;
 }
 
@@ -65,7 +90,9 @@ function add(
   body: string,
   icon: string = "info",
   dismissible: boolean = true,
-  duration: number = 5000
+  duration: number = 5000,
+  type: "info" | "warning" | "success" = "info",
+  details?: ToastDetail
 ) {
   const id = idCounter++;
   notifications.value.push({
@@ -74,7 +101,9 @@ function add(
     body,
     icon,
     dismissible,
-    duration
+    duration,
+    type,
+    details
   });
 
   if (duration > 0) {
@@ -114,8 +143,8 @@ defineExpose({ add });
 	transform: translateY(0);
 }
 
-.translate-y-4 {
-	transform: translateY(1rem);
+.translate-y-2 {
+	transform: translateY(0.5rem);
 }
 
 .opacity-100 {

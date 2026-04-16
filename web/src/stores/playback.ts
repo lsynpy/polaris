@@ -192,20 +192,59 @@ export const usePlaybackStore = defineStore("playback", () => {
       elapsedSeconds.value >= duration.value &&
       !hasNext();
 
-    const newTracks = tracks.filter(
-      (t) => !playlist.value.some((e) => e.path === t)
-    );
-    if (newTracks.length < tracks.length) {
+    const existingPaths = new Set(playlist.value.map((e) => e.path));
+    const duplicateTracks = tracks.filter((t) => existingPaths.has(t));
+    const newTracks = tracks.filter((t) => !existingPaths.has(t));
+
+    if (duplicateTracks.length > 0) {
       (
         window as unknown as {
           __toast?: {
-            add: (title: string, body: string, icon?: string) => void;
+            add: (
+              title: string,
+              body: string,
+              icon?: string,
+              dismissible?: boolean,
+              duration?: number,
+              type?: "info" | "warning" | "success",
+              details?: { [key: string]: string }
+            ) => void;
           };
         }
       ).__toast?.add(
         "Duplicate Tracks",
-        "Some tracks were already in the playlist and were ignored",
-        "warning"
+        `${newTracks.length} track(s) queued successfully`,
+        "warning",
+        true,
+        6000,
+        "warning",
+        {
+          "Ignored (already in playlist)": duplicateTracks.length.toString(),
+          Queued: newTracks.length.toString()
+        }
+      );
+    } else if (newTracks.length > 0) {
+      (
+        window as unknown as {
+          __toast?: {
+            add: (
+              title: string,
+              body: string,
+              icon?: string,
+              dismissible?: boolean,
+              duration?: number,
+              type?: "info" | "warning" | "success",
+              details?: { [key: string]: string }
+            ) => void;
+          };
+        }
+      ).__toast?.add(
+        "Tracks Queued",
+        `${newTracks.length} track(s) added to playlist`,
+        "check_circle",
+        true,
+        3000,
+        "success"
       );
     }
 
