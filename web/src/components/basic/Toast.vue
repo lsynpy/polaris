@@ -9,8 +9,8 @@
 			class="rounded-lg px-5 py-4 shadow-xl transition-all duration-300 border"
 			:class="[
 				notification.type === 'warning'
-					? 'bg-amber-500/90 dark:bg-amber-600/90 border-amber-400/50 dark:border-amber-500/50'
-					: 'bg-blue-500/90 dark:bg-blue-600/90 border-blue-400/50 dark:border-blue-500/50',
+					? 'bg-accent-500/90 dark:bg-accent-600/90 border-accent-400/50 dark:border-accent-500/50'
+					: 'bg-accent-500/90 dark:bg-accent-600/90 border-accent-400/50 dark:border-accent-500/50',
 				index === 0 ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-2 opacity-0 scale-95'
 			]"
 		>
