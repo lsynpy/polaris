@@ -16,6 +16,8 @@
     "**/.claude": true,
     "**/node_modules": true,
     "**/test-results": true,
+    "**/playwright-report": true,
+    "web/playwright/": true,
     "**/test-output": true
   },
   "diffEditor.renderSideBySide": true
