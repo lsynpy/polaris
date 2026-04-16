@@ -32,7 +32,7 @@ import { computed, useTemplateRef } from "vue";
 const input = useTemplateRef("input");
 
 const vFocus = {
-  mounted: (el: HTMLElement, binding: { value: any }) => {
+  mounted: (el: HTMLElement, binding: { value: boolean }) => {
     if (binding.value) {
       el.focus();
     }

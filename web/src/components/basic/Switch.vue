@@ -12,13 +12,13 @@
 <script setup lang="ts">
 export type SwitchItem = {
   icon: string;
-  value: any;
+  value: unknown;
   disabled?: boolean;
 };
 
 defineProps<{ items: SwitchItem[] }>();
 
-const model = defineModel<any>({ required: true });
+const model = defineModel<unknown>({ required: true });
 
 function isSelected(item: SwitchItem) {
   return item.value === model.value;

@@ -153,7 +153,7 @@ function importPlaylists() {
     }
     try {
       await playlists.importPlaylists(files);
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Response) {
         const text = await e.text();
         const throttle = false;

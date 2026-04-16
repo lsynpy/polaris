@@ -70,7 +70,7 @@ const artworkURL = computed(() =>
 const rowClass = computed(() => {
   const isOdd = props.index % 2 === 1;
 
-  let background;
+  let background: string | string[];
   if (props.selected) {
     background = "bg-accent-100 dark:bg-accent-900";
   } else if (props.compact) {
@@ -84,7 +84,7 @@ const rowClass = computed(() => {
     ];
   }
 
-  let text;
+  let text: string;
   if (props.isCurrent && props.selected) {
     text = "text-accent-700 dark:text-accent-100";
   } else if (props.selected) {

@@ -186,7 +186,7 @@ export function makeAlbumURLFromSong(song: Song) {
 export function makeAlbumURLFromSongPaths(paths: string[]) {
   const songs = useSongsStore();
 
-  let albumURL;
+  let albumURL: string | undefined;
   for (const path of paths) {
     const song = songs.cache.get(path);
     if (!song) {

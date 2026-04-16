@@ -9,12 +9,12 @@
 <script setup lang="ts">
 export type SwitchTextItem = {
   label: string;
-  value: any;
+  value: unknown;
 };
 
 defineProps<{ items: SwitchTextItem[] }>();
 
-const model = defineModel<any>({ required: true });
+const model = defineModel<unknown>({ required: true });
 
 function isSelected(item: SwitchTextItem) {
   return item.value === model.value;

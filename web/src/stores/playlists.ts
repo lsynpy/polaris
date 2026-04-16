@@ -9,7 +9,6 @@ import {
   listPlaylists,
   putPlaylist
 } from "@/api/endpoints";
-import notify from "@/notify";
 import { usePlaybackStore } from "./playback";
 
 export type PlaylistsState = {

@@ -16,7 +16,6 @@ import {
 import { loadUserValue, saveUserValue } from "@/storage";
 import { useSongsStore } from "@/stores/songs";
 import { useUserStore } from "@/stores/user";
-import { usePlaylistsStore } from "./playlists";
 
 let next_key = 0;
 
@@ -181,9 +180,9 @@ export const usePlaybackStore = defineStore("playback", () => {
     playlist.value = playlist.value.filter((e) => !removeKeys.has(e.key));
     savePlaylist();
     if (name.value) {
-      entriesToRemove.forEach((e) =>
-        removeTrackFromPlaylist(name.value, e.path)
-      );
+      for (const e of entriesToRemove) {
+        removeTrackFromPlaylist(name.value, e.path);
+      }
     }
   }
 
@@ -222,7 +221,9 @@ export const usePlaybackStore = defineStore("playback", () => {
     }
     savePlaylist();
     if (name.value) {
-      newTracks.forEach((t) => addTrackToPlaylist(name.value, t));
+      for (const t of newTracks) {
+        addTrackToPlaylist(name.value, t);
+      }
     }
   }
 

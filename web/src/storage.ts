@@ -8,40 +8,40 @@ export interface Serializer<T> {
 
 export const StorageSerializers: Record<
   "boolean" | "object" | "number" | "any" | "string" | "map" | "set" | "date",
-  Serializer<any>
+  Serializer<unknown>
 > = {
   boolean: {
-    read: (v: any) => v === "true",
-    write: (v: any) => String(v)
+    read: (v: string) => v === "true",
+    write: (v: unknown) => String(v)
   },
   object: {
-    read: (v: any) => JSON.parse(v),
-    write: (v: any) => JSON.stringify(v)
+    read: (v: string) => JSON.parse(v),
+    write: (v: unknown) => JSON.stringify(v)
   },
   number: {
-    read: (v: any) => Number.parseFloat(v),
-    write: (v: any) => String(v)
+    read: (v: string) => Number.parseFloat(v),
+    write: (v: unknown) => String(v)
   },
   any: {
-    read: (v: any) => v,
-    write: (v: any) => String(v)
+    read: (v: string) => v,
+    write: (v: unknown) => String(v)
   },
   string: {
-    read: (v: any) => v,
-    write: (v: any) => String(v)
+    read: (v: string) => v,
+    write: (v: unknown) => String(v)
   },
   map: {
-    read: (v: any) => new Map(JSON.parse(v)),
-    write: (v: any) =>
-      JSON.stringify(Array.from((v as Map<any, any>).entries()))
+    read: (v: string) => new Map(JSON.parse(v)),
+    write: (v: unknown) =>
+      JSON.stringify(Array.from((v as Map<unknown, unknown>).entries()))
   },
   set: {
-    read: (v: any) => new Set(JSON.parse(v)),
-    write: (v: any) => JSON.stringify(Array.from(v as Set<any>))
+    read: (v: string) => new Set(JSON.parse(v)),
+    write: (v: unknown) => JSON.stringify(Array.from(v as Set<unknown>))
   },
   date: {
-    read: (v: any) => new Date(v),
-    write: (v: any) => v.toISOString()
+    read: (v: string) => new Date(v),
+    write: (v: unknown) => (v as Date).toISOString()
   }
 };
 
@@ -65,7 +65,7 @@ export function guessSerializerType<T>(rawInit: T) {
                   : "any";
 }
 
-function read<T>(key: string, defaultValue: T, serializer: Serializer<any>): T {
+function read<T>(key: string, defaultValue: T, serializer: Serializer<T>): T {
   const rawValue = localStorage.getItem(key);
   if (rawValue == null) {
     return defaultValue;
@@ -74,7 +74,7 @@ function read<T>(key: string, defaultValue: T, serializer: Serializer<any>): T {
   }
 }
 
-function write<T>(key: string, value: T, serializer: Serializer<any>) {
+function write<T>(key: string, value: T, serializer: Serializer<T>) {
   const serialized = serializer.write(value);
   try {
     localStorage.setItem(key, serialized);
@@ -123,7 +123,7 @@ export function loadUserValue<T>(key: string, defaultValue: T): T {
     return defaultValue;
   }
   const type = guessSerializerType<T>(defaultValue);
-  const serializer = StorageSerializers[type];
+  const serializer = StorageSerializers[type] as Serializer<T>;
   return read(`${user.name}.${key}`, defaultValue, serializer);
 }
 

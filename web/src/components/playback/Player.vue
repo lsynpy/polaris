@@ -193,7 +193,7 @@ function onPlaybackError(event: Event) {
   if (!mediaError) {
     return;
   }
-  let errorText;
+  let errorText: string;
   switch (mediaError.code) {
     case mediaError.MEDIA_ERR_NETWORK:
       errorText = `${errorPrefix}of a network error.`;

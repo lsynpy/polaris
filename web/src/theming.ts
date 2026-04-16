@@ -47,13 +47,13 @@ const themes: Map<Theme, ThemeData> = new Map([
 ]);
 
 export function getThemeName(theme: Theme): string {
-  const themeData = themes.get(theme)!;
-  return themeData.name;
+  const themeData = themes.get(theme);
+  return themeData?.name ?? "";
 }
 
 export function getThemePolarity(theme: Theme): "light" | "dark" {
-  const themeData = themes.get(theme)!;
-  return themeData.polarity;
+  const themeData = themes.get(theme);
+  return themeData?.polarity ?? "light";
 }
 
 export function getDefaultTheme(): Theme {

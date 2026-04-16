@@ -55,7 +55,7 @@ import PageHeader, {
 import Spinner from "@/components/basic/Spinner.vue";
 import Switch from "@/components/basic/Switch.vue";
 import ArtistGrid from "@/components/library/ArtistGrid.vue";
-import { saveScrollState, useHistory } from "@/history";
+import { type HistoryValue, saveScrollState, useHistory } from "@/history";
 
 const artists: Ref<ArtistHeader[]> = ref([]);
 const isLoading = ref(true);
@@ -140,9 +140,11 @@ const { y: scrollY } = useScroll(viewport);
 
 watch(filtered, () => (scrollY.value = 0));
 
-const saveArtists = {
+const saveArtists: HistoryValue = {
   save: () => toRaw(artists.value).filter(isRelevant),
-  restore: (v: ArtistHeader[]) => (artists.value = v)
+  restore: (_v: unknown) => {
+    artists.value = _v as ArtistHeader[];
+  }
 };
 
 useHistory("artists", [

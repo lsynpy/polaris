@@ -146,8 +146,8 @@ watch(filterResults, () => {
 
   for (let path of filterResults.value || []) {
     let depth = 0;
-    let match;
     let skippedRoot = false;
+    let match: RegExpExecArray | null;
     while ((match = separator.exec(path)) !== null) {
       const directory = path.substring(0, match.index);
       if (!skippedRoot && treeModel.value[0].key !== directory) {
@@ -192,7 +192,7 @@ async function openDirectory(node: Node) {
     treeModel.value[parentIndex].loading = true;
   }
 
-  let children;
+  let children: ReturnType<typeof makeTreeNodes> | undefined;
   try {
     children = await browse(node.key || "").then((f) => makeTreeNodes(f, node));
   } catch (e) {}

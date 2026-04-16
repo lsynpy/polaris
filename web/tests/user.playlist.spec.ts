@@ -1,15 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 // Helper to mock browser notifications
-async function setupNotificationMock(page: any) {
+async function setupNotificationMock(page: Page) {
   await page.addInitScript(() => {
-    (window as any).Notification = class MockNotification {
-      static permission = "granted";
-      static requestPermission = async () => "granted";
-      constructor(title: string, options: any) {
-        (window as any).__lastNotification = { title, options };
-      }
-    };
+    (window as unknown as { Notification: unknown }).Notification =
+      class MockNotification {
+        static permission = "granted";
+        static requestPermission = async () => "granted";
+        constructor(title: string, options: unknown) {
+          (
+            window as unknown as { __lastNotification: unknown }
+          ).__lastNotification = { title, options };
+        }
+      };
   });
 }
 
@@ -204,9 +207,11 @@ test.describe("Playlist duplicate handling", () => {
 
     // Verify notification
     const notification = await page.evaluate(
-      () => (window as any).__lastNotification
+      () =>
+        (window as unknown as { __lastNotification: unknown })
+          .__lastNotification
     );
-    expect(notification.title).toBe("Duplicate Tracks");
+    expect(notification).toHaveProperty("title", "Duplicate Tracks");
 
     // Verify local queue count (7 unique songs from second album)
     await expect(page.getByTestId("playlist-song").first()).toBeVisible();
@@ -244,9 +249,11 @@ test.describe("Playlist duplicate handling", () => {
 
     // Verify notification on failure (triggered by duplicate add)
     const notification = await page.evaluate(
-      () => (window as any).__lastNotification
+      () =>
+        (window as unknown as { __lastNotification: unknown })
+          .__lastNotification
     );
-    expect(notification.title).toBe("Duplicate Tracks");
+    expect(notification).toHaveProperty("title", "Duplicate Tracks");
 
     // Verify playlist count (5 unique songs from Hunted album)
     await expect(page.getByTestId("playlist-song").first()).toBeVisible();

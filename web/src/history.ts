@@ -3,9 +3,9 @@ import { type MaybeRef, type Ref, toRaw, type WatchSource } from "vue";
 import { useScrollSizeObserver } from "vue-use-scroll-size-observer";
 
 export interface HistoryValue {
-  save: () => any;
-  restore: (v: any) => void;
-  restoreWhen?: (v: any) => WatchSource;
+  save: () => unknown;
+  restore: (v: unknown) => void;
+  restoreWhen?: (v: unknown) => WatchSource;
 }
 
 export function saveScrollState(
@@ -15,11 +15,14 @@ export function saveScrollState(
   const { scrollHeight } = useScrollSizeObserver(el);
   return {
     save: () => [scrollY.value, scrollHeight.value],
-    restore: ([y, _h]) => (scrollY.value = y),
-    restoreWhen:
-      ([_y, h]) =>
-      () =>
-        scrollHeight.value >= h
+    restore: (v: unknown) => {
+      const [y] = v as [number, number];
+      scrollY.value = y;
+    },
+    restoreWhen: (v: unknown) => () => {
+      const [, h] = v as [number, number];
+      return scrollHeight.value >= h;
+    }
   };
 }
 
@@ -56,7 +59,7 @@ export function useHistory(key: string, values: (Ref | HistoryValue)[]) {
     { throttle: 500 }
   );
 
-  const state = history.state[key] as any[] | undefined;
+  const state = history.state[key] as unknown[] | undefined;
   if (!state) {
     return false;
   }
