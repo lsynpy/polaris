@@ -81,6 +81,7 @@ import VirtualTree from "@/components/basic/VirtualTree.vue";
 import { DndPayloadFiles, useDragAndDrop } from "@/dnd";
 import { getPathTail } from "@/format";
 import { useHistory } from "@/history";
+import { useContextMenu } from "@/composables/useContextMenu";
 import { makeSongURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
 import { useSongsStore } from "@/stores/songs";
@@ -222,7 +223,7 @@ function makeTreeNodes(entries: BrowserEntry[], parent?: Node): Node[] {
 
 async function onKeyDown(event: KeyboardEvent) {
   if (event.code === "Enter") {
-    sendSelectionToPlaylist(!event.shiftKey);
+    await sendSelectionToPlaylist(!event.shiftKey);
   }
 }
 
@@ -293,22 +294,14 @@ function playSong(node: Node) {
 
 const contextMenu = useTemplateRef("contextMenu");
 const contextMenuItems = computed(() => {
-  const items: ContextMenuItem[] = [
-    {
-      label: "Play",
-      shortcut: "Enter",
-      action: () => {
-        sendSelectionToPlaylist(true);
-      }
-    },
-    {
-      label: "Queue",
-      shortcut: "Shift+Enter",
-      action: () => {
-        sendSelectionToPlaylist(false);
-      }
-    }
-  ];
+  const getPaths = async () => {
+    const paths = await flattenSelection();
+    return paths;
+  };
+
+  const { contextMenuItems: baseItems } = useContextMenu(getPaths);
+
+  const items: ContextMenuItem[] = baseItems.value;
 
   const selection = getSelection();
   if (selection.length === 1 && selection[0].leaf) {

@@ -31,6 +31,7 @@ import Draggable from "@/components/basic/Draggable.vue";
 import SongListRow from "@/components/SongListRow.vue";
 import { DndPayloadPaths } from "@/dnd";
 import { saveScrollState, useHistory } from "@/history";
+import { useContextMenu } from "@/composables/useContextMenu";
 import useMultiselect from "@/multiselect";
 import { makeAlbumURLFromSongPaths, makeSongURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
@@ -109,7 +110,7 @@ function onKeyDown(event: KeyboardEvent) {
   }
 }
 
-async function queueSelection(replace: boolean) {
+function queueSelection(replace: boolean) {
   const tracks = selection.value.map((s) => s.key);
   if (!tracks.length) {
     return;
@@ -143,6 +144,8 @@ function onSongRightClicked(e: MouseEvent, path: string) {
 
 const contextMenu = useTemplateRef("contextMenu");
 const contextMenuItems = computed(() => {
+  const selectedSongs = selection.value.map((s) => s.key);
+
   const items: ContextMenuItem[] = [
     {
       label: "Play",
@@ -159,8 +162,6 @@ const contextMenuItems = computed(() => {
       }
     }
   ];
-
-  const selectedSongs = selection.value.map((s) => s.key);
 
   const albumURL = makeAlbumURLFromSongPaths(selectedSongs);
   if (albumURL) {

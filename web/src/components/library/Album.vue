@@ -117,6 +117,7 @@ import AlbumSong from "@/components/library/AlbumSong.vue";
 import { DndPayloadAlbum, DndPayloadSongs } from "@/dnd";
 import { isFakeArtist } from "@/format";
 import { saveScrollState, useHistory } from "@/history";
+import { useContextMenu } from "@/composables/useContextMenu";
 import useMultiselect from "@/multiselect";
 import { makeArtistURL, makeSongURL } from "@/router";
 import { usePlaybackStore } from "@/stores/playback";
@@ -159,22 +160,10 @@ const pageActions = [
 ];
 
 const contextMenuItems = computed(() => {
-  const items: ContextMenuItem[] = [
-    {
-      label: "Play",
-      shortcut: "Enter",
-      action: () => {
-        queueSelection(true);
-      }
-    },
-    {
-      label: "Queue",
-      shortcut: "Shift+Enter",
-      action: () => {
-        queueSelection(false);
-      }
-    }
-  ];
+  const getPaths = () => selection.value.map((s) => s.path);
+  const { contextMenuItems: baseItems } = useContextMenu(getPaths);
+
+  const items: ContextMenuItem[] = baseItems.value;
 
   if (selection.value.length === 1) {
     const songURL = makeSongURL(selection.value[0].path);

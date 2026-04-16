@@ -66,7 +66,7 @@ watch:
 test: test_server test_web
 
 test_server:
-	cd server && RUST_BACKTRACE=1 cargo test
+	cd server && RUST_BACKTRACE=full cargo test
 
 test_web:
 	-cd web && npx playwright test || open web/playwright-report/index.html

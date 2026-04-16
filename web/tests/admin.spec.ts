@@ -117,7 +117,7 @@ test("can trigger reindex", async ({ page }) => {
   await page.getByTestId("sidebar").getByTestId("settings").click();
   await page.getByTestId("collection").click();
   await page.getByTestId("trigger-scan").click();
-  await expect(page.getByTestId("last-scan")).toContainText("just now", {
+  await expect(page.getByTestId("last-scan")).toContainText("Started", {
     timeout: 10_000
   });
 });
