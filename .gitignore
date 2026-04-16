@@ -13,8 +13,8 @@ web/node_modules
 web/dist
 
 # Playwright artifacts
-web/playwright-report/
-web/test-results/
+playwright-report/
+test-results/
 web/playwright/
 
 # Local config for quick iteration

@@ -194,9 +194,16 @@ export const usePlaybackStore = defineStore("playback", () => {
       elapsedSeconds.value >= duration.value &&
       !hasNext();
 
-    const newTracks = tracks.filter(t => !playlist.value.some(e => e.path === t));
+    const newTracks = tracks.filter(
+      (t) => !playlist.value.some((e) => e.path === t)
+    );
     if (newTracks.length < tracks.length) {
-      notify("Duplicate Tracks", null, "Some tracks were already in the playlist and were ignored", true);
+      notify(
+        "Duplicate Tracks",
+        null,
+        "Some tracks were already in the playlist and were ignored",
+        true
+      );
     }
 
     if (newTracks.length === 0) return;

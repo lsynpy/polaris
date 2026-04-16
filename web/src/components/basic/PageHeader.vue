@@ -22,7 +22,7 @@
         <div v-if="actions?.length" class="flex gap-2">
             <Button v-for="action in actions" :label="action.label" :icon="action.icon" :disabled="action.disabled"
                 @click="action.action" :size="$slots.jumbo ? 'lg' : 'base'"
-                :severity="action.danger ? 'danger' : 'secondary'" :data-pw="action.testID" class="grow" />
+                :severity="action.danger ? 'danger' : 'secondary'" :data-testid="action.testID" :data-pw="action.testID" class="grow" />
         </div>
     </div>
 </template>

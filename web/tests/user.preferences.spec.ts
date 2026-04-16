@@ -1,5 +1,17 @@
 import { expect, type Page, test } from "@playwright/test";
 
+test.afterEach(async ({ page }) => {
+  // Reset theme to default so other tests aren't affected
+  await page.goto("/");
+  await page.getByTestId("sidebar").getByTestId("settings").click();
+  await page.getByTestId("preferences").click();
+  try {
+    await page.getByTestId("reset-color-scheme").click();
+  } catch {
+    // Already at default
+  }
+});
+
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("sidebar").getByTestId("settings").click();

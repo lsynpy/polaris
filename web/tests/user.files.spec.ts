@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+test.afterEach(async ({ page }) => {
+  // Clean up playlist state so other tests aren't affected
+  await page.goto("/");
+  try {
+    await page.getByTestId("clear-playlist").click({ force: true });
+  } catch {
+    // clear button might not be visible on files view
+  }
+});
+
 test("can expand directories", async ({ page }) => {
   await page.goto("/");
   await page

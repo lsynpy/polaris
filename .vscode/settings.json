@@ -19,5 +19,6 @@
     "**/dist": true,
     "**/node_modules": true,
     "**/test-output": true
-  }
+  },
+  "diffEditor.renderSideBySide": true
 }

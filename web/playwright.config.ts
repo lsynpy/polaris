@@ -53,6 +53,7 @@ export default defineConfig({
       name: "admin",
       dependencies: ["user"],
       testMatch: "**/admin.spec.ts",
+      fullyParallel: true,
       use: {
         baseURL: "http://localhost:5051",
         storageState: "playwright/.auth/user.json"
