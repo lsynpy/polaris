@@ -7,7 +7,6 @@ import {
   shallowRef,
   watch
 } from "vue";
-import notify from "@/notify";
 import {
   addTrackToPlaylist,
   recordPlay,
@@ -197,11 +196,16 @@ export const usePlaybackStore = defineStore("playback", () => {
       (t) => !playlist.value.some((e) => e.path === t)
     );
     if (newTracks.length < tracks.length) {
-      notify(
+      (
+        window as unknown as {
+          __toast?: {
+            add: (title: string, body: string, icon?: string) => void;
+          };
+        }
+      ).__toast?.add(
         "Duplicate Tracks",
-        null,
         "Some tracks were already in the playlist and were ignored",
-        true
+        "warning"
       );
     }
 

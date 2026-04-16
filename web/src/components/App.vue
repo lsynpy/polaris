@@ -10,6 +10,7 @@
 		<Player class="grow lg:grow-0 border-t border-ls-200 dark:border-ds-700" />
 		<SidePanelSetup class="hidden lg:inline-flex z-[100]" />
 		<FloatingWidgetSetup class="hidden lg:inline-flex z-[101]" />
+		<Toast />
 	</div>
 </template>
 
@@ -19,4 +20,5 @@ import SidePanelSetup from "@/components/basic/SidePanelSetup.vue";
 import Player from "@/components/playback/Player.vue";
 import Playlist from "@/components/playback/Playlist.vue";
 import Sidebar from "@/components/Sidebar.vue";
+import Toast from "@/components/basic/Toast.vue";
 </script>
