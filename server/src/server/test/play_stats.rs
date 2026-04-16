@@ -161,7 +161,6 @@ async fn get_artists_sort_requires_auth() {
 }
 
 #[tokio::test]
-#[serial_test::serial]
 async fn per_user_isolation() {
 	let mut service = TestServiceType::new(&test_name!()).await;
 	service.complete_initial_setup().await;
