@@ -210,7 +210,7 @@ export const usePlaybackStore = defineStore("playback", () => {
               dismissible?: boolean,
               duration?: number,
               type?: "info" | "warning" | "success",
-              details?: { [key: string]: string }
+              details?: { [key: string]: string | string[] }
             ) => void;
           };
         }
@@ -222,11 +222,8 @@ export const usePlaybackStore = defineStore("playback", () => {
         6000,
         "warning",
         {
-          "Ignored (already in playlist)": duplicateTracks.length.toString(),
-          Queued: newTracks.length.toString(),
-          ...(duplicateNames.length > 0 && {
-            Examples: duplicateNames.join(", ")
-          })
+          "Ignored (already in playlist)": duplicateNames,
+          Queued: newTracks.length.toString()
         }
       );
     } else if (newTracks.length > 0) {
@@ -243,7 +240,7 @@ export const usePlaybackStore = defineStore("playback", () => {
               dismissible?: boolean,
               duration?: number,
               type?: "info" | "warning" | "success",
-              details?: { [key: string]: string }
+              details?: { [key: string]: string | string[] }
             ) => void;
           };
         }
@@ -254,7 +251,7 @@ export const usePlaybackStore = defineStore("playback", () => {
         true,
         3000,
         "success",
-        trackNames.length > 0 ? { Tracks: trackNames.join(", ") } : undefined
+        { Tracks: trackNames }
       );
     }
 

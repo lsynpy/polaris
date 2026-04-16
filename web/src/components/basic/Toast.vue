@@ -32,9 +32,14 @@
 						v-if="notification.details"
 						class="text-xs text-white/80 bg-white/10 rounded p-2 max-h-24 overflow-y-auto"
 					>
-						<div v-for="(list, key) in notification.details" :key="key" class="mb-1 last:mb-0">
+						<div v-for="(value, key) in notification.details" :key="key" class="mb-1 last:mb-0">
 							<span class="font-medium">{{ key }}:</span>
-							<span class="ml-2">{{ list }}</span>
+							<div v-if="Array.isArray(value)" class="ml-2 mt-1 space-y-0.5">
+								<div v-for="(item, idx) in value" :key="idx" class="text-white/70">
+									{{ item }}
+								</div>
+							</div>
+							<span v-else class="ml-2">{{ value }}</span>
 						</div>
 					</div>
 				</div>
@@ -54,7 +59,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 
 interface ToastDetail {
-  [demand: string]: string;
+  [demand: string]: string | string[];
 }
 
 interface ToastNotification {
