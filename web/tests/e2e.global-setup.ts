@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, execSync } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
@@ -46,6 +46,12 @@ function readLogTail(filePath: string, maxChars = 4_000): string {
 
 export default async function globalSetup(_config: FullConfig) {
   const projectRoot = path.resolve(__dirname, "../..");
+
+  try {
+    execSync(`lsof -ti:${E2E_PORT} | xargs kill -9`, { stdio: "ignore" });
+  } catch {
+    // Ignore if no process is running on the port
+  }
   const tmpDir = path.join(
     projectRoot,
     ".tmp",
