@@ -142,7 +142,7 @@ const pageActions = computed(() => [
     label: "Clear",
     icon: "clear",
     action: playback.clear,
-    disabled: isEmpty.value,
+    disabled: playback.playlist.length === 0,
     testID: "clear-playlist"
   },
   {
@@ -151,7 +151,7 @@ const pageActions = computed(() => [
     action: () => {
       showStats.value = true;
     },
-    disabled: isEmpty.value,
+    disabled: playback.playlist.length === 0,
     testID: "show-playlist-stats"
   },
   {
@@ -160,7 +160,7 @@ const pageActions = computed(() => [
     action: () => {
       savingPlaylist.value = true;
     },
-    disabled: isEmpty.value,
+    disabled: playback.playlist.length === 0,
     testID: "save-playlist"
   }
 ]);

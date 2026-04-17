@@ -1,5 +1,5 @@
 <template>
-    <button type="button" :class="buttonClass" :disabled="disabled"
+    <button type="button" :class="buttonClass" :disabled="disabled" @click="onClick"
         class="inline-flex items-center justify-center gap-x-1.5 rounded-md text-sm font-semibold whitespace-nowrap">
         <span v-if="icon" class="material-icons-round" :class="iconClass">
             {{ icon }}
@@ -11,9 +11,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+const emit = defineEmits<{
+  click: [event: MouseEvent];
+}>();
+
 const {
   severity = "primary",
   size = "base",
+  disabled = false,
   ...props
 } = defineProps<{
   label?: string;
@@ -22,6 +27,12 @@ const {
   severity?: "primary" | "secondary" | "tertiary" | "danger";
   size?: "sm" | "base" | "lg" | "xl";
 }>();
+
+function onClick(event: MouseEvent) {
+  if (!disabled) {
+    emit("click", event);
+  }
+}
 
 let palettes = {
   disabled: `

@@ -1,12 +1,12 @@
 <template>
 	<div
 		v-if="visible"
-		class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex max-w-lg flex-col gap-2 items-center"
+		class="fixed top-4 left-4 z-40 flex max-w-lg flex-col gap-2 pointer-events-none"
 	>
 		<div
 			v-for="(notification, index) in notifications"
 			:key="notification.id"
-			class="rounded-lg px-5 py-4 shadow-xl transition-all duration-300 border"
+			class="rounded-lg px-5 py-4 shadow-xl transition-all duration-300 border w-full pointer-events-auto"
 			:class="[
 				notification.type === 'warning'
 					? 'bg-accent-500/90 dark:bg-accent-600/90 border-accent-400/50 dark:border-accent-500/50'

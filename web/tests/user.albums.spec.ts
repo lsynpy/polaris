@@ -34,6 +34,9 @@ test("can queue album", async ({ page }) => {
   await page.getByTestId("play-all").click();
   await expect(page.getByTestId("playlist-song")).toHaveCount(5);
 
+  // Wait for any toast to disappear
+  await page.waitForTimeout(6000);
+
   // Test clear
   await page.getByTestId("clear-playlist").click({ force: true });
   await expect(page.getByTestId("playlist-song")).toHaveCount(0);
