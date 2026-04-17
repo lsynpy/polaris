@@ -9,7 +9,7 @@
 		</div>
 		<Player class="grow lg:grow-0 border-t border-ls-200 dark:border-ds-700" />
 		<SidePanelSetup class="hidden lg:inline-flex z-[100]" />
-		<FloatingWidgetSetup class="hidden lg:inline-flex z-[101]" />
+		<FloatingWidgetSetup class="hidden lg:inline-flex z-[30]" />
 		<Toast />
 	</div>
 </template>

@@ -99,24 +99,27 @@ test.describe("Context Menu", () => {
       .getByTestId("toggle")
       .click();
 
-    // First queue a song (should start the playlist)
+    // First queue a song (should start playlist) - double click to play
     await page
       .getByTestId("node")
       .filter({ hasText: "Three Gates" })
-      .dragTo(page.getByTestId("playlist-songs"));
+      .dblclick();
 
-    // Wait for the first song to be queued
+    // Wait for first song to be queued
+    await page.waitForTimeout(1000);
     await expect(page.getByTestId("playlist-song")).toHaveCount(1);
-    const initialCount = await page.getByTestId("playlist-song").count();
+    const countBeforeSecondQueue = await page.getByTestId("playlist-song").count();
 
-    // Queue another song (should append) - drag a directory to get multiple songs
+    // Queue another song (should append) - click then Shift+Enter
     await page
       .getByTestId("node")
-      .filter({ hasText: "Tobokegao" })
-      .dragTo(page.getByTestId("playlist-songs"));
+      .filter({ hasText: "Above The Water" })
+      .click();
+    await page.keyboard.press("Shift+Enter");
 
     // Verify playlist now has more items
+    await page.waitForTimeout(1000);
     const finalCount = await page.getByTestId("playlist-song").count();
-    expect(finalCount).toBeGreaterThan(initialCount);
+    expect(finalCount).toBeGreaterThan(countBeforeSecondQueue);
   });
 });

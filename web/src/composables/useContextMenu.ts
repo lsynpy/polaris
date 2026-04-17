@@ -14,6 +14,7 @@ export function useContextMenu(getPaths: () => string[] | Promise<string[]>) {
       {
         label: "Play",
         shortcut: "Enter",
+        testID: "play",
         action: async () => {
           const tracks = paths instanceof Promise ? await paths : paths;
           playback.clear();
@@ -24,6 +25,7 @@ export function useContextMenu(getPaths: () => string[] | Promise<string[]>) {
       {
         label: "Queue",
         shortcut: "Shift+Enter",
+        testID: "queue",
         action: async () => {
           const tracks = paths instanceof Promise ? await paths : paths;
           playback.queueTracks(tracks);

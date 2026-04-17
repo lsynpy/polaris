@@ -75,9 +75,9 @@ let sizes = {
 };
 
 const buttonClass = computed(() => {
-  const palette = props.disabled ? palettes.disabled : palettes[severity];
+  const palette = disabled ? palettes.disabled : palettes[severity];
   return [
-    props.disabled
+    disabled
       ? "cursor-not-allowed"
       : "cursor-pointer [&>*]:active:translate-y-px",
     sizes[size],
@@ -86,7 +86,7 @@ const buttonClass = computed(() => {
 });
 
 const iconClass = computed(() => {
-  if (props.disabled) {
+  if (disabled) {
     return "text-ls-200 dark:text-ds-500";
   } else if (severity === "tertiary") {
     return props.label?.length

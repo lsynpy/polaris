@@ -1,14 +1,16 @@
 <template>
 	<div @contextmenu="show">
 		<slot />
-		<FloatingWidget ref="el" :position="position" @dismissed="open = false">
+		<FloatingWidget ref="el" :position="position" :use-overlay="false" @dismissed="open = false">
 			<div v-if="open" class="flex flex-col min-w-40 p-2 text-sm
 				rounded-md bg-ls-0 dark:bg-ds-900
 				border border-ls-200 dark:border-ds-700
 				shadow-lg shadow-accent-800/20 dark:shadow-accent-900/20">
 				<div v-for="item in items"
 					class="group cursor-pointer flex justify-between gap-8 px-3 py-1.5 rounded-sm hover:bg-accent-100 dark:hover:bg-accent-900"
-					@click="execute(item)">
+					@click="execute(item)"
+					:data-testid="item.testID"
+					:data-pw="item.testID">
 					<div v-text="item.label"
 						class="font-medium text-ls-700 dark:text-ds-300 group-hover:text-accent-700 dark:group-hover:text-accent-200" />
 					<div v-if="items.find(s => s.shortcut)" v-text="item.shortcut"
@@ -27,6 +29,7 @@ export type ContextMenuItem = {
   label: string;
   shortcut?: string;
   action: () => void;
+  testID?: string;
 };
 
 defineProps<{
