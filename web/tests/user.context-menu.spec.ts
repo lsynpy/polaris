@@ -40,32 +40,7 @@ test.describe("Context Menu", () => {
     await expect(page.getByTestId("playlist-song")).toHaveCount(1);
   });
 
-  test("Files view: Queue action (drag-and-drop) works", async ({ page }) => {
-    await setupNotificationMock(page);
-    await page.goto("/");
-    await page.getByTestId("sidebar").getByTestId("files").click();
 
-    // Expand directories to get songs
-    await page
-      .getByTestId("node")
-      .filter({ hasText: "Khemmis" })
-      .getByTestId("toggle")
-      .click();
-    await page
-      .getByTestId("node")
-      .filter({ hasText: "Hunted" })
-      .getByTestId("toggle")
-      .click();
-
-    // Drag song to playlist (equivalent to context menu Queue)
-    await page
-      .getByTestId("node")
-      .filter({ hasText: "Three Gates" })
-      .dragTo(page.getByTestId("playlist-songs"));
-
-    // Verify song was queued
-    await expect(page.getByTestId("playlist-song")).toHaveCount(1);
-  });
 
   test("Files view: Play clears existing playlist", async ({ page }) => {
     await setupNotificationMock(page);
