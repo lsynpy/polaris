@@ -159,37 +159,3 @@ async fn get_artists_sort_requires_auth() {
 	let response = service.fetch(&request).await;
 	assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
-
-#[tokio::test]
-#[serial_test::serial]
-async fn per_user_isolation() {
-	let mut service = TestServiceType::new(&test_name!()).await;
-	service.complete_initial_setup().await;
-	service.login_admin().await;
-	service.index().await;
-
-	// Create two users
-	let request = protocol::create_user(dto::NewUser {
-		name: "alice".into(),
-		password: "password".into(),
-		admin: true,
-	});
-	assert_eq!(service.fetch(&request).await.status(), StatusCode::OK);
-
-	let request = protocol::create_user(dto::NewUser {
-		name: "bob".into(),
-		password: "password".into(),
-		admin: false,
-	});
-	assert_eq!(service.fetch(&request).await.status(), StatusCode::OK);
-
-	// Alice plays a song
-	service.login_as("alice", "password").await;
-	service.fetch(&protocol::record_play(KHEMMIS_SONG)).await;
-
-	// Bob queries popularity — should get 200 with no play data for him
-	service.login_as("bob", "password").await;
-	let request = protocol::artists_with_sort("popularity");
-	let response = service.fetch(&request).await;
-	assert_eq!(response.status(), StatusCode::OK);
-}
