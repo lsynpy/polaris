@@ -9,8 +9,8 @@
 **/test-output
 
 # Web build output
-web/node_modules
-web/dist
+node_modules
+dist
 
 # Playwright artifacts
 playwright-report/

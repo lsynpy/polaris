@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { TEST_USERNAME, TEST_PASSWORD } from './testConstants';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test('rejects bad passwords', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('username').fill('testUser');
+  await page.getByLabel('username').fill(TEST_USERNAME);
   await page.getByLabel('password').fill('badPassword');
   await page.getByTestId('submit-login').click();
   await expect(page.getByTestId('login-error')).toBeVisible();
@@ -12,16 +13,16 @@ test('rejects bad passwords', async ({ page }) => {
 
 test('can login', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('username').fill('testUser');
-  await page.getByLabel('password').fill('testPassword');
+  await page.getByLabel('username').fill(TEST_USERNAME);
+  await page.getByLabel('password').fill(TEST_PASSWORD);
   await page.getByTestId('submit-login').click();
   await page.waitForURL('**/files');
 });
 
 test('remembers login between visits', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('username').fill('testUser');
-  await page.getByLabel('password').fill('testPassword');
+  await page.getByLabel('username').fill(TEST_USERNAME);
+  await page.getByLabel('password').fill(TEST_PASSWORD);
   await page.getByTestId('submit-login').click();
   await page.waitForURL('**/files');
   await page.goto('/');
@@ -30,8 +31,8 @@ test('remembers login between visits', async ({ page }) => {
 
 test('asks for credentials after logging out', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('username').fill('testUser');
-  await page.getByLabel('password').fill('testPassword');
+  await page.getByLabel('username').fill(TEST_USERNAME);
+  await page.getByLabel('password').fill(TEST_PASSWORD);
   await page.getByTestId('submit-login').click();
 
   await page.getByTestId('logout').click();
@@ -44,8 +45,8 @@ test('asks for credentials after logging out', async ({ page }) => {
 
 test('asks for credentials again when returning after logging out', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('username').fill('testUser');
-  await page.getByLabel('password').fill('testPassword');
+  await page.getByLabel('username').fill(TEST_USERNAME);
+  await page.getByLabel('password').fill(TEST_PASSWORD);
   await page.getByTestId('submit-login').click();
 
   await page.getByTestId('logout').click();
@@ -59,8 +60,8 @@ test('asks for credentials again when returning after logging out', async ({ pag
 
 test('starts on auth page when returning with bad auth token', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('username').fill('testUser');
-  await page.getByLabel('password').fill('testPassword');
+  await page.getByLabel('username').fill(TEST_USERNAME);
+  await page.getByLabel('password').fill(TEST_PASSWORD);
   await page.getByTestId('submit-login').click();
 });
 

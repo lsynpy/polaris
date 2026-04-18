@@ -1,6 +1,7 @@
+import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test } from '@playwright/test';
+import { TEST_COLLECTION_NAME, TEST_LOCATION, TEST_PASSWORD, TEST_USERNAME } from './testConstants';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -15,15 +16,15 @@ test.describe('initial setup tests', () => {
 
     await expect(page.getByText('Music Sources')).toBeVisible();
     await expect(page.getByTestId('submit-mount-dirs')).toBeDisabled();
-    await page.getByLabel('location').fill('test-data/small-collection');
-    await page.getByLabel('name').fill('Test');
+    await page.getByLabel('location').fill(TEST_LOCATION);
+    await page.getByLabel('name').fill(TEST_COLLECTION_NAME);
     await page.getByTestId('submit-mount-dirs').click();
 
     await expect(page.getByText('User Account')).toBeVisible();
     await expect(page.getByTestId('submit-user')).toBeDisabled();
-    await page.getByLabel('username').fill('testUser');
-    await page.getByLabel('password').first().fill('testPassword');
-    await page.getByLabel('confirm password').fill('testPassword');
+    await page.getByLabel('username').fill(TEST_USERNAME);
+    await page.getByLabel('password').first().fill(TEST_PASSWORD);
+    await page.getByLabel('confirm password').fill(TEST_PASSWORD);
     await page.getByTestId('submit-user').click();
 
     await page.waitForURL('**/files');
