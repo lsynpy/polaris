@@ -1,34 +1,34 @@
-import type { Song } from "@/api/dto";
+import type { Song } from '@/api/dto';
 
 export function isFakeArtist(name: string) {
-  return name === "Various Artists" || name === "VA";
+  return name === 'Various Artists' || name === 'VA';
 }
 
 export function getPathTail(path: string) {
-  path = path.replace(/\\/g, "/");
-  let slices = path.split("/");
+  path = path.replace(/\\/g, '/');
+  let slices = path.split('/');
   slices = slices.filter((s) => s.length > 0);
-  return slices[slices.length - 1] || "";
+  return slices[slices.length - 1] || '';
 }
 
 export function stripFileExtension(path: string): string {
-  return path.replace(/\.[^/.]+$/, "");
+  return path.replace(/\.[^/.]+$/, '');
 }
 
 export function formatDuration(seconds: number): string {
   if (Number.isNaN(seconds)) {
-    return "";
+    return '';
   }
   const date = new Date(0);
   date.setSeconds(seconds);
   let formatted = date.toISOString().substring(11, 19);
-  formatted = formatted.replace(/^[0:]{1,4}/, "");
+  formatted = formatted.replace(/^[0:]{1,4}/, '');
   return formatted;
 }
 
 export function formatLongDuration(totalSeconds: number): string {
   if (Number.isNaN(totalSeconds)) {
-    return "";
+    return '';
   }
   let seconds = totalSeconds;
   const days = Math.floor(seconds / 3600 / 24);
@@ -37,7 +37,7 @@ export function formatLongDuration(totalSeconds: number): string {
   seconds -= hours * 3600;
   const minutes = Math.floor(seconds / 60);
   seconds -= minutes * 60;
-  let output = "";
+  let output = '';
   if (totalSeconds >= 3600 * 24) {
     output += `${days}d `;
   }
@@ -52,17 +52,15 @@ export function formatLongDuration(totalSeconds: number): string {
 }
 
 export function formatArtists(artists: string[]) {
-  return artists.join(", ");
+  return artists.join(', ');
 }
 
 export function formatTrackNumber(song: Song): string {
   if (song.track_number === undefined) {
-    return "";
+    return '';
   }
   const trackNumber =
-    song.track_number < 10
-      ? `0${song.track_number}`
-      : song.track_number.toString();
+    song.track_number < 10 ? `0${song.track_number}` : song.track_number.toString();
   if (song.disc_number === undefined) {
     return trackNumber;
   } else {
@@ -82,7 +80,7 @@ export function formatSong(song: Song) {
     artists = song.album_artists;
   }
 
-  const artistText = artists.length ? formatArtists(artists) : "Unknown Artist";
+  const artistText = artists.length ? formatArtists(artists) : 'Unknown Artist';
   const titleText = formatTitle(song);
   return `${artistText} - ${titleText}`;
 }

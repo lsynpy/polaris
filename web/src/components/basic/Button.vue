@@ -1,36 +1,42 @@
 <template>
-    <button type="button" :class="buttonClass" :disabled="disabled" @click="onClick"
-        class="inline-flex items-center justify-center gap-x-1.5 rounded-md text-sm font-semibold whitespace-nowrap">
-        <span v-if="icon" class="material-icons-round" :class="iconClass">
-            {{ icon }}
-        </span>
-        <span v-if="label?.length" v-text="label" />
-    </button>
+  <button
+    type="button"
+    :class="buttonClass"
+    :disabled="disabled"
+    class="inline-flex items-center justify-center gap-x-1.5 rounded-md text-sm font-semibold whitespace-nowrap"
+    @click="onClick"
+  >
+    <span v-if="icon" class="material-icons-round" :class="iconClass">
+      {{ icon }}
+    </span>
+    <span v-if="label?.length" v-text="label" />
+  </button>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from 'vue';
 
 const emit = defineEmits<{
   click: [event: MouseEvent];
 }>();
 
 const {
-  severity = "primary",
-  size = "base",
+  severity = 'primary',
+  size = 'base',
   disabled = false,
-  ...props
+  label = '',
+  icon = '',
 } = defineProps<{
   label?: string;
   icon?: string;
   disabled?: boolean;
-  severity?: "primary" | "secondary" | "tertiary" | "danger";
-  size?: "sm" | "base" | "lg" | "xl";
+  severity?: 'primary' | 'secondary' | 'tertiary' | 'danger';
+  size?: 'sm' | 'base' | 'lg' | 'xl';
 }>();
 
 function onClick(event: MouseEvent) {
   if (!disabled) {
-    emit("click", event);
+    emit('click', event);
   }
 }
 
@@ -64,42 +70,36 @@ let palettes = {
         dark:bg-red-600 dark:hover:bg-red-500 dark:text-ds-0
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600
         shadow-sm
-        `
+        `,
 };
 
 let sizes = {
-  sm: "px-1.5 py-1",
-  base: "px-2.5 py-1.5",
-  lg: "px-3 py-2",
-  xl: "px-3.5 py-2.5"
+  sm: 'px-1.5 py-1',
+  base: 'px-2.5 py-1.5',
+  lg: 'px-3 py-2',
+  xl: 'px-3.5 py-2.5',
 };
 
 const buttonClass = computed(() => {
   const palette = disabled ? palettes.disabled : palettes[severity];
   return [
-    disabled
-      ? "cursor-not-allowed"
-      : "cursor-pointer [&>*]:active:translate-y-px",
+    disabled ? 'cursor-not-allowed' : 'cursor-pointer [&>*]:active:translate-y-px',
     sizes[size],
-    palette
+    palette,
   ];
 });
 
 const iconClass = computed(() => {
   if (disabled) {
-    return "text-ls-200 dark:text-ds-500";
-  } else if (severity === "tertiary") {
-    return props.label?.length
-      ? "text-ls-400 dark:text-ds-300"
-      : "text-ls-700 dark:text-ds-200";
-  } else if (severity === "secondary") {
-    return props.label?.length
-      ? "text-ls-400 dark:text-ds-300"
-      : "text-ls-700 dark:text-ds-200";
-  } else if (severity === "danger") {
-    return "text-red-50 dark:text-red-50";
+    return 'text-ls-200 dark:text-ds-500';
+  } else if (severity === 'tertiary') {
+    return label?.length ? 'text-ls-400 dark:text-ds-300' : 'text-ls-700 dark:text-ds-200';
+  } else if (severity === 'secondary') {
+    return label?.length ? 'text-ls-400 dark:text-ds-300' : 'text-ls-700 dark:text-ds-200';
+  } else if (severity === 'danger') {
+    return 'text-red-50 dark:text-red-50';
   } else {
-    return "text-ls-50 dark:text-ds-50";
+    return 'text-ls-50 dark:text-ds-50';
   }
 });
 </script>

@@ -1,6 +1,6 @@
-import { useScroll, watchThrottled, whenever } from "@vueuse/core";
-import { type MaybeRef, type Ref, toRaw, type WatchSource } from "vue";
-import { useScrollSizeObserver } from "vue-use-scroll-size-observer";
+import { useScroll, watchThrottled, whenever } from '@vueuse/core';
+import { type MaybeRef, type Ref, toRaw, type WatchSource } from 'vue';
+import { useScrollSizeObserver } from 'vue-use-scroll-size-observer';
 
 export interface HistoryValue {
   save: () => unknown;
@@ -8,9 +8,7 @@ export interface HistoryValue {
   restoreWhen?: (v: unknown) => WatchSource;
 }
 
-export function saveScrollState(
-  el: MaybeRef<HTMLElement | null>
-): HistoryValue {
+export function saveScrollState(el: MaybeRef<HTMLElement | null>): HistoryValue {
   const { y: scrollY } = useScroll(el);
   const { scrollHeight } = useScrollSizeObserver(el);
   return {
@@ -22,7 +20,7 @@ export function saveScrollState(
     restoreWhen: (v: unknown) => () => {
       const [, h] = v as [number, number];
       return scrollHeight.value >= h;
-    }
+    },
   };
 }
 
@@ -30,7 +28,7 @@ export function useHistory(key: string, values: (Ref | HistoryValue)[]) {
   let pendingRestores = 0;
 
   const watchSources = values.map((r) => {
-    if ("save" in r) {
+    if ('save' in r) {
       return () => r.save();
     } else {
       return r;
@@ -48,13 +46,13 @@ export function useHistory(key: string, values: (Ref | HistoryValue)[]) {
         return;
       }
       const state = values.map((r) => {
-        if ("save" in r) {
+        if ('save' in r) {
           return r.save();
         } else {
           return toRaw(r.value);
         }
       });
-      history.replaceState({ ...history.state, [key]: state }, "");
+      history.replaceState({ ...history.state, [key]: state }, '');
     },
     { throttle: 500 }
   );
@@ -67,7 +65,7 @@ export function useHistory(key: string, values: (Ref | HistoryValue)[]) {
   pendingRestores = values.length;
   for (const [i, v] of state.entries()) {
     const r = values[i];
-    if ("restore" in r) {
+    if ('restore' in r) {
       if (r.restoreWhen) {
         whenever(
           r.restoreWhen(v),

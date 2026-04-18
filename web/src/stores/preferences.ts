@@ -1,38 +1,46 @@
-import { watchImmediate } from "@vueuse/core";
-import { acceptHMRUpdate, defineStore } from "pinia";
-import { computed, type WritableComputedRef } from "vue";
+import { watchImmediate } from '@vueuse/core';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, type WritableComputedRef } from 'vue';
 
-import { useUserStorage } from "@/storage";
+import { useUserStorage } from '@/storage';
 import {
   applyTheme,
   getDefaultAccentHue,
   getDefaultTheme,
   getThemePolarity,
-  type Theme
-} from "@/theming";
+  type Theme,
+} from '@/theming';
 
-export type ArtistDisplayMode = "grid" | "timeline";
-export type ArtistListMode = "fixed" | "proportional";
-export type SongListDisplayMode = "compact" | "tall";
+export type ArtistDisplayMode = 'grid' | 'timeline';
+export type ArtistListMode = 'fixed' | 'proportional';
+export type SongListDisplayMode = 'compact' | 'tall';
 
-export const usePreferencesStore = defineStore("preferences", () => {
-  const accentBaseHue = useUserStorage("accentBaseHue", getDefaultAccentHue());
-  const accentChromaMultiplier = useUserStorage("accentChromaMultiplier", 1.0);
-  const theme = useUserStorage("theme", getDefaultTheme());
+export const usePreferencesStore = defineStore('preferences', () => {
+  const accentBaseHue = useUserStorage('accentBaseHue', getDefaultAccentHue());
+  const accentChromaMultiplier = useUserStorage('accentChromaMultiplier', 1.0);
+  const theme = useUserStorage('theme', getDefaultTheme());
   const polarity = computed(() => getThemePolarity(theme.value));
 
-  const artistDisplayMode: WritableComputedRef<ArtistDisplayMode> =
-    useUserStorage("artistDisplayMode", "grid");
-  const artistListMode: WritableComputedRef<ArtistListMode> = useUserStorage(
-    "artistListMode",
-    "fixed"
+  const artistDisplayMode: WritableComputedRef<ArtistDisplayMode> = useUserStorage(
+    'artistDisplayMode',
+    'grid'
   );
-  const playlistDisplayMode: WritableComputedRef<SongListDisplayMode> =
-    useUserStorage("playlistDisplayMode", "tall");
-  const searchResultsDisplayMode: WritableComputedRef<SongListDisplayMode> =
-    useUserStorage("searchResultsDisplayMode", "tall");
-  const savedPlaylistDisplayMode: WritableComputedRef<SongListDisplayMode> =
-    useUserStorage("savedPlaylistDisplayMode", "tall");
+  const artistListMode: WritableComputedRef<ArtistListMode> = useUserStorage(
+    'artistListMode',
+    'fixed'
+  );
+  const playlistDisplayMode: WritableComputedRef<SongListDisplayMode> = useUserStorage(
+    'playlistDisplayMode',
+    'tall'
+  );
+  const searchResultsDisplayMode: WritableComputedRef<SongListDisplayMode> = useUserStorage(
+    'searchResultsDisplayMode',
+    'tall'
+  );
+  const savedPlaylistDisplayMode: WritableComputedRef<SongListDisplayMode> = useUserStorage(
+    'savedPlaylistDisplayMode',
+    'tall'
+  );
 
   watchImmediate([theme, accentBaseHue, accentChromaMultiplier], () => {
     applyTheme(theme.value, accentBaseHue.value, accentChromaMultiplier.value);
@@ -61,7 +69,7 @@ export const usePreferencesStore = defineStore("preferences", () => {
     savedPlaylistDisplayMode,
 
     setTheme,
-    resetTheme
+    resetTheme,
   };
 });
 

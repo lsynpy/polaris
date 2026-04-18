@@ -1,9 +1,9 @@
-import { StorageSerializers, useLocalStorage } from "@vueuse/core";
-import { acceptHMRUpdate, defineStore } from "pinia";
-import { computed, type Ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { StorageSerializers, useLocalStorage } from '@vueuse/core';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, type Ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
-import { login as doLogin } from "@/api/endpoints";
+import { login as doLogin } from '@/api/endpoints';
 
 interface CurrentUser {
   name: string;
@@ -11,9 +11,9 @@ interface CurrentUser {
   isAdmin: boolean;
 }
 
-export const useUserStore = defineStore("user", () => {
-  const user: Ref<CurrentUser | null> = useLocalStorage("current_user", null, {
-    serializer: StorageSerializers.object
+export const useUserStore = defineStore('user', () => {
+  const user: Ref<CurrentUser | null> = useLocalStorage('current_user', null, {
+    serializer: StorageSerializers.object,
   });
 
   const name = computed(() => user.value?.name);
@@ -23,7 +23,7 @@ export const useUserStore = defineStore("user", () => {
 
   const router = useRouter();
   watch(isLoggedIn, () => {
-    router.push("/").catch((_) => {});
+    router.push('/').catch(() => {});
   });
 
   async function login(username: string, password: string): Promise<void> {
@@ -31,7 +31,7 @@ export const useUserStore = defineStore("user", () => {
     user.value = {
       name: username,
       authToken: authorization.token,
-      isAdmin: authorization.is_admin
+      isAdmin: authorization.is_admin,
     };
   }
 
@@ -45,7 +45,7 @@ export const useUserStore = defineStore("user", () => {
     isLoggedIn,
     name,
     login,
-    logout
+    logout,
   };
 });
 

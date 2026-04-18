@@ -1,9 +1,14 @@
 <template>
-    <div class="leading-7 flex gap-x-8 text-sm font-semibold">
-        <div v-for="item of items" @click="onItemClicked(item)" class="cursor-pointer">
-            <span v-text="item.label" :class="itemClass(item)" />
-        </div>
+  <div class="leading-7 flex gap-x-8 text-sm font-semibold">
+    <div
+      v-for="(item, index) of items"
+      :key="index"
+      class="cursor-pointer"
+      @click="onItemClicked(item)"
+    >
+      <span :class="itemClass(item)" v-text="item.label" />
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -22,9 +27,9 @@ function isSelected(item: SwitchTextItem) {
 
 function itemClass(item: SwitchTextItem) {
   if (isSelected(item)) {
-    return "text-accent-600 dark:text-accent-700";
+    return 'text-accent-600 dark:text-accent-700';
   } else {
-    return "text-ls-700 dark:text-ds-300";
+    return 'text-ls-700 dark:text-ds-300';
   }
 }
 

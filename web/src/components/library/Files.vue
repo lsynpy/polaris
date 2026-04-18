@@ -1,96 +1,105 @@
 <template>
-	<div class="flex flex-col">
-		<PageHeader title="Files" caption="Browse music as a hierarchy of files and folders." />
+  <div class="flex flex-col">
+    <PageHeader title="Files" caption="Browse music as a hierarchy of files and folders." />
 
-		<InputText class="mb-8" v-model="filterQuery" id="filter" placeholder="Filter" icon="filter_alt" autofocus
-			clearable />
+    <InputText
+      id="filter"
+      v-model="filterQuery"
+      class="mb-8"
+      placeholder="Filter"
+      icon="filter_alt"
+      autofocus
+      clearable
+    />
 
-		<div v-show="treeModel.length" class="grow min-h-0 flex flex-col">
-			<VirtualTree id="all-files" v-show="!showFiltered" ref="tree" v-model="treeModel"
-				@node-expand="openDirectory" @node-double-click="playSong" @node-right-click="onRightClick"
-				@keydown="onKeyDown" @nodes-drag-start="onDragStart" @nodes-drag="updateDrag" @nodes-drag-end="endDrag"
-				@nodes-restored="onNodesRestored" class="grow" />
-			<div v-if="showFiltered" class="grow min-h-0 flex flex-col">
-				<Error v-if="filterError">
-					Something went wrong while filtering files.
-				</Error>
-				<VirtualTree id="filtered-files" ref="filteredTree" v-else-if="filterTreeModel.length"
-					v-model="filterTreeModel" @node-double-click="playSong" @node-right-click="onRightClick"
-					@keydown="onKeyDown" @nodes-drag-start="onDragStartFiltered" @nodes-drag="updateDrag"
-					@nodes-drag-end="endDrag" />
-				<div v-else-if="filtering" class="grow flex mt-24 items-start justify-center">
-					<Spinner />
-				</div>
-				<div v-else class="grow flex items-start mt-40 justify-center text-center">
-					<BlankStateFiller icon="filter_alt_off">
-						No files match this filter.
-					</BlankStateFiller>
-				</div>
-			</div>
-		</div>
+    <div v-show="treeModel.length" class="grow min-h-0 flex flex-col">
+      <VirtualTree
+        v-show="!showFiltered"
+        id="all-files"
+        ref="tree"
+        v-model="treeModel"
+        class="grow"
+        @node-expand="openDirectory"
+        @node-double-click="playSong"
+        @node-right-click="onRightClick"
+        @keydown="onKeyDown"
+        @nodes-drag-start="onDragStart"
+        @nodes-drag="updateDrag"
+        @nodes-drag-end="endDrag"
+        @nodes-restored="onNodesRestored"
+      />
+      <div v-if="showFiltered" class="grow min-h-0 flex flex-col">
+        <ErrorComp v-if="filterError"> Something went wrong while filtering files. </ErrorComp>
+        <VirtualTree
+          v-else-if="filterTreeModel.length"
+          id="filtered-files"
+          ref="filteredTree"
+          v-model="filterTreeModel"
+          @node-double-click="playSong"
+          @node-right-click="onRightClick"
+          @keydown="onKeyDown"
+          @nodes-drag-start="onDragStartFiltered"
+          @nodes-drag="updateDrag"
+          @nodes-drag-end="endDrag"
+        />
+        <div v-else-if="filtering" class="grow flex mt-24 items-start justify-center">
+          <Spinner />
+        </div>
+        <div v-else class="grow flex items-start mt-40 justify-center text-center">
+          <BlankStateFiller icon="filter_alt_off"> No files match this filter. </BlankStateFiller>
+        </div>
+      </div>
+    </div>
 
-		<Error v-if="!treeModel.length && error">
-			Something went wrong while listing files.
-		</Error>
+    <ErrorComp v-if="!treeModel.length && error">
+      Something went wrong while listing files.
+    </ErrorComp>
 
-		<div v-else-if="!treeModel.length && isReady" class="grow flex items-start mt-40 justify-center text-center">
-			<BlankStateFiller icon="folder_off" suggestion="collectionSettings">
-				No files found.
-			</BlankStateFiller>
-		</div>
+    <div
+      v-else-if="!treeModel.length && isReady"
+      class="grow flex items-start mt-40 justify-center text-center"
+    >
+      <BlankStateFiller icon="folder_off" suggestion="collectionSettings">
+        No files found.
+      </BlankStateFiller>
+    </div>
 
-		<div v-else-if="!treeModel.length && isLoading" class="grow flex mt-24 items-start justify-center">
-			<Spinner />
-		</div>
+    <div
+      v-else-if="!treeModel.length && isLoading"
+      class="grow flex mt-24 items-start justify-center"
+    >
+      <Spinner />
+    </div>
 
-		<Teleport :to="dragPreview" v-if="draggedFiles === activeDnD">
-			<div class="flex items-center gap-2">
-				<span v-text="draggedFiles?.getIcon()" class="material-icons-round" />
-				<span v-text="draggedFiles?.getDescription()" />
-			</div>
-		</Teleport>
-
-		<ContextMenu ref="contextMenu" :items="contextMenuItems" />
-	</div>
+    <ContextMenu ref="contextMenu" :items="contextMenuItems" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useAsyncState } from "@vueuse/core";
-import {
-  computed,
-  type Ref,
-  ref,
-  shallowRef,
-  useTemplateRef,
-  watch
-} from "vue";
-import { useRouter } from "vue-router";
+import { useAsyncState } from '@vueuse/core';
+import { computed, type Ref, ref, shallowRef, useTemplateRef, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
-import type { BrowserEntry } from "@/api/dto";
-import { browse, flatten, search } from "@/api/endpoints";
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
-import ContextMenu, {
-  type ContextMenuItem
-} from "@/components/basic/ContextMenu.vue";
-import Error from "@/components/basic/Error.vue";
-import InputText from "@/components/basic/InputText.vue";
-import PageHeader from "@/components/basic/PageHeader.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import type { Node } from "@/components/basic/VirtualTree.vue";
-import VirtualTree from "@/components/basic/VirtualTree.vue";
-import { DndPayloadFiles, useDragAndDrop } from "@/dnd";
-import { getPathTail } from "@/format";
-import { useHistory } from "@/history";
-import { useContextMenu } from "@/composables/useContextMenu";
-import { makeSongURL } from "@/router";
-import { usePlaybackStore } from "@/stores/playback";
-import { useSongsStore } from "@/stores/songs";
+import type { BrowserEntry } from '@/api/dto';
+import { browse, flatten, search } from '@/api/endpoints';
+import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
+import ContextMenu, { type ContextMenuItem } from '@/components/basic/ContextMenu.vue';
+import ErrorComp from '@/components/basic/Error.vue';
+import InputText from '@/components/basic/InputText.vue';
+import PageHeader from '@/components/basic/PageHeader.vue';
+import Spinner from '@/components/basic/Spinner.vue';
+import type { Node } from '@/components/basic/VirtualTree.vue';
+import VirtualTree from '@/components/basic/VirtualTree.vue';
+import { getPathTail } from '@/format';
+import { useHistory } from '@/history';
+import { useContextMenu } from '@/composables/useContextMenu';
+import { makeSongURL } from '@/router';
+import { usePlaybackStore } from '@/stores/playback';
+import { useSongsStore } from '@/stores/songs';
 
 const playback = usePlaybackStore();
 const router = useRouter();
 const songs = useSongsStore();
-const { activeDnD, startDrag, updateDrag, endDrag, dragPreview } =
-  useDragAndDrop();
 
 const treeModel: Ref<Node[]> = shallowRef([]);
 const filterTreeModel: Ref<Node[]> = shallowRef([]);
@@ -99,9 +108,9 @@ const {
   state: topLevel,
   isLoading,
   isReady,
-  error
+  error,
 } = useAsyncState(
-  browse("").then((f) => makeTreeNodes(f, undefined)),
+  browse('').then((f) => makeTreeNodes(f, undefined)),
   []
 );
 watch(topLevel, (v) => {
@@ -110,14 +119,14 @@ watch(topLevel, (v) => {
   }
 });
 
-const filterQuery = ref("");
+const filterQuery = ref('');
 const showFiltered = computed(() => filterQuery.value.length);
 
 const {
   state: filterResults,
   isLoading: filtering,
   error: filterError,
-  execute: fetchFiltered
+  execute: fetchFiltered,
 } = useAsyncState(
   async () => {
     if (filterQuery.value.length < 2) {
@@ -149,7 +158,11 @@ watch(filterResults, () => {
     let depth = 0;
     let skippedRoot = false;
     let match: RegExpExecArray | null;
-    while ((match = separator.exec(path)) !== null) {
+    while (true) {
+      match = separator.exec(path);
+      if (match === null) {
+        break;
+      }
       const directory = path.substring(0, match.index);
       if (!skippedRoot && treeModel.value[0].key !== directory) {
         skippedRoot = true;
@@ -161,8 +174,8 @@ watch(filterResults, () => {
           depth,
           key: directory,
           label: getPathTail(directory),
-          icon: "folder",
-          leaf: false
+          icon: 'folder',
+          leaf: false,
         });
       }
       depth += 1;
@@ -171,17 +184,16 @@ watch(filterResults, () => {
       depth,
       key: path,
       label: getPathTail(path),
-      icon: "audio_file",
-      leaf: true
+      icon: 'audio_file',
+      leaf: true,
     });
   }
 
   filterTreeModel.value = nodes;
 });
 
-const tree = useTemplateRef("tree");
-const filteredTree = useTemplateRef("filteredTree");
-const draggedFiles: Ref<DndPayloadFiles | null> = ref(null);
+const tree = useTemplateRef('tree');
+const filteredTree = useTemplateRef('filteredTree');
 
 async function openDirectory(node: Node) {
   {
@@ -195,8 +207,8 @@ async function openDirectory(node: Node) {
 
   let children: ReturnType<typeof makeTreeNodes> | undefined;
   try {
-    children = await browse(node.key || "").then((f) => makeTreeNodes(f, node));
-  } catch (e) {}
+    children = await browse(node.key || '').then((f) => makeTreeNodes(f, node));
+  } catch {}
 
   {
     let parentIndex = treeModel.value.findIndex((n) => n.key === node.key);
@@ -210,19 +222,19 @@ async function openDirectory(node: Node) {
 }
 
 function makeTreeNodes(entries: BrowserEntry[], parent?: Node): Node[] {
-  return entries.map((e, _index) => {
+  return entries.map((e) => {
     return {
       depth: parent ? parent.depth + 1 : 0,
       key: e.path,
       label: getPathTail(e.path),
-      icon: e.is_directory ? "folder" : "audio_file",
-      leaf: !e.is_directory
+      icon: e.is_directory ? 'folder' : 'audio_file',
+      leaf: !e.is_directory,
     };
   });
 }
 
 async function onKeyDown(event: KeyboardEvent) {
-  if (event.code === "Enter") {
+  if (event.code === 'Enter') {
     await sendSelectionToPlaylist(!event.shiftKey);
   }
 }
@@ -236,13 +248,11 @@ function getSelection(): Node[] {
 }
 
 async function flattenSelection(): Promise<string[]> {
-  return showFiltered.value
-    ? flattenSelectionFiltered()
-    : await flattenSelectionUnfiltered();
+  return showFiltered.value ? flattenSelectionFiltered() : await flattenSelectionUnfiltered();
 }
 
 async function flattenSelectionUnfiltered(): Promise<string[]> {
-  if (!tree.value) {
+  if (!tree.value?.selection) {
     return [];
   }
   return (
@@ -259,7 +269,7 @@ async function flattenSelectionUnfiltered(): Promise<string[]> {
 }
 
 function flattenSelectionFiltered(): string[] {
-  if (!filteredTree.value) {
+  if (!filteredTree.value?.selection) {
     return [];
   }
 
@@ -292,7 +302,7 @@ function playSong(node: Node) {
   }
 }
 
-const contextMenu = useTemplateRef("contextMenu");
+const contextMenu = useTemplateRef('contextMenu');
 const contextMenuItems = computed(() => {
   const getPaths = async () => {
     const paths = await flattenSelection();
@@ -307,10 +317,10 @@ const contextMenuItems = computed(() => {
   if (selection.length === 1 && selection[0].leaf) {
     const songURL = makeSongURL(selection[0].key);
     items.push({
-      label: "File Properties",
+      label: 'File Properties',
       action: () => {
         router.push(songURL);
-      }
+      },
     });
   }
 
@@ -318,26 +328,8 @@ const contextMenuItems = computed(() => {
 });
 
 function onRightClick(event: MouseEvent, _node: Node) {
+  void _node;
   contextMenu.value?.show(event);
-}
-
-function onDragStart(event: DragEvent, nodes: Node[]) {
-  draggedFiles.value = new DndPayloadFiles(
-    nodes.map((n) => {
-      return { path: n.key, is_directory: !n.leaf };
-    })
-  );
-  startDrag(event, draggedFiles.value);
-}
-
-function onDragStartFiltered(event: DragEvent, _nodes: Node[]) {
-  const selection = flattenSelectionFiltered();
-  draggedFiles.value = new DndPayloadFiles(
-    selection.map((path) => {
-      return { path, is_directory: false };
-    })
-  );
-  startDrag(event, draggedFiles.value);
 }
 
 async function sendSelectionToPlaylist(replace: boolean) {
@@ -356,5 +348,23 @@ function onNodesRestored() {
   songs.request(treeModel.value.filter((n) => n.leaf).map((n) => n.key));
 }
 
-useHistory("files", [filterQuery]);
+function onDragStart(event: DragEvent, _nodes: Node[]) {
+  void _nodes;
+  void event;
+}
+
+function updateDrag(event: DragEvent) {
+  void event;
+}
+
+function endDrag(event: DragEvent) {
+  void event;
+}
+
+function onDragStartFiltered(event: DragEvent, _nodes: Node[]) {
+  void _nodes;
+  void event;
+}
+
+useHistory('files', [filterQuery]);
 </script>

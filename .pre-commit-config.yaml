@@ -32,18 +32,18 @@ repos:
         files: '^web/.*\.(ts|tsx|vue)$'
         pass_filenames: false
 
-      # Biome formatting
-      - id: biome-format
-        name: biome format
-        entry: bash -c 'cd web && npx @biomejs/biome format --write'
+      # Prettier formatting
+      - id: prettier
+        name: prettier
+        entry: bash -c 'cd web && npx prettier --write "src/**/*.{ts,tsx,vue,js,jsx,json,css,scss}"'
         language: system
-        files: '^web/.*\.(ts|tsx|vue|js|jsx|json)$'
+        files: '^web/.*\.(ts|tsx|vue|js|jsx|json|css|scss)$'
         pass_filenames: false
 
-      # Biome linting
-      - id: biome-lint
-        name: biome lint
-        entry: bash -c 'cd web && npx @biomejs/biome lint --write'
+      # ESLint linting
+      - id: eslint
+        name: eslint
+        entry: bash -c 'cd web && npx eslint "src/**/*.{vue,ts,tsx,js,jsx}" --fix'
         language: system
         files: '^web/.*\.(ts|tsx|vue|js|jsx)$'
         pass_filenames: false

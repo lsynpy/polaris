@@ -1,72 +1,78 @@
 <template>
-	<div class="flex flex-col">
-		<PageHeader title="Playlists" :actions="pageActions" />
-		<div v-if="playlists.listing.length" class="grow min-h-0 flex flex-col">
-			<InputText class="mb-8" v-model="filter" id="filter" placeholder="Filter" icon="filter_alt" autofocus
-				clearable />
-			<div ref="viewport" class="-mx-4 px-4 overflow-y-auto whitespace-nowrap">
-				<div v-if="filtered?.length" class="flex flex-col overflow-x-hidden
-                divide-y divide-ls-200 dark:divide-ds-700">
-					<div v-for="playlist in filtered" :key="playlist.name" data-pw="saved-playlist"
-						class="flex items-center first:pt-1 py-4 gap-4">
-						<Button icon="play_arrow" severity="secondary" @click="play(playlist)" />
-						<div class="basis-fit shrink min-w-0 pr-8 flex flex-col">
-							<span @click="onPlaylistClicked(playlist)" class="cursor-pointer
-								font-semibold text-sm
-                                overflow-hidden text-ellipsis
-                                text-ls-700 dark:text-ds-300
-                                hover:text-accent-600 hover:underline">
-								{{ playlist.name }}
-							</span>
-							<span class="mt-1 text-xs text-ls-500 dark:text-ds-500"
-								v-text="formatLongDuration(playlist.duration)" />
-						</div>
-					</div>
-				</div>
-				<div v-else class="grow flex mt-40 justify-center text-center">
-					<BlankStateFiller icon="filter_alt_off">
-						No playlists match this filter.
-					</BlankStateFiller>
-				</div>
-			</div>
-		</div>
+  <div class="flex flex-col">
+    <PageHeader title="Playlists" :actions="pageActions" />
+    <div v-if="playlists.listing.length" class="grow min-h-0 flex flex-col">
+      <InputText
+        id="filter"
+        v-model="filter"
+        class="mb-8"
+        placeholder="Filter"
+        icon="filter_alt"
+        autofocus
+        clearable
+      />
+      <div ref="viewport" class="-mx-4 px-4 overflow-y-auto whitespace-nowrap">
+        <div
+          v-if="filtered?.length"
+          class="flex flex-col overflow-x-hidden divide-y divide-ls-200 dark:divide-ds-700"
+        >
+          <div
+            v-for="playlist in filtered"
+            :key="playlist.name"
+            data-pw="saved-playlist"
+            class="flex items-center first:pt-1 py-4 gap-4"
+          >
+            <Button icon="play_arrow" severity="secondary" @click="play(playlist)" />
+            <div class="basis-fit shrink min-w-0 pr-8 flex flex-col">
+              <span
+                class="cursor-pointer font-semibold text-sm overflow-hidden text-ellipsis text-ls-700 dark:text-ds-300 hover:text-accent-600 hover:underline"
+                @click="onPlaylistClicked(playlist)"
+              >
+                {{ playlist.name }}
+              </span>
+              <span
+                class="mt-1 text-xs text-ls-500 dark:text-ds-500"
+                v-text="formatLongDuration(playlist.duration)"
+              />
+            </div>
+          </div>
+        </div>
+        <div v-else class="grow flex mt-40 justify-center text-center">
+          <BlankStateFiller icon="filter_alt_off">
+            No playlists match this filter.
+          </BlankStateFiller>
+        </div>
+      </div>
+    </div>
 
-		<div v-else-if="isLoading" class="grow flex mt-24 items-start justify-center">
-			<Spinner />
-		</div>
+    <div v-else-if="isLoading" class="grow flex mt-24 items-start justify-center">
+      <Spinner />
+    </div>
 
-		<Error v-else-if="error">
-			Something went wrong while listing playlists.
-		</Error>
+    <Error v-else-if="error"> Something went wrong while listing playlists. </Error>
 
-		<div v-else-if="!playlists.listing.length" class="grow flex mt-40 justify-center text-center">
-			<BlankStateFiller icon="music_off">
-				No playlists have been saved.
-			</BlankStateFiller>
-		</div>
-	</div>
+    <div v-else-if="!playlists.listing.length" class="grow flex mt-40 justify-center text-center">
+      <BlankStateFiller icon="music_off"> No playlists have been saved. </BlankStateFiller>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, useTemplateRef } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onMounted, ref, useTemplateRef } from 'vue';
+import { useRouter } from 'vue-router';
 
-import type { PlaylistHeader } from "@/api/dto";
-import {
-  exportPlaylists as doExportPlaylists,
-  getPlaylist
-} from "@/api/endpoints";
-import BlankStateFiller from "@/components/basic/BlankStateFiller.vue";
-import Button from "@/components/basic/Button.vue";
-import Error from "@/components/basic/Error.vue";
-import InputText from "@/components/basic/InputText.vue";
-import PageHeader from "@/components/basic/PageHeader.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import { formatLongDuration } from "@/format";
-import { saveScrollState, useHistory } from "@/history";
-import notify from "@/notify";
-import { usePlaybackStore } from "@/stores/playback";
-import { usePlaylistsStore } from "@/stores/playlists";
+import type { PlaylistHeader } from '@/api/dto';
+import { exportPlaylists as doExportPlaylists, getPlaylist } from '@/api/endpoints';
+import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
+import Button from '@/components/basic/Button.vue';
+import Error from '@/components/basic/Error.vue';
+import InputText from '@/components/basic/InputText.vue';
+import PageHeader from '@/components/basic/PageHeader.vue';
+import Spinner from '@/components/basic/Spinner.vue';
+import { formatLongDuration } from '@/format';
+import { saveScrollState, useHistory } from '@/history';
+import { usePlaybackStore } from '@/stores/playback';
+import { usePlaylistsStore } from '@/stores/playlists';
 
 const router = useRouter();
 const playback = usePlaybackStore();
@@ -79,25 +85,25 @@ onMounted(async () => {
   try {
     isLoading.value = true;
     await playlists.fetchList();
-  } catch (e) {
+  } catch {
     error.value = true;
   }
   isLoading.value = false;
 });
 
-const viewport = useTemplateRef("viewport");
+const viewport = useTemplateRef('viewport');
 
 const pageActions = computed(() => [
-  { label: "Import", icon: "download", action: importPlaylists },
+  { label: 'Import', icon: 'download', action: importPlaylists },
   {
-    label: "Export",
-    icon: "upload",
+    label: 'Export',
+    icon: 'upload',
     action: exportPlaylists,
-    disabled: !playlists.listing.length
-  }
+    disabled: !playlists.listing.length,
+  },
 ]);
 
-const filter = ref("");
+const filter = ref('');
 
 const filtered = computed(() => {
   if (!playlists.listing) {
@@ -108,9 +114,7 @@ const filtered = computed(() => {
 });
 
 function onPlaylistClicked(playlist: PlaylistHeader) {
-  router
-    .push(`/playlists/${encodeURIComponent(playlist.name)}`)
-    .catch((_err) => {});
+  router.push(`/playlists/${encodeURIComponent(playlist.name)}`);
 }
 
 async function play(playlist: PlaylistHeader) {
@@ -123,7 +127,7 @@ async function play(playlist: PlaylistHeader) {
 
 function exportPlaylists() {
   doExportPlaylists().then(({ filename, payload }) => {
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     const url = window.URL.createObjectURL(payload);
     link.href = url;
     link.download = filename;
@@ -133,11 +137,11 @@ function exportPlaylists() {
 }
 
 function importPlaylists() {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".m3u,.m3u8,.zip";
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.m3u,.m3u8,.zip';
   input.multiple = true;
-  input.onchange = async (_e) => {
+  input.onchange = async () => {
     const files = [];
     const numFiles = input.files?.length || 0;
     for (let i = 0; i < numFiles; i++) {
@@ -148,21 +152,19 @@ function importPlaylists() {
       const data = new Blob([await file.bytes()]);
       files.push({
         filename: file.name,
-        content: data
+        content: data,
       });
     }
     try {
       await playlists.importPlaylists(files);
     } catch (e: unknown) {
       if (e instanceof Response) {
-        const text = await e.text();
-        const throttle = false;
-        notify("Playlist Import Error", null, text, throttle);
+        await e.text();
       }
     }
   };
   input.click();
 }
 
-useHistory("playlists", [filter, saveScrollState(viewport)]);
+useHistory('playlists', [filter, saveScrollState(viewport)]);
 </script>

@@ -1,59 +1,70 @@
 <template>
-	<div data-pw="player"
-		class="relative flex flex-col gap-y-8 justify-center items-stretch min-h-0 lg:flex-row lg:items-center p-4 lg:px-8 bg-ls-0 dark:bg-ds-900 whitespace-nowrap">
-		<audio ref="htmlAudio" v-if="audioURL" v-bind:src="audioURL" @timeupdate="onTimeUpdate" @error="onPlaybackError"
-			@ended="onEnded" @pause="onPaused" @playing="onPlaying" @waiting="onWaiting" />
-		<PlayerAlbum :mini-player="isMiniPlayer" class="lg:basis-80 min-w-0 min-h-0 lg:grow shrink" />
-		<PlayerSong :mini-player="isMiniPlayer" :seconds-played="secondsPlayed" :duration="duration"
-			:progress="trackProgress" @seek="seekTo" class="lg:grow-[8] lg:basis-80 min-w-32 lg:mx-8 xl:mx-16" />
-		<PlayerControls class="lg:basis-80 lg:min-w-0 lg:grow lg:shrink" v-model:volume="volume" :paused="paused"
-			:buffering="buffering" :error="error" @play="play" @pause="pause" @previous="skipPrevious"
-			@next="skipNext" />
-	</div>
+  <div
+    data-pw="player"
+    class="relative flex flex-col gap-y-8 justify-center items-stretch min-h-0 lg:flex-row lg:items-center p-4 lg:px-8 bg-ls-0 dark:bg-ds-900 whitespace-nowrap"
+  >
+    <audio
+      v-if="audioURL"
+      ref="htmlAudio"
+      :src="audioURL"
+      @timeupdate="onTimeUpdate"
+      @error="onPlaybackError"
+      @ended="onEnded"
+      @pause="onPaused"
+      @playing="onPlaying"
+      @waiting="onWaiting"
+    />
+    <PlayerAlbum :mini-player="isMiniPlayer" class="lg:basis-80 min-w-0 min-h-0 lg:grow shrink" />
+    <PlayerSong
+      :mini-player="isMiniPlayer"
+      :seconds-played="secondsPlayed"
+      :duration="duration"
+      :progress="trackProgress"
+      class="lg:grow-[8] lg:basis-80 min-w-32 lg:mx-8 xl:mx-16"
+      @seek="seekTo"
+    />
+    <PlayerControls
+      v-model:volume="volume"
+      class="lg:basis-80 lg:min-w-0 lg:grow lg:shrink"
+      :paused="paused"
+      :buffering="buffering"
+      :error="error"
+      @play="play"
+      @pause="pause"
+      @previous="skipPrevious"
+      @next="skipNext"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useMediaQuery, useTimeoutPoll } from "@vueuse/core";
-import {
-  computed,
-  nextTick,
-  onMounted,
-  type Ref,
-  ref,
-  useTemplateRef,
-  watch
-} from "vue";
-import { makeAudioURL, makeThumbnailURL } from "@/api/endpoints";
-import PlayerAlbum from "@/components/playback/PlayerAlbum.vue";
-import PlayerControls from "@/components/playback/PlayerControls.vue";
-import PlayerSong from "@/components/playback/PlayerSong.vue";
-import { formatSong } from "@/format";
-import notify from "@/notify";
-import { usePlaybackStore } from "@/stores/playback";
+import { useMediaQuery, useTimeoutPoll } from '@vueuse/core';
+import { computed, nextTick, onMounted, type Ref, ref, useTemplateRef, watch } from 'vue';
+import { makeAudioURL } from '@/api/endpoints';
+import PlayerAlbum from '@/components/playback/PlayerAlbum.vue';
+import PlayerControls from '@/components/playback/PlayerControls.vue';
+import PlayerSong from '@/components/playback/PlayerSong.vue';
+import { formatSong } from '@/format';
+import { usePlaybackStore } from '@/stores/playback';
 
 const playback = usePlaybackStore();
 
-const isMiniPlayer = useMediaQuery("(width < 64rem)");
+const isMiniPlayer = useMediaQuery('(width < 64rem)');
 
 const secondsPlayed = ref(0);
 const duration = ref(1);
 const paused = ref(true);
 const buffering = ref(false);
 const error: Ref<string | null> = ref(null);
-const htmlAudio = useTemplateRef("htmlAudio");
+const htmlAudio = useTemplateRef('htmlAudio');
 
 const audioURL = computed(() =>
   playback.currentTrack ? makeAudioURL(playback.currentTrack.path) : null
 );
-const artworkURL = computed(() =>
-  playback.currentSong?.artwork
-    ? makeThumbnailURL(playback.currentSong.artwork, "small")
-    : null
-);
 
 const volume = computed({
   get: () => playback.volume,
-  set: (value) => playback.setVolume(value)
+  set: (value) => playback.setVolume(value),
 });
 
 useTimeoutPoll(
@@ -91,8 +102,8 @@ onMounted(() => {
   }
 
   if (navigator.mediaSession?.setActionHandler) {
-    navigator.mediaSession.setActionHandler("previoustrack", skipPrevious);
-    navigator.mediaSession.setActionHandler("nexttrack", skipNext);
+    navigator.mediaSession.setActionHandler('previoustrack', skipPrevious);
+    navigator.mediaSession.setActionHandler('nexttrack', skipNext);
   }
 });
 
@@ -107,7 +118,7 @@ function playFromStart() {
     try {
       await htmlAudio.value.play();
       htmlAudio.value.currentTime = 0;
-    } catch (e) {
+    } catch {
       // https://developer.chrome.com/blog/play-request-was-interrupted/
       // This .play() promise will be rejected if we skip to a different
       // song while it is in progress.
@@ -155,28 +166,28 @@ function seekTo(seconds: number) {
   htmlAudio.value.currentTime = seconds;
 }
 
-function onEnded(_event: Event) {
+function onEnded() {
   paused.value = true;
   buffering.value = false;
   skipNext();
 }
 
-function onPaused(_event: Event) {
+function onPaused() {
   buffering.value = false;
   paused.value = true;
 }
 
-function onPlaying(_event: Event) {
+function onPlaying() {
   paused.value = false;
   buffering.value = false;
 }
 
-function onWaiting(_event: Event) {
+function onWaiting() {
   paused.value = false;
   buffering.value = true;
 }
 
-function onTimeUpdate(_event: Event) {
+function onTimeUpdate() {
   if (!htmlAudio.value) {
     return;
   }
@@ -185,9 +196,7 @@ function onTimeUpdate(_event: Event) {
 }
 
 function onPlaybackError(event: Event) {
-  const songInfo = playback.currentSong
-    ? formatSong(playback.currentSong)
-    : "Unknown Song";
+  const songInfo = playback.currentSong ? formatSong(playback.currentSong) : 'Unknown Song';
   const errorPrefix = `'${songInfo}' could not be played because `;
   const mediaError = (event.target as HTMLAudioElement).error;
   if (!mediaError) {
@@ -210,7 +219,5 @@ function onPlaybackError(event: Event) {
   }
   pause();
   error.value = errorText;
-  const throttle = true;
-  notify("Playback Error", artworkURL.value, errorText, throttle);
 }
 </script>

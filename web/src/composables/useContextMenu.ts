@@ -1,6 +1,6 @@
-import { computed } from "vue";
-import { usePlaybackStore } from "@/stores/playback";
-import type { ContextMenuItem } from "@/components/basic/ContextMenu.vue";
+import { computed } from 'vue';
+import { usePlaybackStore } from '@/stores/playback';
+import type { ContextMenuItem } from '@/components/basic/ContextMenu.vue';
 
 export function useContextMenu(getPaths: () => string[] | Promise<string[]>) {
   const playback = usePlaybackStore();
@@ -12,25 +12,25 @@ export function useContextMenu(getPaths: () => string[] | Promise<string[]>) {
 
     return [
       {
-        label: "Play",
-        shortcut: "Enter",
-        testID: "play",
+        label: 'Play',
+        shortcut: 'Enter',
+        testID: 'play',
         action: async () => {
           const tracks = paths instanceof Promise ? await paths : paths;
           playback.clear();
           playback.stop();
           playback.queueTracks(tracks);
-        }
+        },
       },
       {
-        label: "Queue",
-        shortcut: "Shift+Enter",
-        testID: "queue",
+        label: 'Queue',
+        shortcut: 'Shift+Enter',
+        testID: 'queue',
         action: async () => {
           const tracks = paths instanceof Promise ? await paths : paths;
           playback.queueTracks(tracks);
-        }
-      }
+        },
+      },
     ];
   });
 

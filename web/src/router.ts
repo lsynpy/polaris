@@ -1,33 +1,29 @@
-import {
-  createRouter,
-  createWebHashHistory,
-  type RouteLocation
-} from "vue-router";
+import { createRouter, createWebHashHistory, type RouteLocation } from 'vue-router';
 
-import type { Song } from "@/api/dto";
-import App from "@/components/App.vue";
-import Auth from "@/components/Auth.vue";
-import InitialSetup from "@/components/initial-setup/InitialSetup.vue";
-import Album from "@/components/library/Album.vue";
-import Albums from "@/components/library/Albums.vue";
-import Artist from "@/components/library/Artist.vue";
-import Artists from "@/components/library/Artists.vue";
-import Files from "@/components/library/Files.vue";
-import Playlist from "@/components/library/Playlist.vue";
-import Playlists from "@/components/library/Playlists.vue";
-import Search from "@/components/library/Search.vue";
-import SongDetails from "@/components/library/SongDetails.vue";
-import NotFound from "@/components/NotFound.vue";
-import SettingsCollection from "@/components/settings/Collection.vue";
-import SettingsDDNS from "@/components/settings/DDNS.vue";
-import SettingsPreferences from "@/components/settings/Preferences.vue";
-import Settings from "@/components/settings/Settings.vue";
-import SettingsUsers from "@/components/settings/Users.vue";
-import { useInitialSetupStore } from "@/stores/initial-setup";
-import { useSongsStore } from "@/stores/songs";
-import { useUserStore } from "@/stores/user";
+import type { Song } from '@/api/dto';
+import App from '@/components/App.vue';
+import Auth from '@/components/Auth.vue';
+import InitialSetup from '@/components/initial-setup/InitialSetup.vue';
+import Album from '@/components/library/Album.vue';
+import Albums from '@/components/library/Albums.vue';
+import Artist from '@/components/library/Artist.vue';
+import Artists from '@/components/library/Artists.vue';
+import Files from '@/components/library/Files.vue';
+import Playlist from '@/components/library/Playlist.vue';
+import Playlists from '@/components/library/Playlists.vue';
+import Search from '@/components/library/Search.vue';
+import SongDetails from '@/components/library/SongDetails.vue';
+import NotFound from '@/components/NotFound.vue';
+import SettingsCollection from '@/components/settings/Collection.vue';
+import SettingsDDNS from '@/components/settings/DDNS.vue';
+import SettingsPreferences from '@/components/settings/Preferences.vue';
+import Settings from '@/components/settings/Settings.vue';
+import SettingsUsers from '@/components/settings/Users.vue';
+import { useInitialSetupStore } from '@/stores/initial-setup';
+import { useSongsStore } from '@/stores/songs';
+import { useUserStore } from '@/stores/user';
 
-export const URI_ARRAY_SEPARATOR = " ⨯ ";
+export const URI_ARRAY_SEPARATOR = ' ⨯ ';
 
 function extractAlbumKey(route: RouteLocation) {
   let artists: string[] = [];
@@ -37,8 +33,8 @@ function extractAlbumKey(route: RouteLocation) {
   return {
     albumKey: {
       artists,
-      name: route.params.name
-    }
+      name: route.params.name,
+    },
   };
 }
 
@@ -50,61 +46,61 @@ function extractVirtualPath(route: RouteLocation) {
   } else {
     pathMatch = [pathMatchParam];
   }
-  const path = (pathMatch || []).join("/") + (route.hash || "");
+  const path = (pathMatch || []).join('/') + (route.hash || '');
   return { path };
 }
 
 const routes = [
   {
-    path: "/welcome",
+    path: '/welcome',
     component: InitialSetup,
-    meta: { requiresInitialSetupIncomplete: true }
+    meta: { requiresInitialSetupIncomplete: true },
   },
   {
-    path: "/auth",
+    path: '/auth',
     component: Auth,
-    meta: { requiresAnonymous: true, requiresInitialSetupComplete: true }
+    meta: { requiresAnonymous: true, requiresInitialSetupComplete: true },
   },
   {
-    path: "",
+    path: '',
     component: App,
     meta: { requiresAuth: true, requiresInitialSetupComplete: true },
     children: [
-      { path: "/files", component: Files },
-      { path: "/artists", component: Artists },
-      { path: "/artists/:name", component: Artist, props: true },
-      { path: "/albums", component: Albums },
+      { path: '/files', component: Files },
+      { path: '/artists', component: Artists },
+      { path: '/artists/:name', component: Artist, props: true },
+      { path: '/albums', component: Albums },
       {
-        path: "/albums/:artists/:name",
+        path: '/albums/:artists/:name',
         component: Album,
-        props: extractAlbumKey
+        props: extractAlbumKey,
       },
-      { path: "/playlists", component: Playlists },
-      { path: "/playlists/:name", component: Playlist, props: true },
-      { path: "/search", component: Search },
+      { path: '/playlists', component: Playlists },
+      { path: '/playlists/:name', component: Playlist, props: true },
+      { path: '/search', component: Search },
       {
-        path: "/settings",
+        path: '/settings',
         component: Settings,
         children: [
-          { path: "collection", component: SettingsCollection },
-          { path: "ddns", component: SettingsDDNS },
-          { path: "users", component: SettingsUsers },
-          { path: ":pathMatch(.*)*", component: SettingsPreferences }
-        ]
+          { path: 'collection', component: SettingsCollection },
+          { path: 'ddns', component: SettingsDDNS },
+          { path: 'users', component: SettingsUsers },
+          { path: ':pathMatch(.*)*', component: SettingsPreferences },
+        ],
       },
       {
-        path: "/songs/:pathMatch(.*)*",
+        path: '/songs/:pathMatch(.*)*',
         component: SongDetails,
-        props: extractVirtualPath
+        props: extractVirtualPath,
       },
-      { path: ":pathMatch(.*)", component: NotFound }
-    ]
-  }
+      { path: ':pathMatch(.*)', component: NotFound },
+    ],
+  },
 ];
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes
+  routes,
 });
 
 router.beforeEach(async (to, _from, next) => {
@@ -120,34 +116,34 @@ router.beforeEach(async (to, _from, next) => {
   // Re-route to initial-setup if needed
   if (to.matched.some((record) => record.meta.requiresInitialSetupComplete)) {
     if (!isInitialSetupComplete) {
-      return next("/welcome");
+      return next('/welcome');
     }
   }
 
   // Re-route to auth if needed
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!isLoggedIn) {
-      return next("/auth");
+      return next('/auth');
     }
   }
 
   // Re-route away from initial-setup if complete
   if (to.matched.some((record) => record.meta.requiresInitialSetupIncomplete)) {
     if (isInitialSetupComplete) {
-      return next("/");
+      return next('/');
     }
   }
 
   // Re-route away from auth if logged in
   if (to.matched.some((record) => record.meta.requiresAnonymous)) {
     if (isLoggedIn) {
-      return next("/");
+      return next('/');
     }
   }
 
   // Default entry-point
-  if (to.path === "/") {
-    return next("/files");
+  if (to.path === '/') {
+    return next('/files');
   }
 
   next();
@@ -162,9 +158,7 @@ export function makeArtistURL(name: string) {
 }
 
 export function makeAlbumURL(artists: string[], name: string) {
-  const artistsComponent = encodeURIComponent(
-    (artists || []).join(URI_ARRAY_SEPARATOR)
-  );
+  const artistsComponent = encodeURIComponent((artists || []).join(URI_ARRAY_SEPARATOR));
   const nameComponent = encodeURIComponent(name);
   return `/albums/${artistsComponent}/${nameComponent}`;
 }

@@ -1,20 +1,9 @@
-import { acceptHMRUpdate, defineStore } from "pinia";
-import {
-  computed,
-  type Ref,
-  ref,
-  type ShallowRef,
-  shallowRef,
-  watch
-} from "vue";
-import {
-  addTrackToPlaylist,
-  recordPlay,
-  removeTrackFromPlaylist
-} from "@/api/endpoints";
-import { loadUserValue, saveUserValue } from "@/storage";
-import { useSongsStore } from "@/stores/songs";
-import { useUserStore } from "@/stores/user";
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, type Ref, ref, type ShallowRef, shallowRef, watch } from 'vue';
+import { addTrackToPlaylist, recordPlay, removeTrackFromPlaylist } from '@/api/endpoints';
+import { loadUserValue, saveUserValue } from '@/storage';
+import { useSongsStore } from '@/stores/songs';
+import { useUserStore } from '@/stores/user';
 
 let next_key = 0;
 
@@ -23,22 +12,18 @@ function make_key() {
   return next_key;
 }
 
-export type PlaybackOrder =
-  | "default"
-  | "random"
-  | "repeat-track"
-  | "repeat-all";
+export type PlaybackOrder = 'default' | 'random' | 'repeat-track' | 'repeat-all';
 
 export interface PlaylistEntry {
   key: number;
   path: string;
 }
 
-export const usePlaybackStore = defineStore("playback", () => {
+export const usePlaybackStore = defineStore('playback', () => {
   const user = useUserStore();
   const songs = useSongsStore();
 
-  const name = ref("");
+  const name = ref('');
   const playlist: ShallowRef<PlaylistEntry[]> = shallowRef([]);
   const currentTrack: Ref<PlaylistEntry | null> = ref(null);
   const currentSong = computed(() => {
@@ -47,7 +32,7 @@ export const usePlaybackStore = defineStore("playback", () => {
     }
     return songs.cache.get(currentTrack.value.path);
   });
-  const playbackOrder: Ref<PlaybackOrder> = ref("default");
+  const playbackOrder: Ref<PlaybackOrder> = ref('default');
   const volume = ref(1);
   const elapsedSeconds = ref(0);
   const duration = ref(0);
@@ -82,15 +67,13 @@ export const usePlaybackStore = defineStore("playback", () => {
 
     let newTrack = null;
     if (numTracks > 0) {
-      if (order === "random") {
+      if (order === 'random') {
         const newTrackIndex = Math.floor(Math.random() * numTracks);
         newTrack = tracks[newTrackIndex];
-      } else if (order === "repeat-track") {
+      } else if (order === 'repeat-track') {
         newTrack = currentTrack.value || tracks[0];
       } else {
-        const currentTrackIndex = tracks.findIndex(
-          (t) => t.key === currentTrack.value?.key
-        );
+        const currentTrackIndex = tracks.findIndex((t) => t.key === currentTrack.value?.key);
 
         if (currentTrackIndex < 0) {
           newTrack = tracks[0];
@@ -98,7 +81,7 @@ export const usePlaybackStore = defineStore("playback", () => {
           const newTrackIndex = currentTrackIndex + delta;
           if (newTrackIndex >= 0 && newTrackIndex < numTracks) {
             newTrack = tracks[newTrackIndex];
-          } else if (order === "repeat-all") {
+          } else if (order === 'repeat-all') {
             if (delta > 0) {
               newTrack = tracks[0];
             } else {
@@ -148,7 +131,7 @@ export const usePlaybackStore = defineStore("playback", () => {
 
   function clear() {
     playlist.value = [];
-    name.value = "";
+    name.value = '';
     playedSongs.clear();
     savePlaylist();
   }
@@ -188,18 +171,14 @@ export const usePlaybackStore = defineStore("playback", () => {
   function enqueue(tracks: string[], index: number) {
     const playbackStarted = !!currentTrack.value;
     const playbackFinished =
-      !!currentTrack.value &&
-      elapsedSeconds.value >= duration.value &&
-      !hasNext();
+      !!currentTrack.value && elapsedSeconds.value >= duration.value && !hasNext();
 
     const existingPaths = new Set(playlist.value.map((e) => e.path));
     const duplicateTracks = tracks.filter((t) => existingPaths.has(t));
     const newTracks = tracks.filter((t) => !existingPaths.has(t));
 
     if (duplicateTracks.length > 0) {
-      const duplicateNames = duplicateTracks
-        .map((p) => songs.cache.get(p)?.title ?? p)
-        .slice(0, 5);
+      const duplicateNames = duplicateTracks.map((p) => songs.cache.get(p)?.title ?? p).slice(0, 5);
       (
         window as unknown as {
           __toast?: {
@@ -209,27 +188,25 @@ export const usePlaybackStore = defineStore("playback", () => {
               icon?: string,
               dismissible?: boolean,
               duration?: number,
-              type?: "info" | "warning" | "success",
+              type?: 'info' | 'warning' | 'success',
               details?: { [key: string]: string | string[] }
             ) => void;
           };
         }
       ).__toast?.add(
-        "Duplicate Tracks",
+        'Duplicate Tracks',
         `${newTracks.length} track(s) queued successfully`,
-        "warning",
+        'warning',
         true,
         6000,
-        "warning",
+        'warning',
         {
-          "Ignored (already in playlist)": duplicateNames,
-          Queued: newTracks.length.toString()
+          'Ignored (already in playlist)': duplicateNames,
+          Queued: newTracks.length.toString(),
         }
       );
     } else if (newTracks.length > 0) {
-      const trackNames = newTracks
-        .map((p) => songs.cache.get(p)?.title ?? p)
-        .slice(0, 5);
+      const trackNames = newTracks.map((p) => songs.cache.get(p)?.title ?? p).slice(0, 5);
       (
         window as unknown as {
           __toast?: {
@@ -239,18 +216,18 @@ export const usePlaybackStore = defineStore("playback", () => {
               icon?: string,
               dismissible?: boolean,
               duration?: number,
-              type?: "info" | "warning" | "success",
+              type?: 'info' | 'warning' | 'success',
               details?: { [key: string]: string | string[] }
             ) => void;
           };
         }
       ).__toast?.add(
-        "Tracks Queued",
+        'Tracks Queued',
         `${newTracks.length} track(s) added to playlist`,
-        "check_circle",
+        'check_circle',
         true,
         3000,
-        "success",
+        'success',
         { Tracks: trackNames }
       );
     }
@@ -283,48 +260,45 @@ export const usePlaybackStore = defineStore("playback", () => {
   }
 
   function reset() {
-    name.value = "";
-    playbackOrder.value = "default";
+    name.value = '';
+    playbackOrder.value = 'default';
     currentTrack.value = null;
     playlist.value = [];
     elapsedSeconds.value = 0;
   }
 
   function loadFromDisk() {
-    const paths: string[] = loadUserValue("playlist", []);
+    const paths: string[] = loadUserValue('playlist', []);
     songs.request(paths);
 
     playlist.value = paths.map((p) => {
       return { key: make_key(), path: p };
     });
-    playbackOrder.value = loadUserValue("playbackOrder", "default");
-    currentTrack.value =
-      playlist.value[loadUserValue("currentTrackIndex", 0)] || null;
-    elapsedSeconds.value = loadUserValue("elapsedSeconds", 0);
-    name.value = loadUserValue("playlistName", "");
+    playbackOrder.value = loadUserValue('playbackOrder', 'default');
+    currentTrack.value = playlist.value[loadUserValue('currentTrackIndex', 0)] || null;
+    elapsedSeconds.value = loadUserValue('elapsedSeconds', 0);
+    name.value = loadUserValue('playlistName', '');
 
-    const savedVolume = loadUserValue("volume", 1.0);
+    const savedVolume = loadUserValue('volume', 1.0);
     volume.value = Number.isNaN(savedVolume) ? 1 : savedVolume;
   }
 
   function savePlaybackState() {
-    const currentTrackIndex = playlist.value.findIndex(
-      (t) => t.key === currentTrack.value?.key
-    );
-    saveUserValue("currentTrackIndex", currentTrackIndex);
-    saveUserValue("playbackOrder", playbackOrder.value);
-    saveUserValue("elapsedSeconds", elapsedSeconds.value);
-    saveUserValue("volume", volume.value);
+    const currentTrackIndex = playlist.value.findIndex((t) => t.key === currentTrack.value?.key);
+    saveUserValue('currentTrackIndex', currentTrackIndex);
+    saveUserValue('playbackOrder', playbackOrder.value);
+    saveUserValue('elapsedSeconds', elapsedSeconds.value);
+    saveUserValue('volume', volume.value);
   }
 
   function savePlaylist() {
     if (
       saveUserValue(
-        "playlist",
+        'playlist',
         playlist.value.map((e) => e.path)
       )
     ) {
-      saveUserValue("playlistName", name.value);
+      saveUserValue('playlistName', name.value);
       savePlaybackState();
     }
   }
@@ -335,11 +309,8 @@ export const usePlaybackStore = defineStore("playback", () => {
 
   function setElapsedSeconds(seconds: number) {
     const wasPlaying =
-      currentTrack.value &&
-      elapsedSeconds.value < duration.value &&
-      duration.value > 0;
-    const isFinished =
-      seconds >= duration.value && duration.value > 0 && currentTrack.value;
+      currentTrack.value && elapsedSeconds.value < duration.value && duration.value > 0;
+    const isFinished = seconds >= duration.value && duration.value > 0 && currentTrack.value;
 
     elapsedSeconds.value = seconds;
 
@@ -407,7 +378,7 @@ export const usePlaybackStore = defineStore("playback", () => {
     setName,
     setVolume,
     shuffle,
-    stop
+    stop,
   };
 });
 

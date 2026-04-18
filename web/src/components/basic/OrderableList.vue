@@ -1,30 +1,57 @@
 <template>
-    <div ref="viewport" class="overflow-y-auto overflow-x-hidden" tabindex="-1" @keydown="onKeyDown" @dragenter.prevent
-        @dragover.prevent @drop="onDrop">
-        <div ref="wrapper" class="relative min-h-full divide-ls-200 dark:border-ds-700" :class="{ 'divide-y': divider }"
-            :style="{ height: `${props.items.length * rowHeight}px` }">
-            <TransitionGroup :name="isReordering ? 'reorder' : 'drop'" :css="isReordering">
-                <div v-for="item, index of virtualItems" @click="e => clickItem(e, item)" :key="item.key"
-                    :draggable="true" @dragstart="e => onDragStart(e, item)" @dragend="onDragEnd"
-                    class="absolute w-full"
-                    :style="{ translate: `0 ${rowOffset(firstVirtualIndex + index)}px`, height: `${itemHeight}px` }">
+  <div
+    ref="viewport"
+    class="overflow-y-auto overflow-x-hidden"
+    tabindex="-1"
+    @keydown="onKeyDown"
+    @dragenter.prevent
+    @dragover.prevent
+    @drop="onDrop"
+  >
+    <div
+      ref="wrapper"
+      class="relative min-h-full divide-ls-200 dark:border-ds-700"
+      :class="{ 'divide-y': divider }"
+      :style="{ height: `${props.items.length * rowHeight}px` }"
+    >
+      <TransitionGroup :name="isReordering ? 'reorder' : 'drop'" :css="isReordering">
+        <div
+          v-for="(item, index) of virtualItems"
+          :key="item.key"
+          :draggable="true"
+          class="absolute w-full"
+          :style="{
+            translate: `0 ${rowOffset(firstVirtualIndex + index)}px`,
+            height: `${itemHeight}px`,
+          }"
+          @click="(e) => clickItem(e, item)"
+          @dragstart="(e) => onDragStart(e, item)"
+          @dragend="onDragEnd"
+        >
+          <slot v-if="item.isDropPreview" name="drop-preview">
+            <div :style="{ height: itemHeight + 'px' }">Drop Preview</div>
+          </slot>
 
-                    <slot name="drop-preview" v-if="item.isDropPreview">
-                        <div :style="{ height: itemHeight + 'px' }">Drop Preview</div>
-                    </slot>
-
-                    <slot name="default" v-else :item="item" :index="firstVirtualIndex + index"
-                        :selected="selectedKeys.has(item.key)" :focused="focusedKey == item.key">
-                        <div class="whitespace-nowrap" :class="{ 'bg-accent-500': selectedKeys.has(item.key) }"
-                            :style="{ height: itemHeight + 'px' }">
-                            {{ item }}
-                        </div>
-                    </slot>
-
-                </div>
-            </TransitionGroup>
+          <slot
+            v-else
+            name="default"
+            :item="item"
+            :index="firstVirtualIndex + index"
+            :selected="selectedKeys.has(item.key)"
+            :focused="focusedKey == item.key"
+          >
+            <div
+              class="whitespace-nowrap"
+              :class="{ 'bg-accent-500': selectedKeys.has(item.key) }"
+              :style="{ height: itemHeight + 'px' }"
+            >
+              {{ item }}
+            </div>
+          </slot>
         </div>
+      </TransitionGroup>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts" generic="T extends { key: string | number }">
@@ -35,11 +62,11 @@ import {
   useMouseInElement,
   useMousePressed,
   useRafFn,
-  useScroll
-} from "@vueuse/core";
-import { computed, nextTick, ref, toRaw, useTemplateRef, watch } from "vue";
+  useScroll,
+} from '@vueuse/core';
+import { computed, nextTick, ref, toRaw, useTemplateRef, watch } from 'vue';
 
-import useMultiselect from "@/multiselect";
+import useMultiselect from '@/multiselect';
 
 const { divider = false, ...props } = defineProps<{
   items: T[];
@@ -49,28 +76,24 @@ const { divider = false, ...props } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "list-drop": [toIndex: number];
-  "list-reorder": [items: T[], toIndex: number];
-  "list-delete": [items: T[]];
+  'list-drop': [toIndex: number];
+  'list-reorder': [items: T[], toIndex: number];
+  'list-delete': [items: T[]];
 }>();
 
-const viewport = useTemplateRef("viewport");
-const wrapper = useTemplateRef("wrapper");
+const viewport = useTemplateRef('viewport');
+const wrapper = useTemplateRef('wrapper');
 
 const blankImage = new Image(0, 0);
-blankImage.src =
-  "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=";
+blankImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
 
 const { y: scrollY } = useScroll(viewport);
-const { width: viewportWidth, height: rawViewportHeight } =
-  useElementSize(viewport);
-const viewportHeight = computed(
-  () => rawViewportHeight.value || viewport.value?.clientHeight || 0
-);
+const { width: viewportWidth, height: rawViewportHeight } = useElementSize(viewport);
+const viewportHeight = computed(() => rawViewportHeight.value || viewport.value?.clientHeight || 0);
 const {
   elementX: viewportMouseX,
   elementY: viewportMouseY,
-  isOutside
+  isOutside,
 } = useMouseInElement(viewport);
 const { elementY: wrapperMouseY } = useMouseInElement(wrapper);
 const { pressed: mousePressed } = useMousePressed({ target: viewport });
@@ -102,24 +125,14 @@ const rawDropIndex = computed(() => {
   }
 
   const max = isReordering.value ? props.items.length - 1 : props.items.length;
-  return Math.max(
-    0,
-    Math.min(Math.floor(wrapperMouseY.value / rowHeight.value), max)
-  );
+  return Math.max(0, Math.min(Math.floor(wrapperMouseY.value / rowHeight.value), max));
 });
 const dropIndex = useCached(rawDropIndex, (i) => i === undefined);
 
-const {
-  clickItem,
-  multiselect,
-  focusedKey,
-  pivotKey,
-  selectedKeys,
-  selection,
-  selectItem
-} = useMultiselect(() => props.items, {
-  onMove: () => snapScrolling("clamp", "instant")
-});
+const { clickItem, multiselect, focusedKey, pivotKey, selectedKeys, selection, selectItem } =
+  useMultiselect(() => props.items, {
+    onMove: () => snapScrolling('clamp', 'instant'),
+  });
 
 const orderedItems = computed(() => {
   let selected = toRaw(selectedKeys.value);
@@ -149,10 +162,7 @@ const orderedItems = computed(() => {
 
 const virtualItems = computed(() => {
   let items: (T & { isDropPreview: boolean })[] = orderedItems.value
-    .slice(
-      firstVirtualIndex.value,
-      firstVirtualIndex.value + numVirtualItems.value
-    )
+    .slice(firstVirtualIndex.value, firstVirtualIndex.value + numVirtualItems.value)
     .map((i) => {
       return { ...i, isDropPreview: false };
     });
@@ -169,7 +179,7 @@ const virtualItems = computed(() => {
     items.splice(dropIndex.value - first, 0, {
       ...items[0],
       key: -1,
-      isDropPreview: true
+      isDropPreview: true,
     });
   }
 
@@ -211,18 +221,18 @@ function onDragStart(event: DragEvent, item: T) {
 function onDragEnd() {
   isReordering.value = false;
   if (dropIndex.value !== undefined) {
-    emit("list-reorder", selection.value, dropIndex.value);
+    emit('list-reorder', selection.value, dropIndex.value);
   }
 }
 
 function onDrop() {
-  emit("list-drop", dropIndex.value || 0);
+  emit('list-drop', dropIndex.value || 0);
 }
 
 function onKeyDown(event: KeyboardEvent) {
   multiselect.onKeyDown(event);
   switch (event.code) {
-    case "Delete":
+    case 'Delete':
       deleteSelection();
       event.preventDefault();
       break;
@@ -231,18 +241,18 @@ function onKeyDown(event: KeyboardEvent) {
   }
 }
 
-function snapScrolling(mode: "clamp" | "center", behavior: ScrollBehavior) {
+function snapScrolling(mode: 'clamp' | 'center', behavior: ScrollBehavior) {
   const focusedIndex = props.items.findIndex((i) => i.key === focusedKey.value);
   if (focusedIndex < 0) {
     return;
   }
 
   if (document.hidden) {
-    behavior = "instant";
+    behavior = 'instant';
   }
 
   let y = scrollY.value;
-  if (mode === "clamp") {
+  if (mode === 'clamp') {
     const padding = 4;
     const first = firstVirtualIndex.value;
     const last = first + virtualItems.value.length - 1;
@@ -256,7 +266,7 @@ function snapScrolling(mode: "clamp" | "center", behavior: ScrollBehavior) {
   }
 
   if (rowHeight.value * props.items.length > 50 * window.innerHeight) {
-    behavior = "instant";
+    behavior = 'instant';
   }
 
   viewport.value?.scrollTo({ top: y, behavior });
@@ -265,29 +275,19 @@ function snapScrolling(mode: "clamp" | "center", behavior: ScrollBehavior) {
 function deleteSelection() {
   const pivot = props.items.findIndex((i) => i.key === pivotKey.value);
   const newSelection = props.items.find(
-    (item, index) =>
-      pivot >= 0 && index > pivot && !selectedKeys.value.has(item.key)
+    (item, index) => pivot >= 0 && index > pivot && !selectedKeys.value.has(item.key)
   );
 
-  emit("list-delete", selection.value);
+  emit('list-delete', selection.value);
 
   if (newSelection) {
     selectItem(newSelection);
-    nextTick(() => snapScrolling("clamp", "instant"));
+    nextTick(() => snapScrolling('clamp', 'instant'));
   }
 }
 
-function remap(
-  value: number,
-  fromA: number,
-  fromB: number,
-  toA: number,
-  toB: number
-) {
-  return (
-    toA +
-    (toB - toA) * Math.max(0, Math.min((value - fromA) / (fromB - fromA), 1))
-  );
+function remap(value: number, fromA: number, fromB: number, toA: number, toB: number) {
+  return toA + (toB - toA) * Math.max(0, Math.min((value - fromA) / (fromB - fromA), 1));
 }
 
 useRafFn(({ delta }) => {
@@ -310,8 +310,8 @@ useRafFn(({ delta }) => {
     const t = remap(viewportMouseY.value, 0, triggerRange, 1, 0);
     const tracksPerSecond = -maxTracksPerSecond * t ** 1.5;
     viewport.value.scrollBy({
-      behavior: "instant",
-      top: Math.ceil((tracksPerSecond * rowHeight.value * delta) / 1000)
+      behavior: 'instant',
+      top: Math.ceil((tracksPerSecond * rowHeight.value * delta) / 1000),
     });
   } else if (viewportMouseY.value > viewportHeight.value - triggerRange) {
     const t = remap(
@@ -323,8 +323,8 @@ useRafFn(({ delta }) => {
     );
     const tracksPerSecond = maxTracksPerSecond * t ** 3;
     viewport.value.scrollBy({
-      behavior: "instant",
-      top: Math.ceil((tracksPerSecond * rowHeight.value * delta) / 1000)
+      behavior: 'instant',
+      top: Math.ceil((tracksPerSecond * rowHeight.value * delta) / 1000),
     });
   }
 });
@@ -332,17 +332,17 @@ useRafFn(({ delta }) => {
 
 <style scoped>
 .reorder-move {
-    transition: all 0.1s ease-out;
+  transition: all 0.1s ease-out;
 }
 
 .drop-move {
-    transition: all 0s linear;
+  transition: all 0s linear;
 }
 
 .drop-enter-active,
 .drop-leave-active,
 .reorder-enter-active,
 .reorder-leave-active {
-    transition: none 0s linear;
+  transition: none 0s linear;
 }
 </style>

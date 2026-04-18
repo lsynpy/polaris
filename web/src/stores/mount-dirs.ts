@@ -1,14 +1,14 @@
-import { acceptHMRUpdate, defineStore } from "pinia";
-import { type Ref, ref } from "vue";
-import type { MountDir } from "@/api/dto";
-import { getMountDirs, putMountDirs } from "@/api/endpoints";
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { type Ref, ref } from 'vue';
+import type { MountDir } from '@/api/dto';
+import { getMountDirs, putMountDirs } from '@/api/endpoints';
 
 export type MountDirsState = {
   listing: MountDir[];
   fetchedInitialState: boolean;
 };
 
-export const useMountDirsStore = defineStore("mountDirs", () => {
+export const useMountDirsStore = defineStore('mountDirs', () => {
   const fetchedInitialState = ref(false);
   const listing: Ref<MountDir[]> = ref([]);
 
@@ -18,7 +18,7 @@ export const useMountDirsStore = defineStore("mountDirs", () => {
   }
 
   function create() {
-    listing.value.push({ name: "", source: "" });
+    listing.value.push({ name: '', source: '' });
   }
 
   function remove(mountDir: MountDir) {
@@ -46,7 +46,7 @@ export const useMountDirsStore = defineStore("mountDirs", () => {
     overwrite,
     refresh,
     remove,
-    save
+    save,
   };
 });
 

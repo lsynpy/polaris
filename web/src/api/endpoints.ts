@@ -20,15 +20,12 @@ import {
   type Song,
   type SongList,
   type User,
-  type UserUpdate
-} from "@/api/dto";
-import { useSongsStore } from "@/stores/songs";
-import { useUserStore } from "@/stores/user";
+  type UserUpdate,
+} from '@/api/dto';
+import { useSongsStore } from '@/stores/songs';
+import { useUserStore } from '@/stores/user';
 
-async function request(
-  endpoint: string,
-  options?: RequestInit
-): Promise<Response> {
+async function request(endpoint: string, options?: RequestInit): Promise<Response> {
   const user = useUserStore();
 
   if (!options) {
@@ -37,9 +34,9 @@ async function request(
 
   options.headers = new Headers(options.headers);
   if (user.isLoggedIn) {
-    options.headers.set("Authorization", `Bearer ${getAuthToken()}`);
+    options.headers.set('Authorization', `Bearer ${getAuthToken()}`);
   }
-  options.headers.set("Accept-Version", "8");
+  options.headers.set('Accept-Version', '8');
 
   const response = await fetch(`api${endpoint}`, options);
   if (response.status === 401) {
@@ -60,17 +57,14 @@ function getAuthToken(): string | undefined {
 // Basic
 
 export async function initialSetup(): Promise<InitialSetup> {
-  return (await request("/initial_setup")).json();
+  return (await request('/initial_setup')).json();
 }
 
-export async function login(
-  username: string,
-  password: string
-): Promise<Authorization> {
-  const response = await request("/auth", {
-    method: "POST",
+export async function login(username: string, password: string): Promise<Authorization> {
+  const response = await request('/auth', {
+    method: 'POST',
     body: JSON.stringify({ username: username, password: password }),
-    headers: { "Content-type": "application/json" }
+    headers: { 'Content-type': 'application/json' },
   });
   return response.json();
 }
@@ -78,64 +72,61 @@ export async function login(
 // Config
 
 export async function getSettings(): Promise<Settings> {
-  return (await request("/settings")).json();
+  return (await request('/settings')).json();
 }
 
 export async function putSettings(settings: NewSettings): Promise<void> {
-  await request("/settings", {
-    method: "PUT",
+  await request('/settings', {
+    method: 'PUT',
     body: JSON.stringify(settings),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
 export async function getMountDirs(): Promise<MountDir[]> {
-  return (await request("/mount_dirs")).json();
+  return (await request('/mount_dirs')).json();
 }
 
 export async function putMountDirs(mountDirs: MountDir[]): Promise<void> {
-  await request("/mount_dirs", {
-    method: "PUT",
+  await request('/mount_dirs', {
+    method: 'PUT',
     body: JSON.stringify(mountDirs),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
 export async function triggerIndex(): Promise<void> {
-  await request("/trigger_index", { method: "POST" });
+  await request('/trigger_index', { method: 'POST' });
 }
 
 export async function getIndexStatus(): Promise<IndexStatus> {
-  return (await request("/index_status")).json();
+  return (await request('/index_status')).json();
 }
 
 // Users
 
 export async function getUsers(): Promise<User[]> {
-  return (await request("/users")).json();
+  return (await request('/users')).json();
 }
 
 export async function createUser(newUser: NewUser): Promise<void> {
-  await request("/user", {
-    method: "POST",
+  await request('/user', {
+    method: 'POST',
     body: JSON.stringify(newUser),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
-export async function updateUser(
-  name: string,
-  userUpdate: UserUpdate
-): Promise<void> {
+export async function updateUser(name: string, userUpdate: UserUpdate): Promise<void> {
   await request(`/user/${name}`, {
-    method: "PUT",
+    method: 'PUT',
     body: JSON.stringify(userUpdate),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
 export async function deleteUser(name: string) {
-  await request(`/user/${name}`, { method: "DELETE" });
+  await request(`/user/${name}`, { method: 'DELETE' });
 }
 
 // File browser
@@ -165,7 +156,7 @@ export async function flatten(path: string): Promise<SongList> {
 // Semantic
 
 export async function getAlbums(): Promise<AlbumHeader[]> {
-  const response = await request("/albums");
+  const response = await request('/albums');
   return await response.json();
 }
 
@@ -174,31 +165,19 @@ export async function getRandomAlbums(
   offset: number,
   count: number
 ): Promise<AlbumHeader[]> {
-  const response = await request(
-    `/albums/random?seed=${seed}&offset=${offset}&count=${count}`
-  );
+  const response = await request(`/albums/random?seed=${seed}&offset=${offset}&count=${count}`);
   return await response.json();
 }
 
-export async function getRecentAlbums(
-  offset: number,
-  count: number
-): Promise<AlbumHeader[]> {
-  const response = await request(
-    `/albums/recent?offset=${offset}&count=${count}`
-  );
+export async function getRecentAlbums(offset: number, count: number): Promise<AlbumHeader[]> {
+  const response = await request(`/albums/recent?offset=${offset}&count=${count}`);
   return await response.json();
 }
 
-export type ArtistSort =
-  | "alpha"
-  | "-alpha"
-  | "popularity"
-  | "recent"
-  | "-recent";
+export type ArtistSort = 'alpha' | '-alpha' | 'popularity' | 'recent' | '-recent';
 
 export async function getArtists(sort?: ArtistSort): Promise<ArtistHeader[]> {
-  const params = sort ? `?sort=${sort}` : "";
+  const params = sort ? `?sort=${sort}` : '';
   const response = await request(`/artists${params}`);
   return await response.json();
 }
@@ -211,7 +190,7 @@ export async function getArtist(name: string): Promise<Artist> {
 export async function getAlbum(albumKey: AlbumKey): Promise<Album> {
   const songs = useSongsStore();
   const response = await request(
-    `/album/${encodeURIComponent(albumKey.name || "")}/by/${encodeURIComponent(albumKey.artists.join(API_ARRAY_SEPARATOR))}`
+    `/album/${encodeURIComponent(albumKey.name || '')}/by/${encodeURIComponent(albumKey.artists.join(API_ARRAY_SEPARATOR))}`
   );
   return await response.json().then((album: Album) => {
     songs.ingest(album.songs);
@@ -237,7 +216,7 @@ export async function search(query: string): Promise<SongList> {
 // Playlist management
 
 export async function listPlaylists(): Promise<PlaylistHeader[]> {
-  return (await request("/playlists")).json();
+  return (await request('/playlists')).json();
 }
 
 export async function getPlaylist(name: string): Promise<Playlist> {
@@ -250,91 +229,72 @@ export async function getPlaylist(name: string): Promise<Playlist> {
   });
 }
 
-export async function addTrackToPlaylist(
-  name: string,
-  track: string
-): Promise<void> {
+export async function addTrackToPlaylist(name: string, track: string): Promise<void> {
   await request(`/playlist/${encodeURIComponent(name)}/add`, {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({ track: track }),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
-export async function removeTrackFromPlaylist(
-  name: string,
-  track: string
-): Promise<void> {
-  await request(
-    `/playlist/${encodeURIComponent(name)}/remove/${encodeURIComponent(track)}`,
-    {
-      method: "DELETE"
-    }
-  );
+export async function removeTrackFromPlaylist(name: string, track: string): Promise<void> {
+  await request(`/playlist/${encodeURIComponent(name)}/remove/${encodeURIComponent(track)}`, {
+    method: 'DELETE',
+  });
 }
 
-export async function putPlaylist(
-  name: string,
-  tracks: string[]
-): Promise<void> {
+export async function putPlaylist(name: string, tracks: string[]): Promise<void> {
   const playlist: SavePlaylistInput = { tracks: tracks };
   await request(`/playlist/${encodeURIComponent(name)}`, {
-    method: "PUT",
+    method: 'PUT',
     body: JSON.stringify(playlist),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
 export async function deletePlaylist(name: string): Promise<void> {
-  await request(`/playlist/${encodeURIComponent(name)}`, { method: "DELETE" });
+  await request(`/playlist/${encodeURIComponent(name)}`, { method: 'DELETE' });
 }
 
 export async function exportPlaylists(): Promise<{
   filename: string;
   payload: Blob;
 }> {
-  const response = await request("/playlists/export");
-  const parseFilename =
-    /(filename="?([\w\-.]+)"?)|(filename\*=UTF-8''([\w\-.]+))/i;
-  const match = response.headers
-    .get("Content-Disposition")
-    ?.match(parseFilename);
-  let filename = "playlists.zip";
+  const response = await request('/playlists/export');
+  const parseFilename = /(filename="?([\w\-.]+)"?)|(filename\*=UTF-8''([\w\-.]+))/i;
+  const match = response.headers.get('Content-Disposition')?.match(parseFilename);
+  let filename = 'playlists.zip';
   if (match) {
     filename = match[2] || match[4];
   }
   return { filename, payload: await response.blob() };
 }
 
-export async function importPlaylists(
-  files: { filename: string; content: Blob }[]
-): Promise<void> {
+export async function importPlaylists(files: { filename: string; content: Blob }[]): Promise<void> {
   const formData = new FormData();
   for (const { filename, content } of files) {
     formData.append(filename, content);
   }
-  await request("/playlists/import", {
-    method: "PUT",
-    body: formData
+  await request('/playlists/import', {
+    method: 'PUT',
+    body: formData,
   });
 }
 
 // Media
 
-export async function get_songs(
-  paths: string[]
-): Promise<{ songs: Song[]; not_found: string[] }> {
-  const response = await request("/songs", {
-    method: "POST",
+export async function get_songs(paths: string[]): Promise<{ songs: Song[]; not_found: string[] }> {
+  const response = await request('/songs', {
+    method: 'POST',
     body: JSON.stringify({ paths: [...new Set(paths).values()] }),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
   return await response.json();
 }
 
 export async function get_peaks(path: string): Promise<Peaks> {
   const response = await request(`/peaks/${encodeURIComponent(path)}`, {
-    method: "GET"
+    method: 'GET',
   });
   return await response.arrayBuffer().then((buffer) => new Uint8Array(buffer));
 }
@@ -343,11 +303,8 @@ export function makeAudioURL(path: string) {
   return `api/audio/${encodeURIComponent(path)}?auth_token=${getAuthToken()}`;
 }
 
-export function makeThumbnailURL(
-  path: string,
-  size: "tiny" | "small" | "large" | "native"
-) {
-  size = size || "small";
+export function makeThumbnailURL(path: string, size: 'tiny' | 'small' | 'large' | 'native') {
+  size = size || 'small';
   return `api/thumbnail/${encodeURIComponent(path)}?size=${size}&pad=false&auth_token=${getAuthToken()}`;
 }
 
@@ -358,9 +315,9 @@ export interface RecordPlayInput {
 }
 
 export async function recordPlay(input: RecordPlayInput): Promise<void> {
-  await request("/play/record", {
-    method: "POST",
+  await request('/play/record', {
+    method: 'POST',
     body: JSON.stringify(input),
-    headers: { "Content-Type": "application/json" }
+    headers: { 'Content-Type': 'application/json' },
   });
 }

@@ -1,15 +1,10 @@
-import { acceptHMRUpdate, defineStore } from "pinia";
-import { type ShallowRef, shallowRef } from "vue";
-import type { NewUser, User, UserUpdate } from "@/api/dto";
-import {
-  createUser,
-  deleteUser as doDeleteUser,
-  getUsers,
-  updateUser
-} from "@/api/endpoints";
-import { useUserStore } from "@/stores/user";
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { type ShallowRef, shallowRef } from 'vue';
+import type { NewUser, User, UserUpdate } from '@/api/dto';
+import { createUser, deleteUser as doDeleteUser, getUsers, updateUser } from '@/api/endpoints';
+import { useUserStore } from '@/stores/user';
 
-export const useUsersStore = defineStore("users", () => {
+export const useUsersStore = defineStore('users', () => {
   const listing: ShallowRef<User[] | undefined> = shallowRef(undefined);
 
   async function refresh() {
@@ -41,7 +36,7 @@ export const useUsersStore = defineStore("users", () => {
     create,
     deleteUser,
     refresh,
-    update
+    update,
   };
 });
 

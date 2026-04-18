@@ -1,9 +1,9 @@
-import { acceptHMRUpdate, defineStore } from "pinia";
-import { type ShallowRef, shallowRef, triggerRef } from "vue";
-import type { Song } from "@/api/dto";
-import { get_songs } from "@/api/endpoints";
+import type { Song } from '@/api/dto';
+import { get_songs } from '@/api/endpoints';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { type ShallowRef, shallowRef, triggerRef } from 'vue';
 
-export const useSongsStore = defineStore("songs", () => {
+export const useSongsStore = defineStore('songs', () => {
   const cache: ShallowRef<Map<string, Song>> = shallowRef(new Map());
   const requested = new Set<string>();
   const failed = new Set<string>();
@@ -73,7 +73,7 @@ export const useSongsStore = defineStore("songs", () => {
       for (const path of results.not_found) {
         failed.add(path);
       }
-    } catch (_e) {
+    } catch {
       for (const path of batch) {
         failed.add(path);
       }
@@ -87,7 +87,7 @@ export const useSongsStore = defineStore("songs", () => {
   return {
     cache,
     ingest,
-    request
+    request,
   };
 });
 

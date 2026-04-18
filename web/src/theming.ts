@@ -1,59 +1,52 @@
-import {
-  modeOklch,
-  modeRgb,
-  type Oklch,
-  type Rgb,
-  toGamut,
-  useMode
-} from "culori/fn";
+import { modeOklch, modeRgb, type Oklch, type Rgb, toGamut, useMode } from 'culori/fn';
 
-import Blue from "./themes/blue";
-import Brown from "./themes/brown";
-import Dark from "./themes/dark";
-import Light from "./themes/light";
+import Blue from './themes/blue';
+import Brown from './themes/brown';
+import Dark from './themes/dark';
+import Light from './themes/light';
 
 const rgb = useMode(modeRgb);
 const oklch = useMode(modeOklch);
 
 export type ThemeData = {
   name: string;
-  polarity: "light" | "dark";
-  "surface-0": string;
-  "surface-50": string;
-  "surface-100": string;
-  "surface-200": string;
-  "surface-300": string;
-  "surface-400": string;
-  "surface-500": string;
-  "surface-600": string;
-  "surface-700": string;
-  "surface-800": string;
-  "surface-900": string;
-  "surface-950": string;
+  polarity: 'light' | 'dark';
+  'surface-0': string;
+  'surface-50': string;
+  'surface-100': string;
+  'surface-200': string;
+  'surface-300': string;
+  'surface-400': string;
+  'surface-500': string;
+  'surface-600': string;
+  'surface-700': string;
+  'surface-800': string;
+  'surface-900': string;
+  'surface-950': string;
 };
 
 export enum Theme {
-  BLUE = "blue",
-  BROWN = "brown",
-  DARK = "dark",
-  LIGHT = "light"
+  BLUE = 'blue',
+  BROWN = 'brown',
+  DARK = 'dark',
+  LIGHT = 'light',
 }
 
 const themes: Map<Theme, ThemeData> = new Map([
   [Theme.BLUE, Blue],
   [Theme.BROWN, Brown],
   [Theme.DARK, Dark],
-  [Theme.LIGHT, Light]
+  [Theme.LIGHT, Light],
 ]);
 
 export function getThemeName(theme: Theme): string {
   const themeData = themes.get(theme);
-  return themeData?.name ?? "";
+  return themeData?.name ?? '';
 }
 
-export function getThemePolarity(theme: Theme): "light" | "dark" {
+export function getThemePolarity(theme: Theme): 'light' | 'dark' {
   const themeData = themes.get(theme);
-  return themeData?.polarity ?? "light";
+  return themeData?.polarity ?? 'light';
 }
 
 export function getDefaultTheme(): Theme {
@@ -61,17 +54,17 @@ export function getDefaultTheme(): Theme {
 }
 
 const referenceRamp = [
-  "#f6f9fe",
-  "#ecf5fe",
-  "#d4ebfc",
-  "#b3e0f9",
-  "#88d5f6",
-  "#46c8f1",
-  "#25b2ee",
-  "#1196e4",
-  "#0f75c2",
-  "#0a4a89",
-  "#041934"
+  '#f6f9fe',
+  '#ecf5fe',
+  '#d4ebfc',
+  '#b3e0f9',
+  '#88d5f6',
+  '#46c8f1',
+  '#25b2ee',
+  '#1196e4',
+  '#0f75c2',
+  '#0a4a89',
+  '#041934',
 ];
 
 export function getDefaultAccentHue(): number {
@@ -93,15 +86,12 @@ function rgbToString(rgb: Rgb) {
 function hexToRGBString(hex: string) {
   const colorRGB = rgb(hex);
   if (!colorRGB) {
-    return "0 0 0";
+    return '0 0 0';
   }
   return rgbToString(colorRGB);
 }
 
-export function computeAccentRamp(
-  baseHue: number,
-  chromaMultiplier: number
-): Rgb[] {
+export function computeAccentRamp(baseHue: number, chromaMultiplier: number): Rgb[] {
   const ramp = [];
 
   for (let i = 0; i < 11; i++) {
@@ -114,13 +104,13 @@ export function computeAccentRamp(
 
     const hueShift = (referenceShade.h || 0) - (referenceStop.h || 0);
     const shade: Oklch = {
-      mode: "oklch",
+      mode: 'oklch',
       l: clamp(referenceShade.l),
       c: clamp(referenceShade.c * chromaMultiplier),
-      h: (baseHue + hueShift) % 360
+      h: (baseHue + hueShift) % 360,
     };
 
-    const shadeRGB = toGamut("rgb", "oklch")(shade);
+    const shadeRGB = toGamut('rgb', 'oklch')(shade);
     if (shadeRGB) {
       ramp.push(shadeRGB);
     }
@@ -129,46 +119,39 @@ export function computeAccentRamp(
   return ramp;
 }
 
-export function applyTheme(
-  theme: Theme,
-  accentBaseHue: number,
-  accentChromaMultiplier: number
-) {
+export function applyTheme(theme: Theme, accentBaseHue: number, accentChromaMultiplier: number) {
   const themeData = themes.get(theme);
   if (!themeData) {
     return;
   }
 
-  document.documentElement.setAttribute(
-    "data-polaris-theme-polarity",
-    themeData.polarity
-  );
+  document.documentElement.setAttribute('data-polaris-theme-polarity', themeData.polarity);
 
   const style = document.documentElement.style;
-  style.setProperty("--surface-0", "255 255 255");
-  style.setProperty("--surface-50", hexToRGBString(themeData["surface-50"]));
-  style.setProperty("--surface-100", hexToRGBString(themeData["surface-100"]));
-  style.setProperty("--surface-200", hexToRGBString(themeData["surface-200"]));
-  style.setProperty("--surface-300", hexToRGBString(themeData["surface-300"]));
-  style.setProperty("--surface-400", hexToRGBString(themeData["surface-400"]));
-  style.setProperty("--surface-500", hexToRGBString(themeData["surface-500"]));
-  style.setProperty("--surface-600", hexToRGBString(themeData["surface-600"]));
-  style.setProperty("--surface-700", hexToRGBString(themeData["surface-700"]));
-  style.setProperty("--surface-800", hexToRGBString(themeData["surface-800"]));
-  style.setProperty("--surface-900", hexToRGBString(themeData["surface-900"]));
-  style.setProperty("--surface-950", hexToRGBString(themeData["surface-950"]));
+  style.setProperty('--surface-0', '255 255 255');
+  style.setProperty('--surface-50', hexToRGBString(themeData['surface-50']));
+  style.setProperty('--surface-100', hexToRGBString(themeData['surface-100']));
+  style.setProperty('--surface-200', hexToRGBString(themeData['surface-200']));
+  style.setProperty('--surface-300', hexToRGBString(themeData['surface-300']));
+  style.setProperty('--surface-400', hexToRGBString(themeData['surface-400']));
+  style.setProperty('--surface-500', hexToRGBString(themeData['surface-500']));
+  style.setProperty('--surface-600', hexToRGBString(themeData['surface-600']));
+  style.setProperty('--surface-700', hexToRGBString(themeData['surface-700']));
+  style.setProperty('--surface-800', hexToRGBString(themeData['surface-800']));
+  style.setProperty('--surface-900', hexToRGBString(themeData['surface-900']));
+  style.setProperty('--surface-950', hexToRGBString(themeData['surface-950']));
 
   const accentRamp = computeAccentRamp(accentBaseHue, accentChromaMultiplier);
-  style.setProperty("--accent-0", "255 255 255");
-  style.setProperty("--accent-50", rgbToString(accentRamp[0]));
-  style.setProperty("--accent-100", rgbToString(accentRamp[1]));
-  style.setProperty("--accent-200", rgbToString(accentRamp[2]));
-  style.setProperty("--accent-300", rgbToString(accentRamp[3]));
-  style.setProperty("--accent-400", rgbToString(accentRamp[4]));
-  style.setProperty("--accent-500", rgbToString(accentRamp[5]));
-  style.setProperty("--accent-600", rgbToString(accentRamp[6]));
-  style.setProperty("--accent-700", rgbToString(accentRamp[7]));
-  style.setProperty("--accent-800", rgbToString(accentRamp[8]));
-  style.setProperty("--accent-900", rgbToString(accentRamp[9]));
-  style.setProperty("--accent-950", rgbToString(accentRamp[10]));
+  style.setProperty('--accent-0', '255 255 255');
+  style.setProperty('--accent-50', rgbToString(accentRamp[0]));
+  style.setProperty('--accent-100', rgbToString(accentRamp[1]));
+  style.setProperty('--accent-200', rgbToString(accentRamp[2]));
+  style.setProperty('--accent-300', rgbToString(accentRamp[3]));
+  style.setProperty('--accent-400', rgbToString(accentRamp[4]));
+  style.setProperty('--accent-500', rgbToString(accentRamp[5]));
+  style.setProperty('--accent-600', rgbToString(accentRamp[6]));
+  style.setProperty('--accent-700', rgbToString(accentRamp[7]));
+  style.setProperty('--accent-800', rgbToString(accentRamp[8]));
+  style.setProperty('--accent-900', rgbToString(accentRamp[9]));
+  style.setProperty('--accent-950', rgbToString(accentRamp[10]));
 }

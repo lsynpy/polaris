@@ -1,55 +1,54 @@
 <template>
-    <div>
-        <div v-if="label" class="block mb-2 text-sm font-medium leading-6 text-ls-900 dark:text-ds-0">
-            {{ label }}
-        </div>
-        <div ref="root" @click="snapToCursor" @keydown="onKeyDown" tabindex="-1"
-            class="cursor-pointer group relative rounded-full bg-ls-300 dark:bg-ds-700" :class="sizes[size]">
-            <slot name="fill">
-                <div class="absolute h-full rounded-full bg-accent-600 dark:bg-accent-700"
-                    :style="`width: ${100 * unscale(model)}%`" />
-            </slot>
-            <div data-pw="knob" class="cursor-grab
-            absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5
-            rounded-full shadow-sm border-2
-            bg-ls-0 dark:bg-ds-900
-            border-ls-300 dark:border-ds-700
-            group-active:border-accent-500 group-focus:border-accent-500
-            dark:group-active:border-accent-600 dark:group-focus:border-accent-600"
-                :style="`left: ${100 * unscale(model)}%`" />
-        </div>
+  <div>
+    <div v-if="label" class="block mb-2 text-sm font-medium leading-6 text-ls-900 dark:text-ds-0">
+      {{ label }}
     </div>
+    <div
+      ref="root"
+      tabindex="-1"
+      class="cursor-pointer group relative rounded-full bg-ls-300 dark:bg-ds-700"
+      :class="sizes[size]"
+      @click="snapToCursor"
+      @keydown="onKeyDown"
+    >
+      <slot name="fill">
+        <div
+          class="absolute h-full rounded-full bg-accent-600 dark:bg-accent-700"
+          :style="`width: ${100 * unscale(model)}%`"
+        />
+      </slot>
+      <div
+        data-pw="knob"
+        class="cursor-grab absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full shadow-sm border-2 bg-ls-0 dark:bg-ds-900 border-ls-300 dark:border-ds-700 group-active:border-accent-500 group-focus:border-accent-500 dark:group-active:border-accent-600 dark:group-focus:border-accent-600"
+        :style="`left: ${100 * unscale(model)}%`"
+      />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import {
-  useMouseInElement,
-  useMousePressed,
-  watchPausable
-} from "@vueuse/core";
-import { onMounted, useTemplateRef, watch } from "vue";
+import { useMouseInElement, useMousePressed, watchPausable } from '@vueuse/core';
+import { onMounted, useTemplateRef, watch } from 'vue';
 
 const model = defineModel<number>({ required: true });
 
 const {
   min = 0,
   max = 1,
-  size = "base"
+  size = 'base',
+  label = '',
 } = defineProps<{
   min?: number;
   max?: number;
   label?: string;
-  size?: "base" | "lg";
+  size?: 'base' | 'lg';
 }>();
 
-const root = useTemplateRef("root");
+const root = useTemplateRef('root');
 
 const { elementX: mouseX, elementWidth: width } = useMouseInElement(root);
 const { pressed } = useMousePressed({ target: root });
-const { pause: endDrag, resume: beginDrag } = watchPausable(
-  mouseX,
-  snapToCursor
-);
+const { pause: endDrag, resume: beginDrag } = watchPausable(mouseX, snapToCursor);
 
 onMounted(endDrag);
 
@@ -62,8 +61,8 @@ watch(pressed, (down) => {
 });
 
 const sizes = {
-  base: "h-1.5",
-  lg: "h-3.5"
+  base: 'h-1.5',
+  lg: 'h-3.5',
 };
 
 function scale(value: number) {
@@ -76,10 +75,10 @@ function unscale(value: number) {
 
 function onKeyDown(event: KeyboardEvent) {
   switch (event.code) {
-    case "ArrowLeft":
+    case 'ArrowLeft':
       model.value = scale(unscale(model.value) - 0.02);
       break;
-    case "ArrowRight":
+    case 'ArrowRight':
       model.value = scale(unscale(model.value) + 0.02);
       break;
   }

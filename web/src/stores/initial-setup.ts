@@ -1,11 +1,11 @@
-import { watchImmediate } from "@vueuse/core";
-import { acceptHMRUpdate, defineStore } from "pinia";
-import { computed, type Ref, ref } from "vue";
+import { watchImmediate } from '@vueuse/core';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { computed, type Ref, ref } from 'vue';
 
-import { initialSetup } from "@/api/endpoints";
-import { useUsersStore } from "@/stores/users";
+import { initialSetup } from '@/api/endpoints';
+import { useUsersStore } from '@/stores/users';
 
-export const useInitialSetupStore = defineStore("initialSetup", () => {
+export const useInitialSetupStore = defineStore('initialSetup', () => {
   const usersStore = useUsersStore();
 
   const hasAnyUsers: Ref<boolean | null> = ref(null);
@@ -24,7 +24,5 @@ export const useInitialSetupStore = defineStore("initialSetup", () => {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(
-    acceptHMRUpdate(useInitialSetupStore, import.meta.hot)
-  );
+  import.meta.hot.accept(acceptHMRUpdate(useInitialSetupStore, import.meta.hot));
 }

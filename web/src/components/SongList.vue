@@ -1,41 +1,34 @@
 <template>
-    <div v-bind="containerProps" tabindex="-1" @keydown="onKeyDown" class="-mx-4 px-4">
-        <div v-bind="wrapperProps">
-            <Draggable v-for="item in virtualItems" :key="item.index" :allow-pointer-events-inside="true"
-                @draggable-start="onDragStart($event, item.data.key)"
-                :make-payload="() => new DndPayloadPaths(selection.map(s => s.key))" :style="`height: ${itemHeight}px`">
-                <SongListRow :path="item.data.key" :index="item.index + +!!invertStripes" :compact="compact"
-                    :selected="selectedKeys.has(item.data.key)" :focused="focusedKey == item.data.key"
-                    @click="(e: MouseEvent) => clickItem(e, item.data)" @dblclick="onSongDoubleClicked(item.data.key)"
-                    @contextmenu="(e: MouseEvent) => onSongRightClicked(e, item.data.key)" />
-                <template #drag-preview="{ payload }">
-                    <div class="flex items-center gap-2">
-                        <span v-text="'audiotrack'" class="material-icons-round" />
-                        <span v-text="payload?.getDescription()" />
-                    </div>
-                </template>
-            </Draggable>
-        </div>
-        <ContextMenu ref="contextMenu" :items="contextMenuItems" />
+  <div v-bind="containerProps" tabindex="-1" class="-mx-4 px-4" @keydown="onKeyDown">
+    <div v-bind="wrapperProps">
+      <div v-for="item in virtualItems" :key="item.index" :style="`height: ${itemHeight}px`">
+        <SongListRow
+          :path="item.data.key"
+          :index="item.index + +!!invertStripes"
+          :compact="compact"
+          :selected="selectedKeys.has(item.data.key)"
+          :focused="focusedKey == item.data.key"
+          @click="(e: MouseEvent) => clickItem(e, item.data)"
+          @dblclick="onSongDoubleClicked(item.data.key)"
+          @contextmenu="(e: MouseEvent) => onSongRightClicked(e, item.data.key)"
+        />
+      </div>
     </div>
+    <ContextMenu ref="contextMenu" :items="contextMenuItems" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useElementSize, useScroll, useVirtualList } from "@vueuse/core";
-import { computed, nextTick, onMounted, useTemplateRef, watch } from "vue";
-import { useRouter } from "vue-router";
-import ContextMenu, {
-  type ContextMenuItem
-} from "@/components/basic/ContextMenu.vue";
-import Draggable from "@/components/basic/Draggable.vue";
-import SongListRow from "@/components/SongListRow.vue";
-import { DndPayloadPaths } from "@/dnd";
-import { saveScrollState, useHistory } from "@/history";
-import { useContextMenu } from "@/composables/useContextMenu";
-import useMultiselect from "@/multiselect";
-import { makeAlbumURLFromSongPaths, makeSongURL } from "@/router";
-import { usePlaybackStore } from "@/stores/playback";
-import { useSongsStore } from "@/stores/songs";
+import { useElementSize, useScroll, useVirtualList } from '@vueuse/core';
+import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import ContextMenu, { type ContextMenuItem } from '@/components/basic/ContextMenu.vue';
+import SongListRow from '@/components/SongListRow.vue';
+import { saveScrollState, useHistory } from '@/history';
+import useMultiselect from '@/multiselect';
+import { makeAlbumURLFromSongPaths, makeSongURL } from '@/router';
+import { usePlaybackStore } from '@/stores/playback';
+import { useSongsStore } from '@/stores/songs';
 
 const playback = usePlaybackStore();
 const router = useRouter();
@@ -57,21 +50,14 @@ const {
   list: virtualItems,
   containerProps,
   wrapperProps,
-  scrollTo
+  scrollTo,
 } = useVirtualList(items, { itemHeight: () => itemHeight.value, overscan });
 const viewport = computed(() => containerProps.ref.value);
 const { y: scrollY } = useScroll(viewport);
 const { height: viewportHeight } = useElementSize(viewport);
 
-const {
-  clickItem,
-  focusedKey,
-  multiselect,
-  pivotKey,
-  selectedKeys,
-  selectItem,
-  selection
-} = useMultiselect(items, { onMove: snapScrolling });
+const { clickItem, focusedKey, multiselect, pivotKey, selectedKeys, selectItem, selection } =
+  useMultiselect(items, { onMove: snapScrolling });
 
 watch(itemHeight, (to, from) => {
   const halfHeight = viewportHeight.value / 2;
@@ -105,7 +91,7 @@ function snapScrolling() {
 
 function onKeyDown(event: KeyboardEvent) {
   multiselect.onKeyDown(event);
-  if (event.code === "Enter") {
+  if (event.code === 'Enter') {
     queueSelection(!event.shiftKey);
   }
 }
@@ -123,12 +109,6 @@ function queueSelection(replace: boolean) {
   playback.queueTracks(tracks);
 }
 
-function onDragStart(_event: DragEvent, path: string) {
-  if (!selectedKeys.value.has(path)) {
-    selectItem({ key: path });
-  }
-}
-
 function onSongDoubleClicked(path: string) {
   playback.clear();
   playback.stop();
@@ -142,57 +122,51 @@ function onSongRightClicked(e: MouseEvent, path: string) {
   contextMenu.value?.show(e);
 }
 
-const contextMenu = useTemplateRef("contextMenu");
+const contextMenu = useTemplateRef('contextMenu');
 const contextMenuItems = computed(() => {
   const selectedSongs = selection.value.map((s) => s.key);
 
   const items: ContextMenuItem[] = [
     {
-      label: "Play",
-      shortcut: "Enter",
+      label: 'Play',
+      shortcut: 'Enter',
       action: () => {
         queueSelection(true);
-      }
+      },
     },
     {
-      label: "Queue",
-      shortcut: "Shift+Enter",
+      label: 'Queue',
+      shortcut: 'Shift+Enter',
       action: () => {
         queueSelection(false);
-      }
-    }
+      },
+    },
   ];
 
   const albumURL = makeAlbumURLFromSongPaths(selectedSongs);
   if (albumURL) {
     items.push({
-      label: "Album Details",
+      label: 'Album Details',
       action: () => {
         router.push(albumURL);
-      }
+      },
     });
   }
 
   if (selectedSongs.length === 1) {
     const songURL = makeSongURL(selectedSongs[0]);
     items.push({
-      label: "File Properties",
+      label: 'File Properties',
       action: () => {
         router.push(songURL);
-      }
+      },
     });
   }
 
   return items;
 });
 
-useHistory("song-list", [
-  paths,
-  selectedKeys,
-  focusedKey,
-  pivotKey,
-  saveScrollState(viewport)
-]);
+useHistory('song-list', [paths, selectedKeys, focusedKey, pivotKey, saveScrollState(viewport)]);
 
 onMounted(() => {
   songs.request(paths.value);

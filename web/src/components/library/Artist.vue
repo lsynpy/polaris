@@ -1,76 +1,86 @@
 <template>
-    <div class="flex flex-col">
-        <PageHeader :title="name" />
+  <div class="flex flex-col">
+    <PageHeader :title="name" />
 
-        <div v-if="artist" class="flex flex-col min-h-0">
-            <div ref="viewport" class="relative grow -m-4 p-4 mb-0 overflow-y-auto flex flex-col gap-8">
+    <div v-if="artist" class="flex flex-col min-h-0">
+      <div ref="viewport" class="relative grow -m-4 p-4 mb-0 overflow-y-auto flex flex-col gap-8">
+        <Switch
+          v-model="preferences.artistDisplayMode"
+          class="absolute mt-0.5 top-4 right-4"
+          :items="[
+            { icon: 'apps', value: 'grid' },
+            { icon: 'timeline', value: 'timeline' },
+          ]"
+        />
 
-                <Switch class="absolute mt-0.5 top-4 right-4" v-model="preferences.artistDisplayMode" :items="[
-                    { icon: 'apps', value: 'grid' },
-                    { icon: 'timeline', value: 'timeline' }
-                ]" />
-
-                <div v-if="preferences.artistDisplayMode != 'timeline' && mainWorks?.length">
-                    <SectionTitle label="Main Releases" class="h-10">
-                        <ButtonGroup>
-                            <Button icon="play_arrow" severity="secondary" size="sm" @click="play(mainWorks)" />
-                            <Button icon="playlist_add" severity="secondary" size="sm" @click="queue(mainWorks)" />
-                        </ButtonGroup>
-                    </SectionTitle>
-                    <AlbumGrid :albums="mainWorks" :show-artists="false" />
-                </div>
-
-                <div v-if="preferences.artistDisplayMode != 'timeline' && otherWorks?.length">
-                    <SectionTitle label="Featured On" class="h-10">
-                        <ButtonGroup>
-                            <Button icon="play_arrow" severity="secondary" size="sm" @click="play(otherWorks)" />
-                            <Button icon="playlist_add" severity="secondary" size="sm" @click="queue(otherWorks)" />
-                        </ButtonGroup>
-                    </SectionTitle>
-                    <AlbumGrid :albums="otherWorks" :show-artists="true" />
-                </div>
-
-                <Timeline v-if="preferences.artistDisplayMode == 'timeline'" :artist="artist.name"
-                    :albums="artist.albums" class="m-16" />
-
-            </div>
-
-            <!-- TODO orphaned song support -->
-
+        <div v-if="preferences.artistDisplayMode != 'timeline' && mainWorks?.length">
+          <SectionTitle label="Main Releases" class="h-10">
+            <ButtonGroup>
+              <Button icon="play_arrow" severity="secondary" size="sm" @click="play(mainWorks)" />
+              <Button
+                icon="playlist_add"
+                severity="secondary"
+                size="sm"
+                @click="queue(mainWorks)"
+              />
+            </ButtonGroup>
+          </SectionTitle>
+          <AlbumGrid :albums="mainWorks" :show-artists="false" />
         </div>
 
-        <div v-else-if="isLoading" class="grow flex mt-24 items-start justify-center">
-            <Spinner />
+        <div v-if="preferences.artistDisplayMode != 'timeline' && otherWorks?.length">
+          <SectionTitle label="Featured On" class="h-10">
+            <ButtonGroup>
+              <Button icon="play_arrow" severity="secondary" size="sm" @click="play(otherWorks)" />
+              <Button
+                icon="playlist_add"
+                severity="secondary"
+                size="sm"
+                @click="queue(otherWorks)"
+              />
+            </ButtonGroup>
+          </SectionTitle>
+          <AlbumGrid :albums="otherWorks" :show-artists="true" />
         </div>
 
-        <Error v-else-if="error">
-            Something went wrong while listing releases.
-        </Error>
+        <Timeline
+          v-if="preferences.artistDisplayMode == 'timeline'"
+          :artist="artist.name"
+          :albums="artist.albums"
+          class="m-16"
+        />
+      </div>
 
+      <!-- TODO orphaned song support -->
     </div>
+
+    <div v-else-if="isLoading" class="grow flex mt-24 items-start justify-center">
+      <Spinner />
+    </div>
+
+    <Error v-else-if="error"> Something went wrong while listing releases. </Error>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useAsyncState } from "@vueuse/core";
-import { computed, useTemplateRef, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useAsyncState } from '@vueuse/core';
+import { computed, useTemplateRef, watch } from 'vue';
 
-import type { AlbumHeader, AlbumKey } from "@/api/dto";
-import { getAlbum, getArtist } from "@/api/endpoints";
-import Button from "@/components/basic/Button.vue";
-import ButtonGroup from "@/components/basic/ButtonGroup.vue";
-import Error from "@/components/basic/Error.vue";
-import PageHeader from "@/components/basic/PageHeader.vue";
-import SectionTitle from "@/components/basic/SectionTitle.vue";
-import Spinner from "@/components/basic/Spinner.vue";
-import Switch from "@/components/basic/Switch.vue";
-import AlbumGrid from "@/components/library/AlbumGrid.vue";
-import Timeline from "@/components/library/Timeline.vue";
-import { saveScrollState, useHistory } from "@/history";
-import { usePlaybackStore } from "@/stores/playback";
-import { usePreferencesStore } from "@/stores/preferences";
+import type { AlbumHeader, AlbumKey } from '@/api/dto';
+import { getAlbum, getArtist } from '@/api/endpoints';
+import Button from '@/components/basic/Button.vue';
+import ButtonGroup from '@/components/basic/ButtonGroup.vue';
+import Error from '@/components/basic/Error.vue';
+import PageHeader from '@/components/basic/PageHeader.vue';
+import SectionTitle from '@/components/basic/SectionTitle.vue';
+import Spinner from '@/components/basic/Spinner.vue';
+import Switch from '@/components/basic/Switch.vue';
+import AlbumGrid from '@/components/library/AlbumGrid.vue';
+import Timeline from '@/components/library/Timeline.vue';
+import { saveScrollState, useHistory } from '@/history';
+import { usePlaybackStore } from '@/stores/playback';
+import { usePreferencesStore } from '@/stores/preferences';
 
-const router = useRouter();
 const playback = usePlaybackStore();
 const preferences = usePreferencesStore();
 
@@ -82,10 +92,10 @@ const {
   state: artist,
   isLoading,
   error,
-  execute: fetchArtist
+  execute: fetchArtist,
 } = useAsyncState((name: string) => getArtist(name), undefined, {
   immediate: false,
-  resetOnExecute: true
+  resetOnExecute: true,
 });
 
 const mainWorks = computed(() => {
@@ -119,9 +129,9 @@ const otherWorks = computed(() => {
   return albums.filter((a) => !main.includes(a));
 });
 
-const viewport = useTemplateRef("viewport");
+const viewport = useTemplateRef('viewport');
 
-if (!useHistory("artist", [artist, saveScrollState(viewport)])) {
+if (!useHistory('artist', [artist, saveScrollState(viewport)])) {
   fetchArtist(0, props.name);
 }
 
@@ -150,7 +160,7 @@ async function listSongs(albums: AlbumHeader[]) {
       albums.map((a) => {
         const key: AlbumKey = {
           name: a.name,
-          artists: a.main_artists
+          artists: a.main_artists,
         };
         return getAlbum(key).then((album) => album.songs.map((s) => s.path));
       })

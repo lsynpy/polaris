@@ -1,47 +1,55 @@
 <template>
-    <div class="flex justify-between items-center">
-        <div class="flex flex-col gap-3">
-            <div class="flex items-center gap-2">
-                <div class="relative rounded-full p-1.5" :class="dotColor">
-                    <div v-if="scanInProgress"
-                        class="absolute inline-flex animate-ping h-3 w-3 rounded-full bg-current" />
-                    <div class="h-3 w-3 rounded-full bg-current" />
-                </div>
-                <span class="font-medium text-ls-700 dark:text-ds-200" v-text="title" />
-            </div>
-            <div class="flex items-center gap-2 text-ls-500 dark:text-ds-400">
-                <span class="material-icons-round" v-text="'access_time'" />
-                <span v-text="timing" data-pw="last-scan" />
-            </div>
-            <div class="flex items-center gap-2 text-ls-500 dark:text-ds-400">
-                <span class="material-icons-round" v-text="'audiotrack'" />
-                <div class="inline-flex gap-1">
-                    <span v-text="displayNumSongs" :class="scanInProgress ? 'font-mono' : ''" />
-                    <span v-text="pluralize('song', displayNumSongs)" />
-                </div>
-            </div>
+  <div class="flex justify-between items-center">
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-2">
+        <div class="relative rounded-full p-1.5" :class="dotColor">
+          <div
+            v-if="scanInProgress"
+            class="absolute inline-flex animate-ping h-3 w-3 rounded-full bg-current"
+          />
+          <div class="h-3 w-3 rounded-full bg-current" />
         </div>
-        <Button label="Scan Collection" icon="sync" severity="secondary" size="xl" @click="emit('trigger-index')"
-            data-pw="trigger-scan" :disabled="status.state != 'UpToDate'" />
+        <span class="font-medium text-ls-700 dark:text-ds-200" v-text="title" />
+      </div>
+      <div class="flex items-center gap-2 text-ls-500 dark:text-ds-400">
+        <span class="material-icons-round" v-text="'access_time'" />
+        <span data-pw="last-scan" v-text="timing" />
+      </div>
+      <div class="flex items-center gap-2 text-ls-500 dark:text-ds-400">
+        <span class="material-icons-round" v-text="'audiotrack'" />
+        <div class="inline-flex gap-1">
+          <span :class="scanInProgress ? 'font-mono' : ''" v-text="displayNumSongs" />
+          <span v-text="pluralize('song', displayNumSongs)" />
+        </div>
+      </div>
     </div>
+    <Button
+      label="Scan Collection"
+      icon="sync"
+      severity="secondary"
+      size="xl"
+      data-pw="trigger-scan"
+      :disabled="status.state != 'UpToDate'"
+      @click="emit('trigger-index')"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useRafFn, useTimeAgo } from "@vueuse/core";
-import { computed, ref } from "vue";
+import { useRafFn, useTimeAgo } from '@vueuse/core';
+import { computed, ref } from 'vue';
 
-import type { IndexStatus as Status } from "@/api/dto";
-import Button from "@/components/basic/Button.vue";
-import SectionTitle from "@/components/basic/SectionTitle.vue";
-import { pluralize } from "@/format";
+import type { IndexStatus as Status } from '@/api/dto';
+import Button from '@/components/basic/Button.vue';
+import { pluralize } from '@/format';
 
 const props = defineProps<{ status: Status }>();
 
 const emit = defineEmits<{
-  "trigger-index": [];
+  'trigger-index': [];
 }>();
 
-const scanInProgress = computed(() => props.status.state === "InProgress");
+const scanInProgress = computed(() => props.status.state === 'InProgress');
 
 const displayNumSongs = ref(props.status.num_songs_indexed);
 
@@ -50,60 +58,62 @@ function lerp(a: number, b: number, t: number) {
 }
 
 useRafFn(({ delta }) => {
-  if (props.status.state !== "InProgress") {
+  if (props.status.state !== 'InProgress') {
     displayNumSongs.value = props.status.num_songs_indexed;
   } else if (displayNumSongs.value > props.status.num_songs_indexed) {
     displayNumSongs.value = 0;
   } else {
     const rate = 1 / 500;
     displayNumSongs.value = Math.floor(
-      lerp(
-        displayNumSongs.value,
-        props.status.num_songs_indexed,
-        1 - Math.exp(-delta * rate)
-      )
+      lerp(displayNumSongs.value, props.status.num_songs_indexed, 1 - Math.exp(-delta * rate))
     );
   }
 });
 
 const dotColor = computed(() => {
   switch (props.status.state) {
-    case "OutOfDate":
-      return "bg-red-500/10 text-red-500";
-    case "InProgress":
-      return "bg-yellow-400/10 text-yellow-400";
-    case "UpToDate":
-      return "bg-green-500/10 text-green-500";
+    case 'OutOfDate':
+      return 'bg-red-500/10 text-red-500';
+    case 'InProgress':
+      return 'bg-yellow-400/10 text-yellow-400';
+    case 'UpToDate':
+      return 'bg-green-500/10 text-green-500';
+    default:
+      return '';
   }
 });
 
 const title = computed(() => {
   switch (props.status.state) {
-    case "OutOfDate":
-      return "Out of date";
-    case "InProgress":
-      return "Scan in progress";
-    case "UpToDate":
-      return "Up to date";
+    case 'OutOfDate':
+      return 'Out of date';
+    case 'InProgress':
+      return 'Scan in progress';
+    case 'UpToDate':
+      return 'Up to date';
+    default:
+      return '';
   }
 });
 
 const started = useTimeAgo(() => props.status.last_start_time || Date.now(), {
   showSecond: true,
-  updateInterval: 0.5
+  updateInterval: 0.5,
 });
 const end = useTimeAgo(() => props.status.last_end_time || Date.now(), {
   showSecond: false,
-  updateInterval: 5
+  updateInterval: 5,
 });
 const timing = computed(() => {
   switch (props.status.state) {
-    case "OutOfDate":
-      return "Scan is about to start";
-    case "InProgress":
+    case 'OutOfDate':
+      return 'Scan is about to start';
+    case 'InProgress':
       return `Started ${started.value}`;
-    case "UpToDate":
+    case 'UpToDate':
       return `Scanned ${end.value}`;
+    default:
+      return '';
   }
 });
 </script>

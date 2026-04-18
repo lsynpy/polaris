@@ -1,21 +1,21 @@
-import { acceptHMRUpdate, defineStore } from "pinia";
-import { markRaw, type Ref, ref } from "vue";
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import { markRaw, type Ref, ref } from 'vue';
 
-import type { Playlist, PlaylistHeader } from "@/api/dto";
+import type { Playlist, PlaylistHeader } from '@/api/dto';
 import {
   deletePlaylist as doDeletePlaylist,
   importPlaylists as doImportPlaylists,
   getPlaylist,
   listPlaylists,
-  putPlaylist
-} from "@/api/endpoints";
-import { usePlaybackStore } from "./playback";
+  putPlaylist,
+} from '@/api/endpoints';
+import { usePlaybackStore } from './playback';
 
 export type PlaylistsState = {
   listing: PlaylistHeader[];
 };
 
-export const usePlaylistsStore = defineStore("playlists", () => {
+export const usePlaylistsStore = defineStore('playlists', () => {
   const listing: Ref<PlaylistHeader[]> = ref([]);
   const playlists: Ref<Map<string, Playlist>> = ref(new Map());
 
@@ -58,7 +58,7 @@ export const usePlaylistsStore = defineStore("playlists", () => {
     fetchList,
     fetchPlaylist,
     importPlaylists,
-    save
+    save,
   };
 });
 

@@ -1,11 +1,4 @@
-import {
-  type ComputedRef,
-  computed,
-  type MaybeRefOrGetter,
-  type Ref,
-  ref,
-  toValue
-} from "vue";
+import { type ComputedRef, computed, type MaybeRefOrGetter, type Ref, ref, toValue } from 'vue';
 
 interface Item {
   key: string | number;
@@ -43,9 +36,7 @@ class Multiselect<T extends Item> {
       : -1;
 
     if (event.shiftKey && pivotIndex >= 0) {
-      const clickedIndex = toValue(this.items).findIndex(
-        (i) => i.key === item.key
-      );
+      const clickedIndex = toValue(this.items).findIndex((i) => i.key === item.key);
       const from = Math.min(pivotIndex, clickedIndex);
       const to = Math.max(pivotIndex, clickedIndex);
 
@@ -80,40 +71,38 @@ class Multiselect<T extends Item> {
 
   onKeyDown(event: KeyboardEvent) {
     switch (event.code) {
-      case "ArrowUp":
+      case 'ArrowUp':
         this.move(event, -1);
         event.preventDefault();
         break;
-      case "ArrowDown":
+      case 'ArrowDown':
         this.move(event, 1);
         event.preventDefault();
         break;
-      case "PageUp":
+      case 'PageUp':
         this.move(event, -10);
         event.preventDefault();
         break;
-      case "PageDown":
+      case 'PageDown':
         this.move(event, 10);
         event.preventDefault();
         break;
-      case "Home":
+      case 'Home':
         this.move(event, Number.NEGATIVE_INFINITY);
         event.preventDefault();
         break;
-      case "End":
+      case 'End':
         this.move(event, Number.POSITIVE_INFINITY);
         event.preventDefault();
         break;
-      case "Escape":
+      case 'Escape':
         this.selectedKeys.value.clear();
         this.focusedKey.value = undefined;
         this.pivotKey.value = undefined;
         break;
-      case "KeyA":
+      case 'KeyA':
         if (event.ctrlKey) {
-          this.selectedKeys.value = new Set(
-            toValue(this.items).map((i) => i.key)
-          );
+          this.selectedKeys.value = new Set(toValue(this.items).map((i) => i.key));
           this.focusedKey.value = toValue(this.items)[0]?.key;
           this.pivotKey.value = this.focusedKey.value;
         }
@@ -130,22 +119,15 @@ class Multiselect<T extends Item> {
       return;
     }
 
-    const pivotIndex = toValue(this.items).findIndex(
-      (i) => i.key === this.pivotKey.value
-    );
+    const pivotIndex = toValue(this.items).findIndex((i) => i.key === this.pivotKey.value);
     const fromIndex = Math.max(
       0,
       Math.min(
-        toValue(this.items).findIndex(
-          (item) => item.key === this.focusedKey.value
-        ),
+        toValue(this.items).findIndex((item) => item.key === this.focusedKey.value),
         toValue(this.items).length - 1
       )
     );
-    const toIndex = Math.max(
-      0,
-      Math.min(fromIndex + delta, toValue(this.items).length - 1)
-    );
+    const toIndex = Math.max(0, Math.min(fromIndex + delta, toValue(this.items).length - 1));
     const toItem = toValue(this.items)[toIndex];
 
     if (!event.shiftKey || pivotIndex < 0) {
@@ -160,10 +142,7 @@ class Multiselect<T extends Item> {
         delta > 0 ? index <= endIndex : index >= endIndex;
         index += Math.sign(delta)
       ) {
-        if (
-          (delta > 0 && index > pivotIndex) ||
-          (delta < 0 && index < pivotIndex)
-        ) {
+        if ((delta > 0 && index > pivotIndex) || (delta < 0 && index < pivotIndex)) {
           this.selectedKeys.value.add(items[index].key);
         } else if (index !== pivotIndex && index !== toIndex) {
           this.selectedKeys.value.delete(items[index].key);
@@ -195,11 +174,9 @@ export default function useMultiselect<T extends Item>(
     pivotKey: multiselect.pivotKey,
     selection: multiselect.selection,
 
-    clickItem: (event: MouseEvent, item: T) =>
-      multiselect.clickItem(event, item),
-    move: (event: KeyboardEvent, delta: number) =>
-      multiselect.move(event, delta),
+    clickItem: (event: MouseEvent, item: T) => multiselect.clickItem(event, item),
+    move: (event: KeyboardEvent, delta: number) => multiselect.move(event, delta),
     onKeyDown: (event: KeyboardEvent) => multiselect.onKeyDown(event),
-    selectItem: (item: T) => multiselect.selectItem(item)
+    selectItem: (item: T) => multiselect.selectItem(item),
   };
 }

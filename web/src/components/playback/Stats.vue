@@ -1,40 +1,46 @@
 <template>
-    <div class="min-h-full flex flex-col">
-        <SectionTitle label="Playlist Stats" icon="bar_chart" />
-        <div class="grid grid-cols-2 gap-8 mb-8">
-            <div class="p-8 border border-ls-200 dark:border-ds-700 rounded-lg">
-                <p class="text-sm font-medium leading-6 text-ls-700 dark:text-ds-200">Number of songs</p>
-                <p class="mt-2 flex items-baseline gap-x-2">
-                    <span data-pw="song-count" class="text-4xl font-semibold tracking-tight text-ls-900 dark:text-ds-0"
-                        v-text="playback.playlist.length" />
-                </p>
-            </div>
-            <div class="p-8 border border-ls-200 dark:border-ds-700 rounded-lg">
-                <p class="text-sm font-medium leading-6 text-ls-700 dark:text-ds-200">Duration</p>
-                <p class="mt-2 flex items-baseline gap-x-2">
-                    <span class="text-4xl font-semibold tracking-tight text-ls-900 dark:text-ds-0" v-text="duration" />
-                    <span class="text-sm text-ls-700 dark:text-ds-200" v-text="durationUnit" />
-                </p>
-            </div>
-        </div>
-        <div v-if="yearData.length > 1" class="flex flex-col">
-            <SectionTitle label="Songs by Year" icon="timeline" />
-            <apexchart type="line" :options="yearChartOptions" :series="yearSeries" />
-        </div>
+  <div class="min-h-full flex flex-col">
+    <SectionTitle label="Playlist Stats" icon="bar_chart" />
+    <div class="grid grid-cols-2 gap-8 mb-8">
+      <div class="p-8 border border-ls-200 dark:border-ds-700 rounded-lg">
+        <p class="text-sm font-medium leading-6 text-ls-700 dark:text-ds-200">Number of songs</p>
+        <p class="mt-2 flex items-baseline gap-x-2">
+          <span
+            data-pw="song-count"
+            class="text-4xl font-semibold tracking-tight text-ls-900 dark:text-ds-0"
+            v-text="playback.playlist.length"
+          />
+        </p>
+      </div>
+      <div class="p-8 border border-ls-200 dark:border-ds-700 rounded-lg">
+        <p class="text-sm font-medium leading-6 text-ls-700 dark:text-ds-200">Duration</p>
+        <p class="mt-2 flex items-baseline gap-x-2">
+          <span
+            class="text-4xl font-semibold tracking-tight text-ls-900 dark:text-ds-0"
+            v-text="duration"
+          />
+          <span class="text-sm text-ls-700 dark:text-ds-200" v-text="durationUnit" />
+        </p>
+      </div>
     </div>
+    <div v-if="yearData.length > 1" class="flex flex-col">
+      <SectionTitle label="Songs by Year" icon="timeline" />
+      <apexchart type="line" :options="yearChartOptions" :series="yearSeries" />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useCssVar, watchImmediate } from "@vueuse/core";
-import { formatHex, modeRgb, useMode } from "culori/fn";
-import { computed, getCurrentInstance, type Ref, ref } from "vue";
-import VueApexCharts from "vue3-apexcharts";
+import { useCssVar, watchImmediate } from '@vueuse/core';
+import { formatHex, modeRgb, useMode } from 'culori/fn';
+import { computed, getCurrentInstance, type Ref, ref } from 'vue';
+import VueApexCharts from 'vue3-apexcharts';
 
-import type { Song } from "@/api/dto";
-import SectionTitle from "@/components/basic/SectionTitle.vue";
-import { usePlaybackStore } from "@/stores/playback";
-import { usePreferencesStore } from "@/stores/preferences";
-import { useSongsStore } from "@/stores/songs";
+import type { Song } from '@/api/dto';
+import SectionTitle from '@/components/basic/SectionTitle.vue';
+import { usePlaybackStore } from '@/stores/playback';
+import { usePreferencesStore } from '@/stores/preferences';
+import { useSongsStore } from '@/stores/songs';
 
 getCurrentInstance()?.appContext.app.use(VueApexCharts);
 
@@ -56,7 +62,7 @@ const playlistSongs = computed(() => {
 
 const yearData: Ref<[string, number][]> = ref([]);
 const duration = ref(0);
-const durationUnit = ref("");
+const durationUnit = ref('');
 
 watchImmediate(playlistSongs, () => {
   let songsByYear = new Map<number, number>();
@@ -72,7 +78,7 @@ watchImmediate(playlistSongs, () => {
   {
     let minYear = 9999;
     let maxYear = 0;
-    for (let [year, _] of songsByYear.entries()) {
+    for (const [year] of songsByYear.entries()) {
       minYear = Math.min(year, minYear);
       maxYear = Math.max(year, maxYear);
     }
@@ -88,38 +94,23 @@ watchImmediate(playlistSongs, () => {
   const days = hours / 24;
   if (hours < 2) {
     duration.value = Math.floor(seconds / 60);
-    durationUnit.value = "mins";
+    durationUnit.value = 'mins';
   } else if (days < 2) {
     duration.value = Math.floor(10 * hours) / 10;
-    durationUnit.value = "hours";
+    durationUnit.value = 'hours';
   } else {
     duration.value = Math.floor(10 * days) / 10;
-    durationUnit.value = "days";
+    durationUnit.value = 'days';
   }
 });
 
 const yearSeries = computed(() => [{ data: yearData.value }]);
 
-const lightMode = computed(() => preferences.polarity === "light");
-const accent600 = useCssVar(() =>
-  lightMode.value ? "--accent-600" : "--accent-700"
-);
-const surface0 = useCssVar(() =>
-  lightMode.value ? "--surface-0" : "--surface-900"
-);
-const surface50 = useCssVar(() =>
-  lightMode.value ? "--surface-50" : "--surface-800"
-);
-const surface200 = useCssVar(() =>
-  lightMode.value ? "--surface-200" : "--surface-700"
-);
-const surface400 = useCssVar(() =>
-  lightMode.value ? "--surface-400" : "--surface-600"
-);
-const surface500 = useCssVar("--surface-500");
-const surface700 = useCssVar(() =>
-  lightMode.value ? "--surface-700" : "--surface-300"
-);
+const lightMode = computed(() => preferences.polarity === 'light');
+const accent600 = useCssVar(() => (lightMode.value ? '--accent-600' : '--accent-700'));
+const surface200 = useCssVar(() => (lightMode.value ? '--surface-200' : '--surface-700'));
+const surface400 = useCssVar(() => (lightMode.value ? '--surface-400' : '--surface-600'));
+const surface500 = useCssVar('--surface-500');
 
 function toHex(color: string) {
   return formatHex(rgb(`rgb(${color})`));
@@ -130,56 +121,56 @@ const yearChartOptions = {
     animations: { enabled: false },
     redrawOnParentResize: true,
     toolbar: { show: false },
-    zoom: { enabled: false }
+    zoom: { enabled: false },
   },
   colors: [toHex(accent600.value)],
   dataLabels: { enabled: false },
   grid: { show: false },
   fill: {
-    type: "gradient",
+    type: 'gradient',
     gradient: {
-      type: "vertical",
+      type: 'vertical',
       colorStops: [
         { offset: 0, color: toHex(accent600.value), opacity: 1 },
-        { offset: 100, color: toHex(accent600.value), opacity: 0.2 }
-      ]
-    }
+        { offset: 100, color: toHex(accent600.value), opacity: 0.2 },
+      ],
+    },
   },
-  stroke: { curve: "smooth" },
+  stroke: { curve: 'smooth' },
   tooltip: { enabled: false },
   xaxis: {
     axisBorder: { color: toHex(surface200.value) },
     axisTicks: {
-      color: toHex(surface400.value)
+      color: toHex(surface400.value),
     },
     decimalsInFloat: 0,
     labels: {
       rotateAlways: true,
       style: {
         colors: toHex(surface500.value),
-        fontSize: "12px",
-        fontFamily: "InterVariable"
-      }
+        fontSize: '12px',
+        fontFamily: 'InterVariable',
+      },
     },
-    type: "datetime"
+    type: 'datetime',
   },
   yaxis: {
     axisBorder: {
       show: true,
-      color: toHex(surface400.value)
+      color: toHex(surface400.value),
     },
     axisTicks: {
       show: true,
-      color: toHex(surface400.value)
+      color: toHex(surface400.value),
     },
     tickAmount: 4,
     labels: {
       style: {
         colors: toHex(surface500.value),
-        fontSize: "12px",
-        fontFamily: "InterVariable"
-      }
-    }
-  }
+        fontSize: '12px',
+        fontFamily: 'InterVariable',
+      },
+    },
+  },
 };
 </script>

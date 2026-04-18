@@ -1,21 +1,26 @@
 <template>
-    <div ref="root" class="cursor-pointer relative" draggable="true" @click="seekToCursor" @dragstart="onDragStart"
-        @dragend="endDrag">
-        <!--
-         Preferably, we would draw a single white waveform canvas. We would then
-         use it as mask for two empty divs with colored backgrounds. However, this
-         requires `mask-image: element(#myMaskID)` which is not well supported.
-         See:
-            https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image
-            https://developer.mozilla.org/en-US/docs/Web/CSS/image
-            https://developer.mozilla.org/en-US/docs/Web/CSS/element
-         Until then, we simply draw two distinct pre-colored canvas.
-        -->
-        <canvas ref="fullWaveform" class="absolute w-full h-full"
-            :style="`clip-path: xywh(${progress * 100} 0 100% 100%)`" />
-        <canvas ref="playedWaveform" class="absolute w-full h-full"
-            :style="`clip-path: xywh(0 0 ${progress * 100}% 100%)`" />
-    </div>
+  <div ref="root" class="cursor-pointer relative" @click="seekToCursor">
+    <!--
+          Preferably, we would draw a single white waveform canvas. We would then
+          use it as mask for two empty divs with colored backgrounds. However, this
+          requires `mask-image: element(#myMaskID)` which is not well supported.
+          See:
+             https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image
+             https://developer.mozilla.org/en-US/docs/Web/CSS/image
+             https://developer.mozilla.org/en-US/docs/Web/CSS/element
+          Until then, we simply draw two distinct pre-colored canvas.
+         -->
+    <canvas
+      ref="fullWaveform"
+      class="absolute w-full h-full"
+      :style="`clip-path: xywh(${progress * 100} 0 100% 100%)`"
+    />
+    <canvas
+      ref="playedWaveform"
+      class="absolute w-full h-full"
+      :style="`clip-path: xywh(0 0 ${progress * 100}% 100%)`"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -25,14 +30,13 @@ import {
   useElementSize,
   useMouseInElement,
   watchPausable,
-  watchThrottled
-} from "@vueuse/core";
-import { onMounted, type Ref, ref, useTemplateRef, watch } from "vue";
+  watchThrottled,
+} from '@vueuse/core';
+import { onMounted, type Ref, ref, useTemplateRef, watch } from 'vue';
 
-import type { Peaks } from "@/api/dto";
-import { get_peaks } from "@/api/endpoints";
-import { blankElement } from "@/dnd";
-import { usePreferencesStore } from "@/stores/preferences";
+import type { Peaks } from '@/api/dto';
+import { get_peaks } from '@/api/endpoints';
+import { usePreferencesStore } from '@/stores/preferences';
 
 const preferences = usePreferencesStore();
 
@@ -46,11 +50,9 @@ const emit = defineEmits<{
   seek: [seconds: number];
 }>();
 
-const root = useTemplateRef("root");
-const fullWaveform: Ref<HTMLCanvasElement | null> =
-  useTemplateRef("fullWaveform");
-const playedWaveform: Ref<HTMLCanvasElement | null> =
-  useTemplateRef("playedWaveform");
+const root = useTemplateRef('root');
+const fullWaveform: Ref<HTMLCanvasElement | null> = useTemplateRef('fullWaveform');
+const playedWaveform: Ref<HTMLCanvasElement | null> = useTemplateRef('playedWaveform');
 const { width, height } = useElementSize(fullWaveform);
 const { elementX: mouseX } = useMouseInElement(root);
 
@@ -58,31 +60,23 @@ const peaks: Ref<Peaks | null> = ref(null);
 const loading = ref(false);
 const debouncedLoading = refDebounced(loading, 50);
 
-const { pause: endDrag, resume: beginDrag } = watchPausable(
-  mouseX,
-  seekToCursor
-);
+const { pause: endDrag } = watchPausable(mouseX, seekToCursor);
 
 onMounted(endDrag);
 
-function onDragStart(event: DragEvent) {
-  event.dataTransfer?.setDragImage(blankElement, 0, 0);
-  beginDrag();
-}
-
 function seekToCursor() {
-  emit("seek", (props.duration * mouseX.value) / width.value);
+  emit('seek', (props.duration * mouseX.value) / width.value);
 }
 
 watch(() => props.path, endDrag);
 
 const playedColor = useCssVar(
-  () => (preferences.polarity === "light" ? "--accent-600" : "--accent-800"),
+  () => (preferences.polarity === 'light' ? '--accent-600' : '--accent-800'),
   null,
   { observe: true }
 );
 const unplayedColor = useCssVar(
-  () => (preferences.polarity === "light" ? "--surface-300" : "--surface-700"),
+  () => (preferences.polarity === 'light' ? '--surface-300' : '--surface-700'),
   null,
   { observe: true }
 );
@@ -94,7 +88,7 @@ watch(
       loading.value = true;
       try {
         peaks.value = await get_peaks(props.path);
-      } catch (e) {
+      } catch {
         peaks.value = null;
       }
       loading.value = false;
@@ -117,7 +111,7 @@ watchThrottled(
     peaks,
     debouncedLoading,
     playedColor,
-    unplayedColor
+    unplayedColor,
   ],
   redraw,
   { throttle: 100 }
@@ -137,7 +131,7 @@ function draw(canvas: HTMLCanvasElement, color: string) {
   const w = width.value;
   const h = height.value;
 
-  const context = canvas.getContext("2d", { alpha: true });
+  const context = canvas.getContext('2d', { alpha: true });
   if (!context) {
     return;
   }
@@ -184,8 +178,7 @@ function draw(canvas: HTMLCanvasElement, color: string) {
       const sampleRight = Math.ceil(floatIndex);
       const t = floatIndex - sampleLeft;
       const min = t * read(2 * sampleLeft) + (1 - t) * read(2 * sampleRight);
-      const max =
-        t * read(2 * sampleLeft + 1) + (1 - t) * read(2 * sampleRight + 1);
+      const max = t * read(2 * sampleLeft + 1) + (1 - t) * read(2 * sampleRight + 1);
       const y = halfHeight * (1 - max);
       const height = Math.max(1, halfHeight * Math.abs(max - min));
       context.rect(x, y, 1, height);

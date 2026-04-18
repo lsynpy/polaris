@@ -1,5 +1,5 @@
-import { computed, ref, type WritableComputedRef } from "vue";
-import { useUserStore } from "@/stores/user";
+import { useUserStore } from '@/stores/user';
+import { computed, ref, type WritableComputedRef } from 'vue';
 
 export interface Serializer<T> {
   read: (raw: string) => T;
@@ -7,62 +7,61 @@ export interface Serializer<T> {
 }
 
 export const StorageSerializers: Record<
-  "boolean" | "object" | "number" | "any" | "string" | "map" | "set" | "date",
+  'boolean' | 'object' | 'number' | 'any' | 'string' | 'map' | 'set' | 'date',
   Serializer<unknown>
 > = {
   boolean: {
-    read: (v: string) => v === "true",
-    write: (v: unknown) => String(v)
+    read: (v: string) => v === 'true',
+    write: (v: unknown) => String(v),
   },
   object: {
     read: (v: string) => JSON.parse(v),
-    write: (v: unknown) => JSON.stringify(v)
+    write: (v: unknown) => JSON.stringify(v),
   },
   number: {
     read: (v: string) => Number.parseFloat(v),
-    write: (v: unknown) => String(v)
+    write: (v: unknown) => String(v),
   },
   any: {
     read: (v: string) => v,
-    write: (v: unknown) => String(v)
+    write: (v: unknown) => String(v),
   },
   string: {
     read: (v: string) => v,
-    write: (v: unknown) => String(v)
+    write: (v: unknown) => String(v),
   },
   map: {
     read: (v: string) => new Map(JSON.parse(v)),
-    write: (v: unknown) =>
-      JSON.stringify(Array.from((v as Map<unknown, unknown>).entries()))
+    write: (v: unknown) => JSON.stringify(Array.from((v as Map<unknown, unknown>).entries())),
   },
   set: {
     read: (v: string) => new Set(JSON.parse(v)),
-    write: (v: unknown) => JSON.stringify(Array.from(v as Set<unknown>))
+    write: (v: unknown) => JSON.stringify(Array.from(v as Set<unknown>)),
   },
   date: {
     read: (v: string) => new Date(v),
-    write: (v: unknown) => (v as Date).toISOString()
-  }
+    write: (v: unknown) => (v as Date).toISOString(),
+  },
 };
 
 export function guessSerializerType<T>(rawInit: T) {
   return rawInit == null
-    ? "any"
+    ? 'any'
     : rawInit instanceof Set
-      ? "set"
+      ? 'set'
       : rawInit instanceof Map
-        ? "map"
+        ? 'map'
         : rawInit instanceof Date
-          ? "date"
-          : typeof rawInit === "boolean"
-            ? "boolean"
-            : typeof rawInit === "string"
-              ? "string"
-              : typeof rawInit === "object"
-                ? "object"
+          ? 'date'
+          : typeof rawInit === 'boolean'
+            ? 'boolean'
+            : typeof rawInit === 'string'
+              ? 'string'
+              : typeof rawInit === 'object'
+                ? 'object'
                 : !Number.isNaN(rawInit)
-                  ? "number"
-                  : "any";
+                  ? 'number'
+                  : 'any';
 }
 
 function read<T>(key: string, defaultValue: T, serializer: Serializer<T>): T {
@@ -79,16 +78,13 @@ function write<T>(key: string, value: T, serializer: Serializer<T>) {
   try {
     localStorage.setItem(key, serialized);
     return true;
-  } catch (_e) {
+  } catch {
     console.log(`Could not write '${key}' to local storage`);
     return false;
   }
 }
 
-export function useUserStorage<T>(
-  key: string,
-  defaultValue: T
-): WritableComputedRef<T> {
+export function useUserStorage<T>(key: string, defaultValue: T): WritableComputedRef<T> {
   const type = guessSerializerType<T>(defaultValue);
   const serializer = StorageSerializers[type];
   const user = useUserStore();
@@ -113,7 +109,7 @@ export function useUserStorage<T>(
 
   return computed({
     get: getter,
-    set: setter
+    set: setter,
   });
 }
 

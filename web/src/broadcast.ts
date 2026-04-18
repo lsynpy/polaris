@@ -1,8 +1,8 @@
-import { watch } from "vue";
+import { watch } from 'vue';
 
-import { makeThumbnailURL } from "./api/endpoints";
-import { formatArtists, formatSong } from "./format";
-import { usePlaybackStore } from "./stores/playback";
+import { makeThumbnailURL } from './api/endpoints';
+import { formatArtists, formatSong } from './format';
+import { usePlaybackStore } from './stores/playback';
 
 export default function setupBroadcasts() {
   const playback = usePlaybackStore();
@@ -12,15 +12,8 @@ export default function setupBroadcasts() {
     () => playback.currentSong,
     (song) => {
       if (!song) {
-        document.title = "Polaris";
+        document.title = 'Polaris';
         return;
-      }
-
-      let _artists: string[] = [];
-      if (song.artists?.length) {
-        _artists = song.artists;
-      } else if (song.album_artists?.length) {
-        _artists = song.album_artists;
       }
 
       document.title = formatSong(song);
@@ -42,7 +35,7 @@ export default function setupBroadcasts() {
 
       const metadata = new MediaMetadata({
         title: song.title,
-        album: song.album
+        album: song.album,
       });
 
       if (song.artists?.length) {
@@ -52,7 +45,7 @@ export default function setupBroadcasts() {
       }
 
       if (song.artwork) {
-        metadata.artwork = [{ src: makeThumbnailURL(song.artwork, "small") }];
+        metadata.artwork = [{ src: makeThumbnailURL(song.artwork, 'small') }];
       }
 
       navigator.mediaSession.metadata = metadata;
@@ -73,7 +66,7 @@ export default function setupBroadcasts() {
       navigator.mediaSession.setPositionState({
         position: playback.elapsedSeconds,
         duration: playback.duration,
-        playbackRate: 1
+        playbackRate: 1,
       });
     }
   );

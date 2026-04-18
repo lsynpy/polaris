@@ -1,4 +1,4 @@
-export const API_ARRAY_SEPARATOR = "\u{000C}";
+export const API_ARRAY_SEPARATOR = '\u{000C}';
 
 export type Authorization = {
   username: string;
@@ -42,7 +42,7 @@ export type NewSettings = {
 };
 
 export type IndexStatus = {
-  state: "OutOfDate" | "InProgress" | "UpToDate";
+  state: 'OutOfDate' | 'InProgress' | 'UpToDate';
   last_start_time?: number;
   last_end_time?: number;
   num_songs_indexed: number;
