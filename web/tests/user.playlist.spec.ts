@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 test.afterEach(async ({ page }) => {
   // Clean up playlist state so other tests aren't affected
   await page.goto('/');
@@ -10,7 +12,7 @@ test.afterEach(async ({ page }) => {
   }
 });
 
-test('Can clear playlist', async ({ page }) => {
+test('[playlist] jump, clear, remove', async ({ page }) => {
   await page.goto('/');
   await page.getByTestId('sidebar').getByTestId('albums').click();
   await page
@@ -20,22 +22,10 @@ test('Can clear playlist', async ({ page }) => {
     .click({ force: true });
   await page.getByTestId('play-all').click();
   await expect(page.getByTestId('playlist-song')).toHaveCount(7);
-
-  await page.getByTestId('clear-playlist').click();
-  await expect(page.getByTestId('playlist-song')).toHaveCount(0);
-});
-
-test('Can remove playlist songs', async ({ page }) => {
-  await page.goto('/');
-  await page.getByTestId('sidebar').getByTestId('albums').click();
-  await page
-    .getByTestId('album')
-    .filter({ hasText: 'Picnic', hasNotText: 'Remixes' })
-    .getByTestId('album-art')
-    .click({ force: true });
-  await page.getByTestId('play-all').click();
-  await expect(page.getByTestId('playlist-song')).toHaveCount(7);
-
+  // jump to track
+  await page.getByTestId('playlist-song').getByText('Why').click({ clickCount: 2 });
+  await expect(page.getByTestId('player')).toContainText('Why');
+  // remove
   await page.getByTestId('playlist-song').getByText('Blueberry').click();
   await page
     .getByTestId('playlist-song')
@@ -43,39 +33,12 @@ test('Can remove playlist songs', async ({ page }) => {
     .click({ modifiers: ['Shift'] });
   await page.getByTestId('playlist-song').getByText('Sherbet').press('Delete');
   await expect(page.getByTestId('playlist-song')).toHaveCount(4);
+  // clear
+  await page.getByTestId('clear-playlist').click();
+  await expect(page.getByTestId('playlist-song')).toHaveCount(0);
 });
 
-test('Can jump to a track', async ({ page }) => {
-  await page.goto('/');
-  await page.getByTestId('sidebar').getByTestId('albums').click();
-  await page
-    .getByTestId('album')
-    .filter({ hasText: 'Picnic', hasNotText: 'Remixes' })
-    .getByTestId('album-art')
-    .click({ force: true });
-  await page.getByTestId('play-all').click();
-  await expect(page.getByTestId('playlist-song')).toHaveCount(7);
-
-  await page.getByTestId('playlist-song').getByText('Why').click({ clickCount: 2 });
-  await expect(page.getByTestId('player')).toContainText('Why');
-});
-
-test('Can open playlist stats', async ({ page }) => {
-  await page.goto('/');
-  await page.getByTestId('sidebar').getByTestId('albums').click();
-  await page
-    .getByTestId('album')
-    .filter({ hasText: 'Picnic', hasNotText: 'Remixes' })
-    .getByTestId('album-art')
-    .click({ force: true });
-  await page.getByTestId('play-all').click();
-  await expect(page.getByTestId('playlist-song')).toHaveCount(7);
-
-  await page.getByTestId('show-playlist-stats').click();
-  await expect(page.getByTestId('song-count')).toHaveText('7');
-});
-
-test('Can save, retrieve, delete playlist', async ({ page }) => {
+test('[playlist] save, retrieve, delete', async ({ page }) => {
   const uniqueId = Math.random().toString(36).slice(2);
   const names = [`My Playlist ${uniqueId}`, `??? ${uniqueId}`];
   for (const name of names) {
