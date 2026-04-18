@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 test('can set album art pattern', async ({ page }) => {
   const pattern = Math.random().toString();
   const putRequest = page.waitForRequest(

@@ -109,13 +109,14 @@ export default async function globalSetup(_config: FullConfig) {
   try {
     await waitForServer(E2E_PORT, stderrLog);
   } catch (error) {
-    if (earlyExit) {
+    const exitInfo = earlyExit as { code: number | null; signal: NodeJS.Signals | null } | null;
+    if (exitInfo) {
       const stdoutTail = readLogTail(stdoutLog);
       const stderrTail = readLogTail(stderrLog);
       const details = [stdoutTail, stderrTail].filter(Boolean).join('\n\n');
       throw new Error(
         `Polaris exited before becoming ready on port ${E2E_PORT} ` +
-          `(code=${earlyExit.code}, signal=${earlyExit.signal}).` +
+          `(code=${exitInfo.code}, signal=${exitInfo.signal}).` +
           (details ? `\n\n${details}` : '')
       );
     }
