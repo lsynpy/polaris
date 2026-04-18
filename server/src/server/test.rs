@@ -121,10 +121,6 @@ pub trait TestService {
 		self.login_internal(TEST_USERNAME, TEST_PASSWORD).await;
 	}
 
-	async fn login_as(&mut self, username: &str, password: &str) {
-		self.login_internal(username, password).await;
-	}
-
 	async fn logout(&mut self) {
 		self.set_authorization(None);
 	}
