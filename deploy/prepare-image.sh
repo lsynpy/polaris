@@ -38,16 +38,16 @@ TMPDIR="${SCRIPT_DIR}/.deploy-tmp"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "[1/4] Checking if image exists in ACR: ${IMAGE_TAG}..."
+echo "[1/4] Checking if image exists in ACR: ${IMAGE_TAG} (${ARCH})..."
 
-if docker manifest inspect "${IMAGE_TAG}" > /dev/null 2>&1; then
-    echo "  Image found — skipping build"
+if docker manifest inspect "${IMAGE_TAG}" 2>/dev/null | grep -q "\"architecture\": \"${ARCH}\""; then
+    echo "  Image for ${ARCH} found — skipping build"
     echo ""
     echo "==> Image ready: ${IMAGE_TAG}"
     exit 0
 fi
 
-echo "  Image not found — need to build"
+echo "  Image for ${ARCH} not found — need to build"
 
 # ---------------------------------------------------------------------------
 # Helper: download binary from existing release for current ARCH
