@@ -42,7 +42,6 @@ async def check_api(base_url: str) -> bool:
         ("/api/version", "critical"),
         ("/api/albums", "soft"),
         ("/api/artists", "soft"),
-        ("/api/genres", "soft"),
         ("/api/playlists", "soft"),
         ("/api/songs", "soft"),
     ]
@@ -86,7 +85,6 @@ async def check_api(base_url: str) -> bool:
 async def check_ui(base_url: str) -> bool:
     """Smoke test UI pages using Playwright."""
     # Hash-based routes: Polaris uses createWebHashHistory()
-    # Note: #/genres was removed in commit 734230d
     pages = [
         ("#/", None),
         ("#/files", "Files"),
@@ -107,7 +105,7 @@ async def check_ui(base_url: str) -> bool:
         try:
             # Navigate to root first, then auth route
             await page.goto(base_url, wait_until="load", timeout=30000)
-            await page.wait_for_selector('#vue-container', state='attached', timeout=10000)
+            await page.wait_for_selector("#vue-container", state="attached", timeout=10000)
             await page.wait_for_timeout(2000)
             # Navigate to auth page
             await page.goto(f"{base_url}/#/auth", wait_until="load", timeout=15000)
@@ -116,8 +114,8 @@ async def check_ui(base_url: str) -> bool:
             form = await page.query_selector('form[name="authForm"]')
             if form:
                 # InputText.vue renders <input id="..."> directly (flat structure)
-                username_input = await page.query_selector('input#username')
-                password_input = await page.query_selector('input#password')
+                username_input = await page.query_selector("input#username")
+                password_input = await page.query_selector("input#password")
                 if username_input and await username_input.is_visible():
                     await username_input.fill("admin")
                     await password_input.fill("admin")
@@ -127,12 +125,12 @@ async def check_ui(base_url: str) -> bool:
                 else:
                     # Form exists but inputs not visible (headless browser issue)
                     # Try force-click via evaluate
-                    await page.evaluate('''() => {
+                    await page.evaluate("""() => {
                         const el = document.querySelector('#username');
                         if (el) el.style.display = 'block';
-                    }''')
+                    }""")
                     await page.wait_for_timeout(500)
-                    actual_input = await page.query_selector('input#username')
+                    actual_input = await page.query_selector("input#username")
                     if actual_input:
                         await actual_input.fill("admin")
                         await password_input.fill("admin")
@@ -165,7 +163,9 @@ async def check_ui(base_url: str) -> bool:
                     else:
                         # Show a snippet of body for debugging
                         snippet = body_text[:200].replace("\n", " ")
-                        print(f"  UI  {hash_path}: WARN (title: {title}, '{expected_text}' not found, body: {snippet}...)")
+                        print(
+                            f"  UI  {hash_path}: WARN (title: {title}, '{expected_text}' not found, body: {snippet}...)"
+                        )
                         ok = False
                 else:
                     print(f"  UI  {hash_path}: OK (title: {title})")
