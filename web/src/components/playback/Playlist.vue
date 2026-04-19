@@ -62,11 +62,8 @@
         class="h-full -ml-8 -mr-4 pr-4"
         :items="playback.playlist"
         :item-height="itemHeight"
-        :show-drop-preview="true"
         @keydown="onKeyDown"
-        @list-reorder="onReorder"
         @list-delete="playback.removeTracks"
-        @list-drop="onDrop"
       >
         <template #default="{ item, index, selected, focused }">
           <PlaylistSong
@@ -78,15 +75,6 @@
             :focused="focused"
             @contextmenu="(e: MouseEvent) => onSongRightClicked(e, item)"
           />
-        </template>
-        <template #drop-preview>
-          <div class="flex items-stretch pl-8 pr-2 py-1" :style="{ height: `${itemHeight}px` }">
-            <div
-              class="grow flex items-center place-content-center rounded-sm bg-accent-100 dark:bg-accent-900 text-accent-700 dark:text-accent-300 outline-accent-600 dark:outline-accent-700 outline-1 outline-dashed"
-            >
-              <span class="material-icons-round">add</span>
-            </div>
-          </div>
         </template>
       </OrderableList>
       <ContextMenu ref="contextMenu" :items="contextMenuItems" />
@@ -104,15 +92,7 @@
 
 <script setup lang="ts">
 import { vOnClickOutside } from '@vueuse/components';
-import {
-  computed,
-  defineAsyncComponent,
-  nextTick,
-  onMounted,
-  ref,
-  useTemplateRef,
-  watch,
-} from 'vue';
+import { computed, defineAsyncComponent, nextTick, ref, useTemplateRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
@@ -138,6 +118,7 @@ const playback = usePlaybackStore();
 const playlists = usePlaylistsStore();
 const preferences = usePreferencesStore();
 const router = useRouter();
+
 const orderableList = useTemplateRef('orderableList');
 
 const compact = computed(() => preferences.playlistDisplayMode === 'compact');
@@ -149,12 +130,14 @@ const playlistName = computed({
   set: (value) => playback.setName(value),
 });
 
+const isEmpty = computed(() => playback.playlist.length === 0);
+
 const pageActions = computed(() => [
   {
     label: 'Clear',
     icon: 'clear',
     action: playback.clear,
-    disabled: playback.playlist.length === 0,
+    disabled: isEmpty.value,
     testID: 'clear-playlist',
   },
   {
@@ -163,7 +146,7 @@ const pageActions = computed(() => [
     action: () => {
       showStats.value = true;
     },
-    disabled: playback.playlist.length === 0,
+    disabled: isEmpty.value,
     testID: 'show-playlist-stats',
   },
   {
@@ -172,7 +155,7 @@ const pageActions = computed(() => [
     action: () => {
       savingPlaylist.value = true;
     },
-    disabled: playback.playlist.length === 0,
+    disabled: isEmpty.value,
     testID: 'save-playlist',
   },
 ]);
@@ -198,7 +181,6 @@ const playbackOrder = computed({
 
 const showStats = ref(false);
 
-onMounted(() => autoScroll('instant'));
 watch(
   () => playback.currentTrack,
   () => autoScroll('smooth')
@@ -216,24 +198,12 @@ function autoScroll(scrollBehavior: ScrollBehavior) {
   });
 }
 
-function onReorder(tracks: PlaylistEntry[], newIndex: number) {
-  playback.reorder(tracks, newIndex);
-}
-
 function onKeyDown(event: KeyboardEvent) {
   if (event.code === 'Enter') {
     const entry = orderableList.value?.selection[0];
     if (entry) {
       playback.play(entry);
     }
-  }
-}
-
-async function onDrop(atIndex: number) {
-  const selection = orderableList.value?.selection || [];
-  const paths = selection.map((s) => s.path);
-  if (paths.length) {
-    playback.queueTracks(paths, atIndex);
   }
 }
 
