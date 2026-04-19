@@ -56,7 +56,7 @@ class Multiselect<T extends Item> {
           }
         }
       }
-    } else if (event.ctrlKey) {
+    } else if (event.metaKey) {
       if (this.selectedKeys.value.has(item.key)) {
         this.selectedKeys.value.delete(item.key);
         this.pivotKey.value = undefined;
@@ -101,7 +101,7 @@ class Multiselect<T extends Item> {
         this.pivotKey.value = undefined;
         break;
       case 'KeyA':
-        if (event.ctrlKey) {
+        if (event.metaKey) {
           this.selectedKeys.value = new Set(toValue(this.items).map((i) => i.key));
           this.focusedKey.value = toValue(this.items)[0]?.key;
           this.pivotKey.value = this.focusedKey.value;
