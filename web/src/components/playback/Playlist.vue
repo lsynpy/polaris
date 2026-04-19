@@ -57,7 +57,7 @@
     </div>
 
     <div data-pw="playlist-songs" class="grow relative min-h-0">
-      <OrderableList
+      <ScrollableList
         ref="orderableList"
         class="h-full -ml-8 -mr-4 pr-4"
         :items="playback.playlist"
@@ -76,7 +76,7 @@
             @contextmenu="(e: MouseEvent) => onSongRightClicked(e, item)"
           />
         </template>
-      </OrderableList>
+      </ScrollableList>
       <ContextMenu ref="contextMenu" :items="contextMenuItems" />
       <div
         v-if="!playback.playlist.length"
@@ -99,7 +99,7 @@ import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
 import Button from '@/components/basic/Button.vue';
 import ContextMenu, { type ContextMenuItem } from '@/components/basic/ContextMenu.vue';
 import InputText from '@/components/basic/InputText.vue';
-import OrderableList from '@/components/basic/OrderableList.vue';
+import ScrollableList from '@/components/basic/ScrollableList.vue';
 import PageHeader from '@/components/basic/PageHeader.vue';
 import ScreenDarkening from '@/components/basic/ScreenDarkening.vue';
 import ScreenFade from '@/components/basic/ScreenFade.vue';
