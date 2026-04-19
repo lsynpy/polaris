@@ -39,6 +39,16 @@
     <div v-else class="grow flex items-start mt-40 justify-center text-center">
       <BlankStateFiller icon="music_off"> This playlist is empty. </BlankStateFiller>
     </div>
+
+    <Dialog v-model="showDeleteConfirm" title="Delete Playlist">
+      <p class="text-sm text-ls-500 dark:text-ds-400">
+        Are you sure you want to delete this playlist? This action cannot be undone.
+      </p>
+      <div class="flex gap-2 justify-end">
+        <Button label="Cancel" severity="secondary" @click="showDeleteConfirm = false" />
+        <Button label="Delete" severity="danger" @click="confirmDelete" />
+      </div>
+    </Dialog>
   </div>
 </template>
 
@@ -49,6 +59,8 @@ import { useRouter } from 'vue-router';
 
 import { getPlaylist } from '@/api/endpoints';
 import BlankStateFiller from '@/components/basic/BlankStateFiller.vue';
+import Button from '@/components/basic/Button.vue';
+import Dialog from '@/components/basic/Dialog.vue';
 import Error from '@/components/basic/Error.vue';
 import PageHeader from '@/components/basic/PageHeader.vue';
 import Spinner from '@/components/basic/Spinner.vue';
@@ -79,6 +91,7 @@ const pageActions = [
 
 const isLoading = ref(false);
 const error = ref(false);
+const showDeleteConfirm = ref(false);
 
 const songs = computed(() => playlist.value?.songs.paths || []);
 
@@ -105,9 +118,14 @@ async function play() {
   playback.setName(props.name);
 }
 
-async function deletePlaylist() {
+function deletePlaylist() {
+  showDeleteConfirm.value = true;
+}
+
+async function confirmDelete() {
   await playlists.deletePlaylist(props.name);
   await router.push('/playlists');
+  showDeleteConfirm.value = false;
 }
 
 async function listSongs() {
