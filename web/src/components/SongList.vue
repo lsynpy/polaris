@@ -1,30 +1,19 @@
 <template>
   <div v-bind="containerProps" tabindex="-1" class="-mx-4 px-4" @keydown="onKeyDown">
     <div v-bind="wrapperProps">
-      <Draggable
+      <SongListRow
         v-for="item in virtualItems"
         :key="item.index"
-        :allow-pointer-events-inside="true"
+        :path="item.data.key"
+        :index="item.index + +!!invertStripes"
+        :compact="compact"
+        :selected="selectedKeys.has(item.data.key)"
+        :focused="focusedKey == item.data.key"
         :style="`height: ${itemHeight}px`"
-        @draggable-start="onDragStart($event, item.data.key)"
-      >
-        <SongListRow
-          :path="item.data.key"
-          :index="item.index + +!!invertStripes"
-          :compact="compact"
-          :selected="selectedKeys.has(item.data.key)"
-          :focused="focusedKey == item.data.key"
-          @click="(e: MouseEvent) => clickItem(e, item.data)"
-          @dblclick="onSongDoubleClicked(item.data.key)"
-          @contextmenu="(e: MouseEvent) => onSongRightClicked(e, item.data.key)"
-        />
-        <template #drag-preview="{ payload }">
-          <div class="flex items-center gap-2">
-            <span class="material-icons-round" v-text="'audiotrack'" />
-            <span v-text="payload?.getDescription()" />
-          </div>
-        </template>
-      </Draggable>
+        @click="(e: MouseEvent) => clickItem(e, item.data)"
+        @dblclick="onSongDoubleClicked(item.data.key)"
+        @contextmenu="(e: MouseEvent) => onSongRightClicked(e, item.data.key)"
+      />
     </div>
     <ContextMenu ref="contextMenu" :items="contextMenuItems" />
   </div>
@@ -32,8 +21,6 @@
 
 <script setup lang="ts">
 import ContextMenu, { type ContextMenuItem } from '@/components/basic/ContextMenu.vue';
-import Draggable from '@/components/basic/Draggable.vue';
-import SongListRow from '@/components/SongListRow.vue';
 import { saveScrollState, useHistory } from '@/history';
 import useMultiselect from '@/multiselect';
 import { makeAlbumURLFromSongPaths, makeSongURL } from '@/router';
@@ -42,6 +29,7 @@ import { useSongsStore } from '@/stores/songs';
 import { useElementSize, useScroll, useVirtualList } from '@vueuse/core';
 import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import SongListRow from './SongListRow.vue';
 
 const playback = usePlaybackStore();
 const router = useRouter();
@@ -120,12 +108,6 @@ function queueSelection(replace: boolean) {
     playback.stop();
   }
   playback.queueTracks(tracks);
-}
-
-function onDragStart(_event: DragEvent, path: string) {
-  if (!selectedKeys.value.has(path)) {
-    selectItem({ key: path });
-  }
 }
 
 function onSongDoubleClicked(path: string) {
