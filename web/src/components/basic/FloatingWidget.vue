@@ -16,7 +16,6 @@ const bus = useEventBus<FloatingWidgetEvent>('floating-widget');
 
 const props = defineProps<{
   position: [number, number];
-  useOverlay?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -26,9 +25,7 @@ const emit = defineEmits<{
 defineExpose({ open, close });
 
 function open() {
-  if (props.useOverlay !== false) {
-    bus.emit('OPEN_WIDGET');
-  }
+  bus.emit('OPEN_WIDGET');
 }
 
 function close() {

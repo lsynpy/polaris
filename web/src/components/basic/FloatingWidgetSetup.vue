@@ -1,6 +1,11 @@
 <template>
-  <div v-show="open" class="absolute h-full w-full pointer-events-none">
-    <div class="h-full w-full pointer-events-auto" @click="dismiss" @click.right="dismiss">
+  <div class="absolute h-full w-full pointer-events-none">
+    <div
+      v-show="open"
+      class="h-full w-full pointer-events-auto"
+      @click="dismiss"
+      @click.right="dismiss"
+    >
       <div id="floating-widget" />
     </div>
   </div>
