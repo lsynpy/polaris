@@ -118,7 +118,7 @@ impl Manager {
 					.filter_map(|r| r.ok())
 					.collect::<Vec<_>>();
 
-				records.sort_by(|a, b| b.played_at.cmp(&a.played_at));
+				records.sort_by_key(|b| std::cmp::Reverse(b.played_at));
 				records.truncate(limit);
 				Ok(records)
 			}
