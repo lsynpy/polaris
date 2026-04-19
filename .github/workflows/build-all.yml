@@ -51,7 +51,7 @@ jobs:
         id: tag
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
-          TAG="latest-${{ matrix.arch }}-$(date +%Y%m%d)-${SHORT_SHA}"
+          TAG="latest-$(date +%Y%m%d)-${SHORT_SHA}"
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "Tag: ${TAG}"
 
@@ -59,10 +59,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-          name: "Latest ${{ matrix.arch }} Build - ${{ steps.tag.outputs.tag }}"
+          name: "Latest Build - ${{ steps.tag.outputs.tag }}"
           files: server/target/release/polaris-${{ matrix.arch }}.tar.gz
           body: |
-            Auto-generated ${{ matrix.arch }} build from commit ${{ github.sha }}.
+            Auto-generated builds from commit ${{ github.sha }}.
             Branch: `${{ github.ref_name }}`
           draft: false
           prerelease: true

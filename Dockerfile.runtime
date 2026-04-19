@@ -1,12 +1,14 @@
 FROM debian:bookworm-slim
 
+ARG TARGETARCH
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /usr/share/polaris/web /var/cache/polaris /var/lib/polaris
 
-COPY polaris /usr/local/bin/polaris
+COPY polaris-${TARGETARCH} /usr/local/bin/polaris
 COPY web /usr/share/polaris/web
 
 WORKDIR /var/lib/polaris
