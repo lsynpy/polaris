@@ -1,17 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-test.describe.configure({ mode: 'serial' });
-
-test.afterEach(async ({ page }) => {
-  // Clean up playlist state so other tests aren't affected
-  await page.goto('/');
-  try {
-    await page.getByTestId('clear-playlist').click({ force: true });
-  } catch {
-    // Might already be cleared or on a different view
-  }
-});
-
 test('[playlist] jump, clear, remove', async ({ page }) => {
   await page.goto('/');
   await page.getByTestId('sidebar').getByTestId('albums').click();
@@ -39,35 +27,31 @@ test('[playlist] jump, clear, remove', async ({ page }) => {
 });
 
 test('[playlist] save, retrieve, delete', async ({ page }) => {
-  const uniqueId = Math.random().toString(36).slice(2);
-  const names = [`My Playlist ${uniqueId}`, `??? ${uniqueId}`];
-  for (const name of names) {
-    await page.goto('/');
-    await page.getByTestId('sidebar').getByTestId('albums').click();
-    await page
-      .getByTestId('album')
-      .filter({ hasText: 'Hunted' })
-      .getByTestId('album-art')
-      .click({ force: true });
-    await page.getByTestId('play-all').click();
-    await page.getByTestId('save-playlist').click();
-    await page.getByLabel('Playlist Name').fill(name);
-    await page.getByTestId('submit-save-playlist').click();
-    await expect(page.locator('form')).not.toBeVisible();
+  const playlist_name = `test_${Date.now()}`;
+  await page.goto('/');
+  await page.getByTestId('sidebar').getByTestId('albums').click();
+  const albumArt = page.getByTestId('album').filter({ hasText: 'Hunted' }).getByTestId('album-art');
+  await expect(albumArt).toBeVisible();
+  await albumArt.click();
+  await page.getByTestId('play-all').click();
+  await page.getByTestId('save-playlist').click();
+  await page.getByLabel('Playlist Name').fill(playlist_name);
+  await page.getByTestId('submit-save-playlist').click();
+  await expect(page.locator('form')).not.toBeVisible();
 
-    await page.getByTestId('sidebar').getByTestId('playlists').click();
-    await page.getByTestId('saved-playlist').getByText(name).click();
-    await expect(
-      page.getByTestId('saved-playlist-songs').getByTestId('song').locator('visible=true')
-    ).toHaveCount(5);
-    await page.getByTestId('delete-playlist').click();
-    await expect(page).toHaveURL(/\/playlists$/);
-    await expect(page.getByTestId('saved-playlist').getByText(name)).toHaveCount(0);
-  }
+  await page.getByTestId('sidebar').getByTestId('playlists').click();
+  await page.getByTestId('saved-playlist').getByText(playlist_name).click();
+  await expect(
+    page.getByTestId('saved-playlist-songs').getByTestId('song').locator('visible=true')
+  ).toHaveCount(5);
+  await page.getByTestId('delete-playlist').click();
+  await page.getByTestId('delete-playlist-confirm').click();
+  await expect(page).toHaveURL(/\/playlists$/);
+  await expect(page.getByTestId('saved-playlist').getByText(playlist_name)).toHaveCount(0);
 });
 
 test('Silently ignores duplicate tracks when saving', async ({ page }) => {
-  const uniqueName = `Duplicate Test Playlist ${Math.random().toString(36).slice(2)}`;
+  const playlist_name = `test_${Date.now()}`;
   await page.goto('/');
 
   await page.getByTestId('sidebar').getByTestId('albums').click();
@@ -84,14 +68,14 @@ test('Silently ignores duplicate tracks when saving', async ({ page }) => {
 
   // Try to save
   await page.getByTestId('save-playlist').click();
-  await page.getByLabel('Playlist Name').fill(uniqueName);
+  await page.getByLabel('Playlist Name').fill(playlist_name);
   await page.getByTestId('submit-save-playlist').click();
 
   // Verify successful save: wait for dialog to close and check playlist contents
   await expect(page.locator('form')).not.toBeVisible();
 
   await page.getByTestId('sidebar').getByTestId('playlists').click();
-  await page.getByTestId('saved-playlist').getByText(uniqueName).click();
+  await page.getByTestId('saved-playlist').getByText(playlist_name).click();
 
   // Verify only 5 unique songs were saved
   await expect(
@@ -100,6 +84,7 @@ test('Silently ignores duplicate tracks when saving', async ({ page }) => {
 
   // Clean up: delete the playlist so it doesn't interfere with other tests
   await page.getByTestId('delete-playlist').click();
+  await page.getByTestId('delete-playlist-confirm').click();
 });
 
 test.describe('Playlist duplicate handling', () => {

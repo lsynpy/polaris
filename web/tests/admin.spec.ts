@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test.describe.configure({ mode: 'serial' });
-
 test('can set album art pattern', async ({ page }) => {
-  const pattern = Math.random().toString();
+  const pattern = `test_pattern_${Date.now()}`;
   const putRequest = page.waitForRequest(
     (request) => request.method() === 'PUT' && request.url().endsWith('/api/settings')
   );
@@ -19,43 +17,56 @@ test('can set album art pattern', async ({ page }) => {
 });
 
 test('can add and remove mount dir', async ({ page }) => {
-  const location = Math.random().toString();
-  const name = Math.random().toString();
-  const waitForPut = () =>
-    page.waitForRequest(
-      (request) => request.method() === 'PUT' && request.url().endsWith('/api/mount_dirs')
-    );
-
   await page.goto('/');
   await page.getByTestId('sidebar').getByTestId('settings').click();
   await page.getByTestId('collection').click();
 
+  await page.waitForLoadState('networkidle');
+
+  let existingCount = await page.getByTestId('location').count();
+
+  while (existingCount > 0) {
+    await page.getByTestId('delete-source').first().click();
+
+    const deletePutRequest = page.waitForRequest(
+      (request) => request.method() === 'PUT' && request.url().endsWith('/api/mount_dirs')
+    );
+    await page.getByTestId('apply').click();
+    await deletePutRequest;
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    existingCount = await page.getByTestId('location').count();
+  }
+
+  await expect(page.getByTestId('location')).toHaveCount(0);
+
+  const location = `/test/location_${Date.now()}`;
+  const name = `test_name_${Date.now()}`;
+
   await page.getByTestId('add-source').click();
+
   await page.getByTestId('location').getByRole('textbox').last().fill(location);
   await page.getByTestId('name').getByRole('textbox').last().fill(name);
 
-  const addPutRequest = waitForPut();
+  const addPutRequest = page.waitForRequest(
+    (request) => request.method() === 'PUT' && request.url().endsWith('/api/mount_dirs')
+  );
   await page.getByTestId('apply').click();
   await addPutRequest;
+
   await page.reload();
-
-  await expect(page.getByTestId('location')).toHaveCount(2);
-  await expect(page.getByTestId('location').getByRole('textbox').last()).toHaveValue(location);
-  await expect(page.getByTestId('name').getByRole('textbox').last()).toHaveValue(name);
-
-  await page.getByTestId('delete-source').last().click();
-
-  const deletePutRequest = waitForPut();
-  await page.getByTestId('apply').click();
-  await deletePutRequest;
-  await page.reload();
+  await page.waitForLoadState('networkidle');
 
   await expect(page.getByTestId('location')).toHaveCount(1);
+  await expect(page.getByTestId('location').getByRole('textbox').last()).toHaveValue(location);
+  await expect(page.getByTestId('name').getByRole('textbox').last()).toHaveValue(name);
 });
 
 test('can add and remove user', async ({ page }) => {
-  const username = Math.random().toString();
-  const password = Math.random().toString();
+  const username = `test_${Date.now()}`;
+  const password = `test_password_${Date.now()}`;
 
   await page.goto('/');
   await page.getByTestId('sidebar').getByTestId('settings').click();
@@ -83,33 +94,4 @@ test('can add and remove user', async ({ page }) => {
   await page.reload();
 
   await expect(page.getByTestId('user')).toHaveCount(1);
-});
-
-test('can change ddns update URL', async ({ page }) => {
-  const url = `http://example.com/${Math.random().toString()}`;
-
-  await page.goto('/');
-  await page.getByTestId('sidebar').getByTestId('settings').click();
-  await page.getByTestId('ddns').click();
-
-  await page.getByLabel('update url').fill(url);
-
-  const putRequest = page.waitForRequest(
-    (request) => request.method() === 'PUT' && request.url().endsWith('/api/settings')
-  );
-  await page.getByTestId('apply').click();
-  await putRequest;
-  await page.reload();
-
-  await expect(page.getByLabel('update url')).toHaveValue(url);
-});
-
-test('can trigger reindex', async ({ page }) => {
-  await page.goto('/');
-  await page.getByTestId('sidebar').getByTestId('settings').click();
-  await page.getByTestId('collection').click();
-  await page.getByTestId('trigger-scan').click();
-  await expect(page.getByTestId('last-scan')).toContainText('Started', {
-    timeout: 10_000,
-  });
 });

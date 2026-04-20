@@ -37,7 +37,6 @@
         :disabled="action.disabled"
         :size="$slots.jumbo ? 'lg' : 'base'"
         :severity="action.danger ? 'danger' : 'secondary'"
-        :data-testid="action.testID"
         :data-pw="action.testID"
         class="grow"
         @click="action.action"

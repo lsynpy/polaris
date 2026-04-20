@@ -83,12 +83,7 @@
               icon="numbers"
               :label="`Disc ${discEntry[1][0].disc_number}`"
             />
-            <Draggable
-              v-for="(song, songIndex) of discEntry[1]"
-              :key="song.path"
-              :allow-pointer-events-inside="true"
-              @draggable-start="onDragStart($event, song)"
-            >
+            <div v-for="(song, songIndex) of discEntry[1]" :key="song.path" class="flex flex-col">
               <AlbumSong
                 :key="songIndex"
                 ref="albumSongs"
@@ -100,7 +95,7 @@
                 @dblclick="onSongDoubleClicked(song)"
                 @contextmenu="(e: MouseEvent) => onSongRightClicked(e, song)"
               />
-            </Draggable>
+            </div>
           </div>
         </div>
       </div>
@@ -124,7 +119,6 @@ import type { AlbumKey, Song } from '@/api/dto';
 import { getAlbum, makeThumbnailURL } from '@/api/endpoints';
 import AlbumArt from '@/components/AlbumArt.vue';
 import ContextMenu, { type ContextMenuItem } from '@/components/basic/ContextMenu.vue';
-import Draggable from '@/components/basic/Draggable.vue';
 import PageHeader from '@/components/basic/PageHeader.vue';
 import SectionTitle from '@/components/basic/SectionTitle.vue';
 import Spinner from '@/components/basic/Spinner.vue';
@@ -274,12 +268,6 @@ function onSongRightClicked(event: MouseEvent, song: Song) {
     selectItem({ key: song.path, ...song });
   }
   contextMenu.value?.show(event);
-}
-
-function onDragStart(_event: DragEvent, song: Song) {
-  if (!selectedKeys.value.has(song.path)) {
-    selectItem({ key: song.path, ...song });
-  }
 }
 
 function onKeyDown(event: KeyboardEvent) {

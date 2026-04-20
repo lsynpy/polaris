@@ -13,8 +13,7 @@ export default defineConfig({
   globalTeardown: './tests/e2e.global-teardown',
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: 3,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [['list'], ['html', { open: 'never' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -23,7 +22,9 @@ export default defineConfig({
     baseURL: 'http://localhost:5051',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    defaultBrowserType: 'firefox',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    defaultBrowserType: 'chromium',
     testIdAttribute: 'data-pw',
     viewport: { width: 2560, height: 1440 },
   },

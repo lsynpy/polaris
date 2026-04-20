@@ -10,7 +10,6 @@
           v-for="item in items"
           :key="item.testID || items.indexOf(item)"
           class="group cursor-pointer flex justify-between gap-8 px-3 py-1.5 rounded-sm hover:bg-accent-100 dark:hover:bg-accent-900"
-          :data-testid="item.testID"
           :data-pw="item.testID"
           @click="execute(item)"
         >

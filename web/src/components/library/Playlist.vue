@@ -45,8 +45,18 @@
         Are you sure you want to delete this playlist? This action cannot be undone.
       </p>
       <div class="flex gap-2 justify-end">
-        <Button label="Cancel" severity="secondary" @click="showDeleteConfirm = false" />
-        <Button label="Delete" severity="danger" @click="confirmDelete" />
+        <Button
+          label="Cancel"
+          severity="secondary"
+          data-pw="delete-playlist-cancel"
+          @click="showDeleteConfirm = false"
+        />
+        <Button
+          label="Delete"
+          severity="danger"
+          data-pw="delete-playlist-confirm"
+          @click="confirmDelete"
+        />
       </div>
     </Dialog>
   </div>
