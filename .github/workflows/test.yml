@@ -97,7 +97,7 @@ jobs:
       # --- Playwright ---
       - name: Install Playwright
         working-directory: web
-        run: npx playwright install --with-deps firefox
+        run: npx playwright install --with-deps chromium
 
       # --- Start Polaris and run tests ---
       - name: Create blank config
