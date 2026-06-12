@@ -15,6 +15,7 @@ const fs = require("fs");
 const path = require("path");
 const net = require("net");
 const os = require("os");
+const { PLAYER_DIR, info, action, warn, error } = require("./player-logger");
 
 // ─── Configuration ───────────────────────────────────────────
 const MUSIC_DIR = path.join(os.homedir(), "Music", "polaris");
@@ -171,11 +172,13 @@ async function ensureMpv() {
   try {
     await sendMpvCommand(["get_property", "volume"]);
     // mpv is alive — still ensure cover watcher is running
+    info("Player", "mpv already running, ensuring cover watcher");
     ensureCoverWatcher();
     return;
   } catch { /* mpv not reachable, start it */ }
 
   // Kill stale mpv
+  info("Player", "mpv not reachable, starting new instance");
   try { require("child_process").execSync(`pkill -f 'mpv.*${path.basename(IPC_SOCKET)}' 2>/dev/null`, { stdio: "ignore" }); } catch {}
   try { fs.unlinkSync(IPC_SOCKET); } catch {}
 
@@ -211,6 +214,7 @@ function ensureCoverWatcher() {
   try { execSync("sleep 0.3"); } catch {}
   // Start fresh watcher
   const watcherPath = path.join(__dirname, "player-cover-watcher.js");
+  action("Player", "Starting cover watcher", { path: watcherPath });
   execSync(`nohup node '${watcherPath}' >/dev/null 2>&1 &`, { shell: "/bin/bash", stdio: "ignore", timeout: 3000 });
 }
 
@@ -303,18 +307,19 @@ const COVER_CACHE = new Map();
 
 function coverTmpPath(localPath) {
   const base = path.basename(localPath).replace(/[^a-zA-Z0-9_\-]/g, "_");
-  return path.join(os.tmpdir(), `mpv-cover-${base}-${Date.now()}.jpg`);
+  return path.join(PLAYER_DIR, `cover-${base}-${Date.now()}.jpg`);
 }
 
 async function pushCoverArt() {
   try {
-    // Get current file path from mpv
     const pathResp = await sendMpvCommand(["get_property", "path"]);
     let jdcUrl = pathResp?.data || "";
-    if (!jdcUrl) return;
+    if (!jdcUrl) {
+      warn("Cover", "No mpv path available, skipping cover");
+      return;
+    }
+    info("Cover", "mpv path obtained", { path: jdcUrl });
 
-    // Extract the Polaris path from the JDC stream URL
-    // URL format: /api/audio/Music/Artist/Album/file.ext?auth_token=...
     let polarisPath = "";
     if (jdcUrl.startsWith("http://192.168.100.1:5050")) {
       const u = new URL(jdcUrl);
@@ -328,43 +333,55 @@ async function pushCoverArt() {
     } else {
       polarisPath = `Music/${jdcUrl}`;
     }
-    if (!polarisPath) return;
+    if (!polarisPath) {
+      warn("Cover", "Could not extract Polaris path from URL", { jdcUrl });
+      return;
+    }
+    info("Cover", "Extracted Polaris path", { polarisPath });
 
-    // Cache: skip if already downloaded for this path
     const cacheKey = `polaris:${polarisPath}`;
-    if (COVER_CACHE.get(cacheKey)) return;
+    if (COVER_CACHE.get(cacheKey)) {
+      info("Cover", "Cover cache hit, skipping download", { polarisPath });
+      return;
+    }
 
-    // Download cover from Polaris thumbnail API
     const coverPath = coverTmpPath(polarisPath);
     const thumbPath = `/api/thumbnail/${encodeURIComponent(polarisPath)}?size=small&pad=false`;
+    info("Cover", "Downloading cover from Polaris API", { thumbPath, dest: coverPath });
     const data = await polarisGetBuffer(thumbPath);
 
     if (data && data.length > 100) {
+      info("Cover", "Cover downloaded from Polaris API", { bytes: data.length });
       require("fs").writeFileSync(coverPath, data);
+      action("Cover", "Cover written to disk", { path: coverPath, bytes: data.length });
       await sendMpvCommand(["set", "cover-art-files", coverPath]);
+      action("Cover", "cover-art-files set via IPC", { coverPath });
       COVER_CACHE.set(cacheKey, true);
-      // Limit cache size
       if (COVER_CACHE.size > 50) {
         const firstKey = COVER_CACHE.keys().next().value;
         COVER_CACHE.delete(firstKey);
       }
-      // Clean up old cover files (keep only the last 10)
       cleanupOldCovers(coverPath);
+    } else {
+      warn("Cover", "Cover download too small or empty", { bytes: data?.length || 0 });
     }
-  } catch { /* cover art is optional */ }
+  } catch (err) {
+    error("Cover", "pushCoverArt failed", { error: err.message });
+  }
 }
 
 function cleanupOldCovers(currentPath) {
   try {
-    const tmpDir = os.tmpdir();
-    const files = require("fs").readdirSync(tmpDir)
-      .filter(f => f.startsWith("mpv-cover-") && f.endsWith(".jpg"))
-      .map(f => ({ name: f, path: path.join(tmpDir, f), mtime: require("fs").statSync(path.join(tmpDir, f)).mtimeMs }))
+    const files = require("fs").readdirSync(PLAYER_DIR)
+      .filter(f => f.startsWith("cover-") && f.endsWith(".jpg"))
+      .map(f => ({ name: f, path: path.join(PLAYER_DIR, f), mtime: require("fs").statSync(path.join(PLAYER_DIR, f)).mtimeMs }))
       .sort((a, b) => b.mtime - a.mtime);
     // Keep the current one + 9 most recent = 10 total
+    let removed = 0;
     for (let i = 10; i < files.length; i++) {
-      try { require("fs").unlinkSync(files[i].path); } catch {}
+      try { require("fs").unlinkSync(files[i].path); removed++; } catch {}
     }
+    if (removed > 0) info("Player", "Cleaned up old cover files", { removed });
   } catch {}
 }
 
@@ -376,6 +393,7 @@ function getMacosVolume() {
 }
 
 async function cmdPlay(query) {
+  action("Player", "cmd_play", { query });
   const results = searchScored(query);
   if (results.length === 0) { console.log(`No results for "${query}"`); return; }
 
@@ -396,6 +414,7 @@ async function cmdPlay(query) {
 }
 
 async function cmdPause() {
+  action("Player", "cmd_pause");
   await ensureMpv();
   try {
     await sendMpvCommand(["set", "pause", "yes"]);
@@ -404,6 +423,7 @@ async function cmdPause() {
 }
 
 async function cmdResume() {
+  action("Player", "cmd_resume");
   await ensureMpv();
   try {
     await sendMpvCommand(["set", "pause", "no"]);
@@ -412,6 +432,7 @@ async function cmdResume() {
 }
 
 async function cmdToggle() {
+  action("Player", "cmd_toggle");
   await ensureMpv();
   try {
     const resp = await sendMpvCommand(["cycle", "pause"]);
@@ -420,6 +441,7 @@ async function cmdToggle() {
 }
 
 async function cmdStop() {
+  action("Player", "cmd_stop");
   try {
     await sendMpvCommand(["stop"]);
     await sendMpvCommand(["playlist-clear"]);
@@ -428,6 +450,7 @@ async function cmdStop() {
 }
 
 async function cmdNext() {
+  action("Player", "cmd_next");
   await ensureMpv();
   try {
     await sendMpvCommand(["playlist-next"]);
@@ -440,6 +463,7 @@ async function cmdNext() {
 }
 
 async function cmdPrev() {
+  action("Player", "cmd_prev");
   await ensureMpv();
   try {
     const resp = await sendMpvCommand(["playlist-prev"]);
@@ -452,6 +476,7 @@ async function cmdPrev() {
 }
 
 async function cmdQueue(args) {
+  if (args.length > 0) action("Player", "cmd_queue", { query: args.join(" ") });
   if (args.length === 0) {
     // Show queue from mpv's playlist
     const entries = await mpvPlaylistEntries();
@@ -592,6 +617,7 @@ async function cmdNow() {
 }
 
 async function cmdVolume(args) {
+  if (args.length > 0) action("Player", "cmd_volume", { level: parseInt(args[0], 10) });
   const level = parseInt(args[0], 10);
   if (isNaN(level) || level < 0 || level > 100) {
     // Show current volume
@@ -612,6 +638,7 @@ async function cmdVolume(args) {
 }
 
 async function cmdSysvol(level) {
+  action("Player", "cmd_sysvol", { level });
   if (isNaN(level) || level < 0 || level > 100) {
     console.log("Usage: player sysvol <0-100>");
     return;
@@ -625,6 +652,7 @@ async function cmdSysvol(level) {
 
 async function cmdSeek(args) {
   const amount = args[0];
+  action("Player", "cmd_seek", { amount });
   if (!amount) { console.log("Usage: player seek <+/-seconds>"); return; }
   try {
     await sendMpvCommand(["seek", amount, "relative"]);
@@ -777,6 +805,7 @@ function polarisPathToLocal(polarisPath) {
 
 async function cmdPlaylist(name) {
   const playlistName = name || "fav";
+  action("Player", "cmd_playlist", { name: playlistName });
   try {
     const data = await polarisGet(`/api/playlist/${encodeURIComponent(playlistName)}`);
     const plPaths = (data.songs || {}).paths || [];
@@ -812,6 +841,7 @@ async function cmdPlaylist(name) {
 }
 
 async function cmdShuffle() {
+  action("Player", "cmd_shuffle");
   await ensureMpv();
   try {
     await sendMpvCommand(["playlist-shuffle"]);
@@ -823,6 +853,7 @@ async function cmdShuffle() {
 }
 
 async function cmdPlaylistAdd(query) {
+  action("Player", "cmd_pl-add", { query });
   if (!query) { console.log("Usage: player pl-add <query>"); return; }
   const results = searchScored(query);
   if (results.length === 0) { console.log(`No results for "${query}"`); return; }
@@ -849,6 +880,7 @@ async function cmdPlaylistAdd(query) {
 }
 
 async function cmdPlaylistRemove(query) {
+  action("Player", "cmd_pl-remove", { query });
   if (!query) { console.log("Usage: player pl-remove <query>"); return; }
   try {
     const playlistName = "fav";
@@ -874,6 +906,7 @@ async function main() {
   const args = process.argv.slice(2);
   const cmd = args[0] || "help";
   const rest = args.slice(1);
+  action("Player", "dispatch", { cmd, args: rest });
 
   if (!fs.existsSync(MUSIC_DIR)) {
     console.error(`Music directory not found: ${MUSIC_DIR}`);
