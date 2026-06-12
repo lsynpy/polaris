@@ -33,7 +33,7 @@ impl Default for Paths {
 	fn default() -> Self {
 		let local_app_data = std::env::var("LOCALAPPDATA").map(PathBuf::from).unwrap();
 		let install_directory: PathBuf =
-			local_app_data.join(["Permafrost", "Polaris"].iter().collect::<PathBuf>());
+			local_app_data.join(["Permafrost", "Vox"].iter().collect::<PathBuf>());
 		Self {
 			cache_dir_path: install_directory.clone(),
 			config_file_path: install_directory.join("vox.toml"),

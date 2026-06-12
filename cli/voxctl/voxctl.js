@@ -18,7 +18,7 @@ const os = require("os");
 const { PLAYER_DIR, info, warn, error } = require("./voxctl-logger");
 
 // ─── Configuration ───────────────────────────────────────────
-const MUSIC_DIR = path.join(os.homedir(), "Music", "polaris");
+const MUSIC_DIR = path.join(os.homedir(), "Music", "vox");
 const SOCKET_DIR = path.join(os.homedir(), ".vox", "player");
 const IPC_SOCKET = path.join(SOCKET_DIR, "mpv.sock");
 const MPV_LOG = path.join(SOCKET_DIR, "mpv.log");

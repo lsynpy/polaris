@@ -185,9 +185,9 @@ cargo fmt --check
 
 - Configuration file format: **TOML**
 - Default config location varies by platform:
-  - Windows: `%LOCALAPPDATA%/Permafrost/Polaris/polaris.toml`
-  - Linux (system): `/usr/local/etc/polaris/polaris.toml`
-  - Linux (XDG): `~/.config/polaris/polaris.toml`
+  - Windows: `%LOCALAPPDATA%/Permafrost/Vox/vox.toml`
+  - Linux (system): `/usr/local/etc/vox/vox.toml`
+  - Linux (XDG): `~/.config/vox/vox.toml`
   - Or specified via `-c` CLI option
 
 ### Testing Practices
