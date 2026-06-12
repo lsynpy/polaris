@@ -170,7 +170,9 @@ async function ensureMpv() {
   // Try existing socket
   try {
     await sendMpvCommand(["get_property", "volume"]);
-    return; // mpv is alive
+    // mpv is alive — still ensure cover watcher is running
+    ensureCoverWatcher();
+    return;
   } catch { /* mpv not reachable, start it */ }
 
   // Kill stale mpv
@@ -194,6 +196,18 @@ async function ensureMpv() {
   // Wait for IPC socket
   for (let i = 0; i < 50; i++) {
     try { fs.accessSync(IPC_SOCKET); break; } catch { await new Promise(r => setTimeout(r, 100)); }
+  }
+
+  // Start cover art watcher
+  ensureCoverWatcher();
+}
+
+function ensureCoverWatcher() {
+  try {
+    require("child_process").execSync("pgrep -f 'player-cover-watcher' >/dev/null 2>&1", { stdio: "ignore" });
+  } catch {
+    const watcherPath = path.join(__dirname, "player-cover-watcher.js");
+    require("child_process").execSync(`nohup node '${watcherPath}' >/dev/null 2>&1 &`, { shell: "/bin/bash", stdio: "ignore", timeout: 3000 });
   }
 }
 
@@ -397,6 +411,9 @@ async function cmdNext() {
   await ensureMpv();
   try {
     await sendMpvCommand(["playlist-next"]);
+    // Wait for track to load before querying now-playing + cover
+    await new Promise(r => setTimeout(r, 600));
+    await pushCoverArt();
     const np = await mpvNowPlaying();
     if (np && np.title) console.log(`Now playing: ${np.artist ? np.artist + " — " : ""}${np.title}`);
   } catch (err) { console.error(`Failed: ${err.message}`); }
@@ -406,6 +423,9 @@ async function cmdPrev() {
   await ensureMpv();
   try {
     const resp = await sendMpvCommand(["playlist-prev"]);
+    // Wait for track to load before querying now-playing + cover
+    await new Promise(r => setTimeout(r, 600));
+    await pushCoverArt();
     const np = await mpvNowPlaying();
     if (np && np.title) console.log(`Now playing: ${np.artist ? np.artist + " — " : ""}${np.title}`);
   } catch (err) { console.error(`Failed: ${err.message}`); }
