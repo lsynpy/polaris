@@ -172,13 +172,13 @@ async function ensureMpv() {
   try {
     await sendMpvCommand(["get_property", "volume"]);
     // mpv is alive — still ensure cover watcher is running
-    info("Player", "mpv already running, ensuring cover watcher");
+    info("mpv already running, ensuring cover watcher");
     ensureCoverWatcher();
     return;
   } catch { /* mpv not reachable, start it */ }
 
   // Kill stale mpv
-  info("Player", "mpv not reachable, starting new instance");
+  info("mpv not reachable, starting new instance");
   try { require("child_process").execSync(`pkill -f 'mpv.*${path.basename(IPC_SOCKET)}' 2>/dev/null`, { stdio: "ignore" }); } catch {}
   try { fs.unlinkSync(IPC_SOCKET); } catch {}
 
@@ -214,7 +214,7 @@ function ensureCoverWatcher() {
   try { execSync("sleep 0.3"); } catch {}
   // Start fresh watcher
   const watcherPath = path.join(__dirname, "player-cover-watcher.js");
-  action("Player", "Starting cover watcher", { path: watcherPath });
+  action("Starting cover watcher", { path: watcherPath });
   execSync(`nohup node '${watcherPath}' >/dev/null 2>&1 &`, { shell: "/bin/bash", stdio: "ignore", timeout: 3000 });
 }
 
@@ -318,10 +318,10 @@ async function pushCoverArt() {
     const pathResp = await sendMpvCommand(["get_property", "path"]);
     let jdcUrl = pathResp?.data || "";
     if (!jdcUrl) {
-      warn("Cover", "No mpv path available, skipping cover");
+      warn("No mpv path available, skipping cover");
       return;
     }
-    info("Cover", "mpv path obtained", { path: jdcUrl });
+    info("mpv path obtained", { path: jdcUrl });
 
     let polarisPath = "";
     if (jdcUrl.startsWith("http://192.168.100.1:5050")) {
@@ -337,28 +337,28 @@ async function pushCoverArt() {
       polarisPath = `Music/${jdcUrl}`;
     }
     if (!polarisPath) {
-      warn("Cover", "Could not extract Polaris path from URL", { jdcUrl });
+      warn("Could not extract Polaris path from URL", { jdcUrl });
       return;
     }
-    info("Cover", "Extracted Polaris path", { polarisPath });
+    info("Extracted Polaris path", { polarisPath });
 
     const cacheKey = `polaris:${polarisPath}`;
     if (COVER_CACHE.get(cacheKey)) {
-      info("Cover", "Cover cache hit, skipping download", { polarisPath });
+      info("Cover cache hit, skipping download", { polarisPath });
       return;
     }
 
     const coverPath = coverTmpPath(polarisPath);
     const thumbPath = `/api/thumbnail/${encodeURIComponent(polarisPath)}?size=small&pad=false`;
-    info("Cover", "Downloading cover from Polaris API", { thumbPath, dest: coverPath });
+    info("Downloading cover from Polaris API", { thumbPath, dest: coverPath });
     const data = await polarisGetBuffer(thumbPath);
 
     if (data && data.length > 100) {
-      info("Cover", "Cover downloaded from Polaris API", { bytes: data.length });
+      info("Cover downloaded from Polaris API", { bytes: data.length });
       require("fs").writeFileSync(coverPath, data);
-      action("Cover", "Cover written to disk", { path: coverPath, bytes: data.length });
+      action("Cover written to disk", { path: coverPath, bytes: data.length });
       await sendMpvCommand(["set", "cover-art-files", coverPath]);
-      action("Cover", "cover-art-files set via IPC", { coverPath });
+      action("cover-art-files set via IPC", { coverPath });
       COVER_CACHE.set(cacheKey, true);
       if (COVER_CACHE.size > 50) {
         const firstKey = COVER_CACHE.keys().next().value;
@@ -366,10 +366,10 @@ async function pushCoverArt() {
       }
       cleanupOldCovers(coverPath);
     } else {
-      warn("Cover", "Cover download too small or empty", { bytes: data?.length || 0 });
+      warn("Cover download too small or empty", { bytes: data?.length || 0 });
     }
   } catch (err) {
-    error("Cover", "pushCoverArt failed", { error: err.message });
+    error("pushCoverArt failed", { error: err.message });
   }
 }
 
@@ -384,7 +384,7 @@ function cleanupOldCovers(currentPath) {
     for (let i = 10; i < files.length; i++) {
       try { require("fs").unlinkSync(files[i].path); removed++; } catch {}
     }
-    if (removed > 0) info("Player", "Cleaned up old cover files", { removed });
+    if (removed > 0) info("Cleaned up old cover files", { removed });
   } catch {}
 }
 
@@ -396,7 +396,7 @@ function getMacosVolume() {
 }
 
 async function cmdPlay(query) {
-  action("Player", "cmd_play", { query });
+  action("cmd_play", { query });
   const results = searchScored(query);
   if (results.length === 0) { console.log(`No results for "${query}"`); return; }
 
@@ -417,7 +417,7 @@ async function cmdPlay(query) {
 }
 
 async function cmdPause() {
-  action("Player", "cmd_pause");
+  action("cmd_pause");
   await ensureMpv();
   try {
     await sendMpvCommand(["set", "pause", "yes"]);
@@ -426,7 +426,7 @@ async function cmdPause() {
 }
 
 async function cmdResume() {
-  action("Player", "cmd_resume");
+  action("cmd_resume");
   await ensureMpv();
   try {
     await sendMpvCommand(["set", "pause", "no"]);
@@ -435,7 +435,7 @@ async function cmdResume() {
 }
 
 async function cmdToggle() {
-  action("Player", "cmd_toggle");
+  action("cmd_toggle");
   await ensureMpv();
   try {
     const resp = await sendMpvCommand(["cycle", "pause"]);
@@ -444,7 +444,7 @@ async function cmdToggle() {
 }
 
 async function cmdStop() {
-  action("Player", "cmd_stop");
+  action("cmd_stop");
   try {
     await sendMpvCommand(["stop"]);
     await sendMpvCommand(["playlist-clear"]);
@@ -453,7 +453,7 @@ async function cmdStop() {
 }
 
 async function cmdNext() {
-  action("Player", "cmd_next");
+  action("cmd_next");
   await ensureMpv();
   try {
     await sendMpvCommand(["playlist-next"]);
@@ -466,7 +466,7 @@ async function cmdNext() {
 }
 
 async function cmdPrev() {
-  action("Player", "cmd_prev");
+  action("cmd_prev");
   await ensureMpv();
   try {
     const resp = await sendMpvCommand(["playlist-prev"]);
@@ -479,7 +479,7 @@ async function cmdPrev() {
 }
 
 async function cmdQueue(args) {
-  if (args.length > 0) action("Player", "cmd_queue", { query: args.join(" ") });
+  if (args.length > 0) action("cmd_queue", { query: args.join(" ") });
   if (args.length === 0) {
     // Show queue from mpv's playlist
     const entries = await mpvPlaylistEntries();
@@ -620,7 +620,7 @@ async function cmdNow() {
 }
 
 async function cmdVolume(args) {
-  if (args.length > 0) action("Player", "cmd_volume", { level: parseInt(args[0], 10) });
+  if (args.length > 0) action("cmd_volume", { level: parseInt(args[0], 10) });
   const level = parseInt(args[0], 10);
   if (isNaN(level) || level < 0 || level > 100) {
     // Show current volume
@@ -641,7 +641,7 @@ async function cmdVolume(args) {
 }
 
 async function cmdSysvol(level) {
-  action("Player", "cmd_sysvol", { level });
+  action("cmd_sysvol", { level });
   if (isNaN(level) || level < 0 || level > 100) {
     console.log("Usage: player sysvol <0-100>");
     return;
@@ -655,7 +655,7 @@ async function cmdSysvol(level) {
 
 async function cmdSeek(args) {
   const amount = args[0];
-  action("Player", "cmd_seek", { amount });
+  action("cmd_seek", { amount });
   if (!amount) { console.log("Usage: player seek <+/-seconds>"); return; }
   try {
     await sendMpvCommand(["seek", amount, "relative"]);
@@ -801,7 +801,7 @@ async function polarisPut(path, body) {
 
 async function cmdPlaylist(name) {
   const playlistName = name || "fav";
-  action("Player", "cmd_playlist", { name: playlistName });
+  action("cmd_playlist", { name: playlistName });
   try {
     const data = await polarisGet(`/api/playlist/${encodeURIComponent(playlistName)}`);
     const plPaths = (data.songs || {}).paths || [];
@@ -837,7 +837,7 @@ async function cmdPlaylist(name) {
 }
 
 async function cmdShuffle() {
-  action("Player", "cmd_shuffle");
+  action("cmd_shuffle");
   await ensureMpv();
   try {
     await sendMpvCommand(["playlist-shuffle"]);
@@ -849,7 +849,7 @@ async function cmdShuffle() {
 }
 
 async function cmdPlaylistAdd(query) {
-  action("Player", "cmd_pl-add", { query });
+  action("cmd_pl-add", { query });
   if (!query) { console.log("Usage: player pl-add <query>"); return; }
   const results = searchScored(query);
   if (results.length === 0) { console.log(`No results for "${query}"`); return; }
@@ -876,7 +876,7 @@ async function cmdPlaylistAdd(query) {
 }
 
 async function cmdPlaylistRemove(query) {
-  action("Player", "cmd_pl-remove", { query });
+  action("cmd_pl-remove", { query });
   if (!query) { console.log("Usage: player pl-remove <query>"); return; }
   try {
     const playlistName = "fav";
@@ -902,7 +902,7 @@ async function main() {
   const args = process.argv.slice(2);
   const cmd = args[0] || "help";
   const rest = args.slice(1);
-  action("Player", "dispatch", { cmd, args: rest });
+  action("dispatch", { cmd, args: rest });
 
   if (!fs.existsSync(MUSIC_DIR)) {
     console.error(`Music directory not found: ${MUSIC_DIR}`);

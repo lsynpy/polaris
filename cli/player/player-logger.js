@@ -40,15 +40,14 @@ function rotateIfNeeded() {
   }
 }
 
-function write(level, component, msg, data) {
+function write(level, msg, data) {
   ensureDir();
   rotateIfNeeded();
   const d = new Date();
   const ts = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
   const paddedLevel = level.padEnd(6);
-  const paddedComp = component.padEnd(20);
   const dataStr = data !== undefined ? "  " + JSON.stringify(data) : "";
-  const line = `[${ts}] [${paddedLevel}] [${paddedComp}] ${msg}${dataStr}\n`;
+  const line = `[${ts}] [${paddedLevel}] ${msg}${dataStr}\n`;
   try {
     fs.appendFileSync(LOG_FILE, line);
   } catch {}
@@ -56,8 +55,8 @@ function write(level, component, msg, data) {
 
 module.exports = {
   PLAYER_DIR,
-  info: (component, msg, data) => write("INFO", component, msg, data),
-  action: (component, msg, data) => write("ACTION", component, msg, data),
-  warn: (component, msg, data) => write("WARN", component, msg, data),
-  error: (component, msg, data) => write("ERROR", component, msg, data),
+  info: (msg, data) => write("INFO", msg, data),
+  action: (msg, data) => write("ACTION", msg, data),
+  warn: (msg, data) => write("WARN", msg, data),
+  error: (msg, data) => write("ERROR", msg, data),
 };
