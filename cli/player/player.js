@@ -206,20 +206,66 @@ function searchScored(query) {
 // ─── mpv control ─────────────────────────────────────────────
 
 // Populate mpv's internal playlist with all remaining queue tracks
-// so mpv auto-advances when a song finishes.
+// so mpv auto-advances when a song finishes. Uses JDC streaming URLs
+// when Polaris is reachable, falls back to local files.
 async function loadQueueToMpvPlaylist(state) {
   if (state.currentIndex < 0 || state.queue.length === 0) return;
+
+  let useStream = false;
+  let token = "";
+  try {
+    token = await polarisAuth();
+    useStream = !!token;
+  } catch { /* Polaris unreachable, use local files */ }
 
   // Clear mpv's internal playlist
   try { await sendMpvCommand(["playlist-clear"]); } catch { /* ignore */ }
 
-  // Load current track (replace any existing playlist)
-  const current = state.queue[state.currentIndex];
-  try { await sendMpvCommand(["loadfile", current.filepath, "replace"]); } catch { /* ignore */ }
+  // Batch-load tracks: reuse one socket for all append commands
+  const MAX_MPV_PLAYLIST = 100;
+  const end = Math.min(state.queue.length, state.currentIndex + MAX_MPV_PLAYLIST);
 
-  // Append remaining tracks
-  for (let i = state.currentIndex + 1; i < state.queue.length; i++) {
-    try { await sendMpvCommand(["loadfile", state.queue[i].filepath, "append"]); } catch { /* ignore */ }
+  // Build all commands first
+  const cmds = [];
+  for (let i = state.currentIndex; i < end; i++) {
+    const track = state.queue[i];
+    let url;
+    if (useStream && track.relative) {
+      let p = track.relative;
+      const prefix = `${POLARIS_MOUNT}/`;
+      if (!p.startsWith(prefix)) p = prefix + p;
+      const parts = p.split("/").map((s) => encodeURIComponent(s));
+      url = `${POLARIS_URL}/api/audio/${parts.join("/")}?auth_token=${encodeURIComponent(token)}`;
+    } else {
+      url = track.filepath;
+    }
+    cmds.push(url);
+  }
+
+  // Send all loadfile commands in rapid succession on one connection
+  if (cmds.length > 0) {
+    await new Promise((resolve, reject) => {
+      const client = new net.Socket();
+      let complete = false;
+      const timeout = setTimeout(() => { client.destroy(); if (!complete) reject(); }, 15000);
+      client.connect(IPC_SOCKET, () => {
+        for (let i = 0; i < cmds.length; i++) {
+          const mode = i === 0 ? "replace" : "append";
+          const msg = JSON.stringify({ command: ["loadfile", cmds[i], mode], request_id: i }) + "\n";
+          client.write(msg);
+        }
+        // Don't wait for responses, just fire and forget
+        setTimeout(() => {
+          clearTimeout(timeout);
+          complete = true;
+          client.destroy();
+          resolve();
+        }, 500);
+      });
+      client.on("error", (err) => { clearTimeout(timeout); client.destroy(); reject(err); });
+    });
+    // Ensure mpv starts playing (playlist-clear resets pause state)
+    try { await sendMpvCommand(["set", "pause", false]); } catch { /* ignore */ }
   }
 }
 
@@ -775,6 +821,21 @@ function polarisPathToLocal(polarisPath) {
   return path.join(MUSIC_DIR, polarisPath);
 }
 
+// Convert a track's Polaris path to a streaming URL for mpv
+function polarisStreamUrl(relative) {
+  // Ensure path starts with "Music/"
+  let streamPath = relative;
+  const prefix = `${POLARIS_MOUNT}/`;
+  if (!streamPath.startsWith(prefix)) {
+    streamPath = prefix + streamPath;
+  }
+  // Encode each path component to handle Chinese characters and special chars
+  const parts = streamPath.split("/").map((p) => encodeURIComponent(p));
+  const encoded = parts.join("/");
+  // Token is cached; if it fails mpv will report error
+  return `${POLARIS_URL}/api/audio/${encoded}?auth_token=${encodeURIComponent(_polarisToken || "")}`;
+}
+
 // ─── Playlist commands ───────────────────────────────────────
 
 async function cmdPlaylist(name) {
@@ -785,25 +846,20 @@ async function cmdPlaylist(name) {
     const plPaths = songs.paths || [];
 
     if (plPaths.length === 0) {
-      console.log(`Playlist "${playlistName}" is empty`);
-      return;
-    }
+        console.log(`Playlist "${playlistName}" is empty`);
+        return;
+      }
 
-    const localTracks = [];
-    const missing = [];
-    for (const p of plPaths) {
-      const localPath = polarisPathToLocal(p);
-      if (fs.existsSync(localPath)) {
+      const localTracks = [];
+      for (const p of plPaths) {
+        const localPath = polarisPathToLocal(p);
         const parts = p.split(path.sep);
         const artist = parts.length >= 2 ? parts[1] : "Unknown";
         const album = parts.length >= 3 ? parts[2] : "Unknown";
         const file = parts[parts.length - 1];
         const title = file.replace(/^\d+\.\s*/, "").replace(/\.[^.]+$/, "");
         localTracks.push({ filepath: localPath, relative: p, artist, album, title, ext: path.extname(localPath) });
-      } else {
-        missing.push(p);
       }
-    }
 
     if (localTracks.length === 0) {
       console.log(`No playable files found from playlist "${playlistName}"`);
@@ -816,7 +872,6 @@ async function cmdPlaylist(name) {
     saveState(state);
 
     console.log(`Loaded playlist "${playlistName}" (${localTracks.length} tracks)`);
-    if (missing.length > 0) console.log(`  (${missing.length} files missing locally, skipped)`);
 
     state = await ensureMpv(state);
     try {
