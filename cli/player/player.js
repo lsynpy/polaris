@@ -165,15 +165,19 @@ function sendMpvCommand(command) {
 }
 
 // Ensure mpv is running. No local state — just try IPC, restart if needed.
+// Also starts the NowPlaying bridge daemon for album art in macOS Control Center.
 async function ensureMpv() {
   // Try existing socket
   try {
     await sendMpvCommand(["get_property", "volume"]);
-    return; // mpv is alive
+    // mpv is alive, ensure bridge is too
+    startNowPlayingBridge();
+    return;
   } catch { /* mpv not reachable, start it */ }
 
-  // Kill stale mpv
+  // Kill stale mpv and bridge
   try { require("child_process").execSync("pkill -f 'mpv.*polaris-player' 2>/dev/null", { stdio: "ignore" }); } catch {}
+  try { require("child_process").execSync("pkill -f 'mpv-nowplaying-bridge' 2>/dev/null", { stdio: "ignore" }); } catch {}
   try { fs.unlinkSync(IPC_SOCKET); } catch {}
 
   // Ensure socket dir exists
@@ -191,10 +195,27 @@ async function ensureMpv() {
 
   // Wait for IPC socket
   for (let i = 0; i < 50; i++) {
-    try { fs.accessSync(IPC_SOCKET); return; } catch { await new Promise(r => setTimeout(r, 100)); }
+    try { fs.accessSync(IPC_SOCKET); break; } catch { await new Promise(r => setTimeout(r, 100)); }
   }
-  console.error("ERROR: mpv IPC socket not ready after 5s");
-  console.error(`  Check log: ${MPV_LOG}`);
+
+  // Start NowPlaying bridge daemon
+  startNowPlayingBridge();
+}
+
+function startNowPlayingBridge() {
+  try {
+    const { execSync } = require("child_process");
+    execSync("pgrep -f mpv-nowplaying-bridge >/dev/null 2>&1", { stdio: "pipe" });
+    // Already running
+  } catch {
+    // Not running, start it
+    try {
+      require("child_process").execSync(
+        "nohup /usr/local/bin/mpv-nowplaying-bridge > /dev/null 2>&1 &",
+        { shell: "/bin/bash", stdio: "pipe", timeout: 3000 }
+      );
+    } catch { /* ignore */ }
+  }
 }
 
 // Read mpv's entire playlist as an array of { filename, current }
