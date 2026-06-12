@@ -202,12 +202,16 @@ async function ensureMpv() {
 }
 
 function ensureCoverWatcher() {
+  // Kill any existing watcher (ensures we always run the latest code)
   try {
-    require("child_process").execSync("pgrep -f 'player-cover-watcher' >/dev/null 2>&1", { stdio: "ignore" });
-  } catch {
-    const watcherPath = path.join(__dirname, "player-cover-watcher.js");
-    require("child_process").execSync(`nohup node '${watcherPath}' >/dev/null 2>&1 &`, { shell: "/bin/bash", stdio: "ignore", timeout: 3000 });
-  }
+    require("child_process").execSync("pkill -f 'player-cover-watcher' 2>/dev/null", { stdio: "ignore" });
+  } catch {}
+  // Wait briefly for cleanup
+  const { execSync } = require("child_process");
+  try { execSync("sleep 0.3"); } catch {}
+  // Start fresh watcher
+  const watcherPath = path.join(__dirname, "player-cover-watcher.js");
+  execSync(`nohup node '${watcherPath}' >/dev/null 2>&1 &`, { shell: "/bin/bash", stdio: "ignore", timeout: 3000 });
 }
 
 // Read mpv's entire playlist as an array of { filename, current }
