@@ -165,6 +165,22 @@ mp.register_event("file-loaded", function()
     log("INFO", "music playing")
 end)
 
+-- ─── Media key: Play ──────────────────────────────
+-- When mpv is idle: load fav playlist shuffled and play.
+-- When a track is loaded: toggle pause (default behavior).
+
+local PLAY_FAV_SCRIPT = "/Users/kt/code/polaris/cli/player/play-fav.sh"
+
+mp.add_key_binding("Play", "play-fav", function()
+    local path = mp.get_property("path")
+    if not path or path == "" then
+        log("INFO", "Play key: no file loaded, starting fav playlist")
+        mp.commandv("run", PLAY_FAV_SCRIPT)
+    else
+        mp.set_property("pause", not mp.get_property_bool("pause"))
+    end
+end)
+
 -- ─── Startup ──────────────────────────────────────
 
 local ok_f = io.open(PLAYER_DIR .. ".lua-hook-ok", "w")
