@@ -16,7 +16,7 @@
 -- before the skip means mpv reads the OLD cover, then the hook replaces it for the
 -- NEW track. The hook guarantees the right cover for every track change.
 
-local PLAYER_DIR = "/tmp/polaris-player/"
+local PLAYER_DIR = "/tmp/vox-player/"
 local LOG_PATH = PLAYER_DIR .. "player.log"
 local POLARIS_URL = "http://192.168.100.1:5050"
 local LOG_SEPARATOR = string.rep("─", 40)
@@ -55,15 +55,15 @@ function cmd_output(cmd)
     return result
 end
 
--- Minimal URL encoding (chars that actually appear in polaris paths)
+-- Minimal URL encoding (chars that actually appear in vox paths)
 function url_encode(str)
     return str:gsub("([^%w%.%-_~ ])", function(c)
         return string.format("%%%02X", c:byte())
     end):gsub(" ", "%%20")
 end
 
--- Extract polaris path from a JDC audio URL
-function extract_polaris_path(url)
+-- Extract vox path from a JDC audio URL
+function extract_vox_path(url)
     if not url then return nil end
     local _, _, path = url:find("/audio/(.+)$")
     if path then
@@ -90,15 +90,15 @@ function on_load()
     local url = mp.get_property("path")
     if not url then return end
 
-    local polaris_path = extract_polaris_path(url)
-    if not polaris_path then
-        log("WARN", "Could not extract polaris path, skipping cover", url)
+    local vox_path = extract_vox_path(url)
+    if not vox_path then
+        log("WARN", "Could not extract vox path, skipping cover", url)
         return
     end
 
-    local cover_path = cover_tmp_path(polaris_path)
+    local cover_path = cover_tmp_path(vox_path)
     if not cover_path then
-        log("WARN", "Could not generate cover path for", polaris_path)
+        log("WARN", "Could not generate cover path for", vox_path)
         return
     end
 
@@ -115,22 +115,22 @@ function on_load()
         return
     end
 
-    log("INFO", "Cover download initiated for", polaris_path)
+    log("INFO", "Cover download initiated for", vox_path)
     os.execute("mkdir -p " .. PLAYER_DIR)
 
-    -- Step 1: auth with Polaris API
+    -- Step 1: auth with Vox API
     local auth_cmd = 'curl -s -X POST -H "Content-Type: application/json" -d '
         .. "'" .. '{"username":"admin","password":"admin"}' .. "'"
         .. " " .. POLARIS_URL .. "/api/auth"
     local auth_out = cmd_output(auth_cmd)
     local _, _, token = auth_out:find('"token"%s*:%s*"([^"]+)"')
     if not token then
-        log("ERROR", "Auth failed for cover download", polaris_path)
+        log("ERROR", "Auth failed for cover download", vox_path)
         return
     end
 
     -- Step 2: download thumbnail
-    local enc_path = url_encode(polaris_path)
+    local enc_path = url_encode(vox_path)
     local enc_token = url_encode(token)
     local dl_url = POLARIS_URL .. "/api/thumbnail/" .. enc_path
         .. "?size=small&pad=false&auth_token=" .. enc_token
@@ -143,7 +143,7 @@ function on_load()
     local size = tonumber(stat)
 
     if not size or size <= 100 then
-        log("WARN", "Cover download too small (" .. (size or 0) .. " bytes), skipped", polaris_path)
+        log("WARN", "Cover download too small (" .. (size or 0) .. " bytes), skipped", vox_path)
         os.execute("rm -f '" .. cover_path:gsub("'", "'\\''") .. "'")
         return
     end
@@ -169,7 +169,7 @@ end)
 -- When mpv is idle: load fav playlist shuffled and play.
 -- When a track is loaded: toggle pause (default behavior).
 
-local PLAY_FAV_SCRIPT = "/Users/kt/code/polaris/cli/player/play-fav.sh"
+local PLAY_FAV_SCRIPT = "/Users/kt/code/vox/cli/voxctl/play-fav.sh"
 
 mp.add_key_binding("Play", "play-fav", function()
     local path = mp.get_property("path")

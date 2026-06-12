@@ -39,24 +39,24 @@ Timeline (fixed):
 
 ### Implementation
 
-**`cli/player/cover-hook.lua`** — mpv Lua script loaded via `--script`
+**`cli/voxctl/cover-hook.lua`** — mpv Lua script loaded via `--script`
 
 - Registers `on_load` hook at priority 0 (highest)
 - Hook blocks (synchronous) — mpv waits until the function returns
-- Auth with Polaris API via `curl` → download thumbnail → save to `/tmp/polaris-player/`
+- Auth with Vox API via `curl` → download thumbnail → save to `/tmp/vox-player/`
 - Set `cover-art-files` via `mp.set_property()`
 - Return → mpv reads `cover-art-files` → correct NowPlaying cover
-- Also writes all logs to `/tmp/polaris-player/player.log` (track changes, cover status, errors)
+- Also writes all logs to `/tmp/vox-player/player.log` (track changes, cover status, errors)
 
 ### Files
 
 | File                         | Role                                                      |
 |------------------------------|-----------------------------------------------------------|
-| `cli/player/cover-hook.lua`  | **Lua script** — hook + download + set cover + write logs |
-| `cli/player/player.js`       | Starts mpv with `--script=cover-hook.lua` (line 189)      |
+| `cli/voxctl/cover-hook.lua`  | **Lua script** — hook + download + set cover + write logs |
+| `cli/voxctl/player.js`       | Starts mpv with `--script=cover-hook.lua` (line 189)      |
 | `docs/cover-architecture.md` | This document                                             |
 
-`player-cover-watcher.js` was removed — logging is now inline in `cover-hook.lua`.
+`voxctl-cover-watcher.js` was removed — logging is now inline in `cover-hook.lua`.
 
 ### Key Insights
 
@@ -70,8 +70,8 @@ Timeline (fixed):
 
 If covers are still wrong, check:
 
-1. `/tmp/polaris-player/player.log` — track change and cover status logs
-2. `echo '{"command": ["get_property", "cover-art-files"]}' | nc -U ~/.polaris/player/mpv.sock`
+1. `/tmp/vox-player/player.log` — track change and cover status logs
+2. `echo '{"command": ["get_property", "cover-art-files"]}' | nc -U ~/.vox/player/mpv.sock`
 
 ### Log Format
 
@@ -79,7 +79,7 @@ If covers are still wrong, check:
 [2026-06-12 18:15:19] [INFO  ] Cover hook registered (on_load)
 [2026-06-12 18:15:26] [INFO  ] ────────────────────────────────────────
 [2026-06-12 18:15:26] [INFO  ] Track path changed  <url>
-[2026-06-12 18:15:26] [INFO  ] Cover set (cache)  /tmp/polaris-player/cover-xxx.jpg
+[2026-06-12 18:15:26] [INFO  ] Cover set (cache)  /tmp/vox-player/cover-xxx.jpg
 [2026-06-12 18:15:26] [INFO  ] music playing
 ```
 

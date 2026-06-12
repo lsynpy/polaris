@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * polaris-player — macOS CLI music player for Polaris music library.
+ * voxctl — macOS CLI music player for Vox music library.
  *
- * No local state caching — everything reads from mpv IPC or Polaris API in real time.
+ * No local state caching — everything reads from mpv IPC or Vox API in real time.
  * mpv's own internal playlist IS the queue. No local state.json.
  *
  * Depends on: mpv (brew install mpv)
@@ -15,18 +15,18 @@ const fs = require("fs");
 const path = require("path");
 const net = require("net");
 const os = require("os");
-const { PLAYER_DIR, info, warn, error } = require("./player-logger");
+const { PLAYER_DIR, info, warn, error } = require("./voxctl-logger");
 
 // ─── Configuration ───────────────────────────────────────────
 const MUSIC_DIR = path.join(os.homedir(), "Music", "polaris");
-const SOCKET_DIR = path.join(os.homedir(), ".polaris", "player");
+const SOCKET_DIR = path.join(os.homedir(), ".vox", "player");
 const IPC_SOCKET = path.join(SOCKET_DIR, "mpv.sock");
 const MPV_LOG = path.join(SOCKET_DIR, "mpv.log");
 
-// Polaris server config
-const POLARIS_URL = "http://192.168.100.1:5050";
-const POLARIS_CREDS = { username: "admin", password: "admin" };
-const POLARIS_MOUNT = "Music";
+// Vox server config
+const VOX_URL = "http://192.168.100.1:5050";
+const VOX_CREDS = { username: "admin", password: "admin" };
+const VOX_MOUNT = "Music";
 
 // ─── Music library search ────────────────────────────────────
 
@@ -216,14 +216,14 @@ async function mpvPlaylistEntries() {
 // Decode a playable URL (JDC stream or local path) from a track's relative path
 async function resolveTrackUrl(relative) {
   try {
-    const token = await polarisAuth();
+    const token = await voxAuth();
     let p = relative;
-    const prefix = `${POLARIS_MOUNT}/`;
+    const prefix = `${VOX_MOUNT}/`;
     if (!p.startsWith(prefix)) p = prefix + p;
     const parts = p.split("/").map((s) => encodeURIComponent(s));
-    return `${POLARIS_URL}/api/audio/${parts.join("/")}?auth_token=${encodeURIComponent(token)}`;
+    return `${VOX_URL}/api/audio/${parts.join("/")}?auth_token=${encodeURIComponent(token)}`;
   } catch {
-    // Polaris unreachable, use local file
+    // Vox unreachable, use local file
     return path.join(MUSIC_DIR, relative);
   }
 }
@@ -306,38 +306,38 @@ async function pushCoverArt() {
     }
     info("mpv path obtained", { path: jdcUrl });
 
-    let polarisPath = "";
+    let voxPath = "";
     if (jdcUrl.startsWith("http://192.168.100.1:5050")) {
       const u = new URL(jdcUrl);
       const segments = u.pathname.split("/").filter(Boolean);
       const audioIdx = segments.indexOf("audio");
       if (audioIdx >= 0) {
-        polarisPath = segments.slice(audioIdx + 1).map(s => decodeURIComponent(s)).join("/");
+        voxPath = segments.slice(audioIdx + 1).map(s => decodeURIComponent(s)).join("/");
       }
     } else if (jdcUrl.startsWith("/")) {
-      polarisPath = jdcUrl;
+      voxPath = jdcUrl;
     } else {
-      polarisPath = `Music/${jdcUrl}`;
+      voxPath = `Music/${jdcUrl}`;
     }
-    if (!polarisPath) {
-      warn("Could not extract Polaris path from URL", { jdcUrl });
+    if (!voxPath) {
+      warn("Could not extract Vox path from URL", { jdcUrl });
       return;
     }
-    info("Extracted Polaris path", { polarisPath });
+    info("Extracted Vox path", { voxPath });
 
-    const cacheKey = `polaris:${polarisPath}`;
+    const cacheKey = `vox:${voxPath}`;
     if (COVER_CACHE.get(cacheKey)) {
-      info("Cover cache hit, skipping download", { polarisPath });
+      info("Cover cache hit, skipping download", { voxPath });
       return;
     }
 
-    const coverPath = coverTmpPath(polarisPath);
-    const thumbPath = `/api/thumbnail/${encodeURIComponent(polarisPath)}?size=small&pad=false`;
-    info("Downloading cover from Polaris API", { thumbPath, dest: coverPath });
-    const data = await polarisGetBuffer(thumbPath);
+    const coverPath = coverTmpPath(voxPath);
+    const thumbPath = `/api/thumbnail/${encodeURIComponent(voxPath)}?size=small&pad=false`;
+    info("Downloading cover from Vox API", { thumbPath, dest: coverPath });
+    const data = await voxGetBuffer(thumbPath);
 
     if (data && data.length > 100) {
-      info("Cover downloaded from Polaris API", { bytes: data.length });
+      info("Cover downloaded from Vox API", { bytes: data.length });
       require("fs").writeFileSync(coverPath, data);
       info("Cover written to disk", { path: coverPath, bytes: data.length });
       await sendMpvCommand(["set", "cover-art-files", coverPath]);
@@ -494,7 +494,7 @@ async function cmdList() {
 }
 
 async function cmdQueueJump(query) {
-  if (!query) { console.log("Usage: player jump <query>"); return; }
+  if (!query) { console.log("Usage: voxctl jump <query>"); return; }
 
   const entries = await mpvPlaylistEntries();
   if (entries.length === 0) { console.log("Queue is empty"); return; }
@@ -612,7 +612,7 @@ async function cmdVolume(args) {
 async function cmdSysvol(level) {
   info("cmd_sysvol", { level });
   if (isNaN(level) || level < 0 || level > 100) {
-    console.log("Usage: player sysvol <0-100>");
+    console.log("Usage: voxctl sysvol <0-100>");
     return;
   }
   const { execSync } = require("child_process");
@@ -625,7 +625,7 @@ async function cmdSysvol(level) {
 async function cmdSeek(args) {
   const amount = args[0];
   info("cmd_seek", { amount });
-  if (!amount) { console.log("Usage: player seek <+/-seconds>"); return; }
+  if (!amount) { console.log("Usage: voxctl seek <+/-seconds>"); return; }
   try {
     await sendMpvCommand(["seek", amount, "relative"]);
     console.log(`Seek ${amount}s`);
@@ -645,9 +645,9 @@ async function cmdSearch(query) {
 
 function cmdHelp() {
   console.log(`
-polaris-player — macOS CLI music player
+voxctl — macOS CLI music player
 
-Usage: player <command> [args]
+Usage: voxctl <command> [args]
 
 Playback:
   play <query>        Search and play a song
@@ -664,8 +664,8 @@ Queue (mpv's playlist):
   shuffle             Randomize queue order
   jump <query>        Jump to a track matching query in current queue
 
-Playlist (via Polaris API):
-  playlist [name]     Load a Polaris playlist (default: fav)
+Playlist (via Vox API):
+  playlist [name]     Load a Vox playlist (default: fav)
   pl-add <query>      Add search result to the current playlist
   pl-remove <query>   Remove track from current playlist
 
@@ -679,22 +679,22 @@ Info:
   help                Show this help
 
 Examples:
-  player playlist          Load fav playlist and start playing
-  player playlist jazz     Load a playlist named "jazz"
-  player shuffle           Randomize current queue
-  player pl-add 消愁       Add "消愁" to the current playlist
-  player pl-remove 消愁    Remove "消愁" from the playlist
-  player play 漠河舞厅
-  player volume 60
+  voxctl playlist          Load fav playlist and start playing
+  voxctl playlist jazz     Load a playlist named "jazz"
+  voxctl shuffle           Randomize current queue
+  voxctl pl-add 消愁       Add "消愁" to the current playlist
+  voxctl pl-remove 消愁    Remove "消愁" from the playlist
+  voxctl play 漠河舞厅
+  voxctl volume 60
 `);
 }
 
-// ─── Polaris API ────────────────────────────────────────────
+// ─── Vox API ────────────────────────────────────────────
 
 const http = require("http");
-let _polarisToken = null;
+let _voxToken = null;
 
-function polarisFetch(url, options = {}) {
+function voxFetch(url, options = {}) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
     const { method = "GET", headers = {}, body } = options;
@@ -712,33 +712,33 @@ function polarisFetch(url, options = {}) {
   });
 }
 
-async function polarisAuth() {
-  if (_polarisToken) return _polarisToken;
-  const resp = await polarisFetch(`${POLARIS_URL}/api/auth`, {
+async function voxAuth() {
+  if (_voxToken) return _voxToken;
+  const resp = await voxFetch(`${VOX_URL}/api/auth`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(POLARIS_CREDS),
+    body: JSON.stringify(VOX_CREDS),
   });
-  if (resp.status !== 200) throw new Error(`Polaris auth failed: ${resp.status}`);
+  if (resp.status !== 200) throw new Error(`Vox auth failed: ${resp.status}`);
   const data = resp.json();
-  _polarisToken = data.token;
-  return _polarisToken;
+  _voxToken = data.token;
+  return _voxToken;
 }
 
-async function polarisGet(path) {
-  const token = await polarisAuth();
+async function voxGet(path) {
+  const token = await voxAuth();
   const separator = path.includes("?") ? "&" : "?";
-  const resp = await polarisFetch(`${POLARIS_URL}${path}${separator}auth_token=${encodeURIComponent(token)}`, {
+  const resp = await voxFetch(`${VOX_URL}${path}${separator}auth_token=${encodeURIComponent(token)}`, {
     headers: { "Accept-Version": "8" },
   });
-  if (resp.status !== 200) throw new Error(`Polaris GET ${path} failed: ${resp.status} ${(resp.body || "").substring(0, 200)}`);
+  if (resp.status !== 200) throw new Error(`Vox GET ${path} failed: ${resp.status} ${(resp.body || "").substring(0, 200)}`);
   return resp.json();
 }
 
-async function polarisGetBuffer(path) {
-  const token = await polarisAuth();
+async function voxGetBuffer(path) {
+  const token = await voxAuth();
   const separator = path.includes("?") ? "&" : "?";
-  const url = `${POLARIS_URL}${path}${separator}auth_token=${encodeURIComponent(token)}`;
+  const url = `${VOX_URL}${path}${separator}auth_token=${encodeURIComponent(token)}`;
   const urlObj = new URL(url);
   return new Promise((resolve, reject) => {
     const req = require("http").request(
@@ -755,15 +755,15 @@ async function polarisGetBuffer(path) {
   });
 }
 
-async function polarisPut(path, body) {
-  const token = await polarisAuth();
+async function voxPut(path, body) {
+  const token = await voxAuth();
   const separator = path.includes("?") ? "&" : "?";
-  const resp = await polarisFetch(`${POLARIS_URL}${path}${separator}auth_token=${encodeURIComponent(token)}`, {
+  const resp = await voxFetch(`${VOX_URL}${path}${separator}auth_token=${encodeURIComponent(token)}`, {
     method: "PUT",
     headers: { "Accept-Version": "8", "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (resp.status !== 200 && resp.status !== 204) throw new Error(`Polaris PUT ${path} failed: ${resp.status}`);
+  if (resp.status !== 200 && resp.status !== 204) throw new Error(`Vox PUT ${path} failed: ${resp.status}`);
 }
 
 // ─── Playlist commands ───────────────────────────────────────
@@ -772,7 +772,7 @@ async function cmdPlaylist(name) {
   const playlistName = name || "fav";
   info("cmd_playlist", { name: playlistName });
   try {
-    const data = await polarisGet(`/api/playlist/${encodeURIComponent(playlistName)}`);
+    const data = await voxGet(`/api/playlist/${encodeURIComponent(playlistName)}`);
     const plPaths = (data.songs || {}).paths || [];
 
     if (plPaths.length === 0) { console.log(`Playlist "${playlistName}" is empty`); return; }
@@ -819,25 +819,25 @@ async function cmdShuffle() {
 
 async function cmdPlaylistAdd(query) {
   info("cmd_pl-add", { query });
-  if (!query) { console.log("Usage: player pl-add <query>"); return; }
+  if (!query) { console.log("Usage: voxctl pl-add <query>"); return; }
   const results = searchScored(query);
   if (results.length === 0) { console.log(`No results for "${query}"`); return; }
 
   const best = results[0];
-  const polarisPath = `${POLARIS_MOUNT}/${path.relative(MUSIC_DIR, best.filepath)}`;
+  const voxPath = `${VOX_MOUNT}/${path.relative(MUSIC_DIR, best.filepath)}`;
 
   try {
     const playlistName = "fav";
     let currentTracks = [];
     try {
-      const data = await polarisGet(`/api/playlist/${playlistName}`);
+      const data = await voxGet(`/api/playlist/${playlistName}`);
       currentTracks = (data.songs || {}).paths || [];
     } catch {}
-    if (currentTracks.includes(polarisPath)) {
+    if (currentTracks.includes(voxPath)) {
       console.log(`Already in playlist: ${best.artist} — ${best.title}`);
       return;
     }
-    await polarisPut(`/api/playlist/${playlistName}`, { tracks: [...currentTracks, polarisPath] });
+    await voxPut(`/api/playlist/${playlistName}`, { tracks: [...currentTracks, voxPath] });
     console.log(`Added to playlist: ${best.artist} — ${best.title}`);
   } catch (err) {
     console.error(`Failed to add to playlist: ${err.message}`);
@@ -846,15 +846,15 @@ async function cmdPlaylistAdd(query) {
 
 async function cmdPlaylistRemove(query) {
   info("cmd_pl-remove", { query });
-  if (!query) { console.log("Usage: player pl-remove <query>"); return; }
+  if (!query) { console.log("Usage: voxctl pl-remove <query>"); return; }
   try {
     const playlistName = "fav";
-    const data = await polarisGet(`/api/playlist/${playlistName}`);
+    const data = await voxGet(`/api/playlist/${playlistName}`);
     const plPaths = (data.songs || {}).paths || [];
     const matching = plPaths.filter((p) => p.toLowerCase().includes(query.toLowerCase()));
     if (matching.length === 0) { console.log(`No matching tracks for "${query}" in playlist`); return; }
     const newTracks = plPaths.filter((p) => !matching.includes(p));
-    await polarisPut(`/api/playlist/${playlistName}`, { tracks: newTracks });
+    await voxPut(`/api/playlist/${playlistName}`, { tracks: newTracks });
     matching.forEach((p) => {
       const filename = path.basename(p).replace(/\.[^.]+$/, "");
       console.log(`Removed: ${filename}`);

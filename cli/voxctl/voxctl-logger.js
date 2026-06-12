@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Shared logger for polaris-player.
+ * Shared logger for voxctl.
  *
- * All temp files, cover images, and logs go to /tmp/polaris-player/.
+ * All temp files, cover images, and logs go to /tmp/vox-player/.
  * Log rotation at 5 MB.
  *
  * Usage:
@@ -13,7 +13,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const PLAYER_DIR = "/tmp/polaris-player";
+const PLAYER_DIR = "/tmp/vox-player";
 const LOG_FILE = path.join(PLAYER_DIR, "player.log");
 const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5 MB
 
