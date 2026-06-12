@@ -171,9 +171,7 @@ async function ensureMpv() {
   // Try existing socket
   try {
     await sendMpvCommand(["get_property", "volume"]);
-    // mpv is alive — still ensure cover watcher is running
-    info("mpv already running, ensuring cover watcher");
-    ensureCoverWatcher();
+    // mpv is alive — cover-on-load handled by Lua script
     return;
   } catch { /* mpv not reachable, start it */ }
 
@@ -185,8 +183,9 @@ async function ensureMpv() {
   // Ensure socket dir exists
   fs.mkdirSync(SOCKET_DIR, { recursive: true });
 
-  // Start mpv as detached daemon, with cover-art-files support for NowPlaying
-  const cmd = `nohup mpv --no-video --no-terminal --idle --input-ipc-server='${IPC_SOCKET}' > '${MPV_LOG}' 2>&1 & echo $!`;
+  // Start mpv as detached daemon, with cover-on-load hook and cover-art-files support for NowPlaying
+  const scriptPath = path.join(__dirname, "cover-hook.lua");
+  const cmd = `nohup mpv --no-video --no-terminal --idle --script='${scriptPath}' --input-ipc-server='${IPC_SOCKET}' > '${MPV_LOG}' 2>&1 & echo $!`;
   try {
     const { execSync } = require("child_process");
     execSync(cmd, { shell: "/bin/bash", encoding: "utf-8", timeout: 5000 });
@@ -200,25 +199,9 @@ async function ensureMpv() {
     try { fs.accessSync(IPC_SOCKET); break; } catch { await new Promise(r => setTimeout(r, 100)); }
   }
 
-  // Start cover art watcher
-  ensureCoverWatcher();
-}
+  }
 
-function ensureCoverWatcher() {
-  // Kill any existing watcher (ensures we always run the latest code)
-  try {
-    require("child_process").execSync("pkill -f 'player-cover-watcher' 2>/dev/null", { stdio: "ignore" });
-  } catch {}
-  // Wait briefly for cleanup
-  const { execSync } = require("child_process");
-  try { execSync("sleep 0.3"); } catch {}
-  // Start fresh watcher
-  const watcherPath = path.join(__dirname, "player-cover-watcher.js");
-  info("Starting cover watcher", { path: watcherPath });
-  execSync(`nohup node '${watcherPath}' >/dev/null 2>&1 &`, { shell: "/bin/bash", stdio: "ignore", timeout: 3000 });
-}
-
-// Read mpv's entire playlist as an array of { filename, current }
+  // Read mpv's entire playlist as an array of { filename, current }
 async function mpvPlaylistEntries() {
   try {
     const resp = await sendMpvCommand(["get_property", "playlist"]);
@@ -364,7 +347,6 @@ async function pushCoverArt() {
         const firstKey = COVER_CACHE.keys().next().value;
         COVER_CACHE.delete(firstKey);
       }
-      cleanupOldCovers(coverPath);
     } else {
       warn("Cover download too small or empty", { bytes: data?.length || 0 });
     }
@@ -373,20 +355,7 @@ async function pushCoverArt() {
   }
 }
 
-function cleanupOldCovers(currentPath) {
-  try {
-    const files = require("fs").readdirSync(PLAYER_DIR)
-      .filter(f => f.startsWith("cover-") && f.endsWith(".jpg"))
-      .map(f => ({ name: f, path: path.join(PLAYER_DIR, f), mtime: require("fs").statSync(path.join(PLAYER_DIR, f)).mtimeMs }))
-      .sort((a, b) => b.mtime - a.mtime);
-    // Keep the current one + 9 most recent = 10 total
-    let removed = 0;
-    for (let i = 10; i < files.length; i++) {
-      try { require("fs").unlinkSync(files[i].path); removed++; } catch {}
-    }
-    if (removed > 0) info("Cleaned up old cover files", { removed });
-  } catch {}
-}
+// ─── Cover art functions ─────────────────────────
 
 function getMacosVolume() {
   try {
