@@ -42,7 +42,7 @@ rollback_remote() {
         docker run -d \
             --name ${CONTAINER_NAME} \
             --restart unless-stopped \
-            -p ${POLARIS_PORT}:${POLARIS_PORT} \
+            -p ${VOX_PORT}:${VOX_PORT} \
             -v ${MUSIC_DIR}:/music \
             -v ${CONFIG_DIR}:/var/lib/vox \
             -v ${CACHE_DIR}:/var/cache/vox \

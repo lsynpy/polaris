@@ -18,8 +18,8 @@ import httpx
 
 
 async def login(client: httpx.AsyncClient, base_url: str) -> str | None:
-    username = os.environ.get("POLARIS_USER", "admin")
-    password = os.environ.get("POLARIS_PASSWORD", "admin")
+    username = os.environ.get("VOX_USER", "admin")
+    password = os.environ.get("VOX_PASSWORD", "admin")
 
     resp = await client.post(
         urljoin(base_url, "/api/auth"),

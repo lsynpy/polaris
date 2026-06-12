@@ -371,7 +371,7 @@ impl Scan {
 	}
 
 	pub fn run(self) -> Result<(), Error> {
-		let key = "POLARIS_NUM_TRAVERSER_THREADS";
+		let key = "VOX_NUM_TRAVERSER_THREADS";
 		let num_threads = std::env::var_os(key)
 			.map(|v| v.to_string_lossy().to_string())
 			.and_then(|v| usize::from_str(&v).ok())

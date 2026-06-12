@@ -20,8 +20,8 @@ async def login(client: httpx.AsyncClient, base_url: str) -> str | None:
     """Try to authenticate as admin to get a bearer token."""
     import os
 
-    username = os.environ.get("POLARIS_USER", "admin")
-    password = os.environ.get("POLARIS_PASSWORD", "admin")
+    username = os.environ.get("VOX_USER", "admin")
+    password = os.environ.get("VOX_PASSWORD", "admin")
 
     try:
         resp = await client.post(

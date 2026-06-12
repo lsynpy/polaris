@@ -48,25 +48,25 @@ impl Paths {
 	fn from_build() -> Self {
 		let defaults = Self::default();
 		Self {
-			cache_dir_path: option_env!("POLARIS_CACHE_DIR")
+			cache_dir_path: option_env!("VOX_CACHE_DIR")
 				.map(PathBuf::from)
 				.unwrap_or(defaults.cache_dir_path),
-			config_file_path: option_env!("POLARIS_CONFIG_DIR")
+			config_file_path: option_env!("VOX_CONFIG_DIR")
 				.map(|p| [p, "vox.toml"].iter().collect())
 				.unwrap_or(defaults.config_file_path),
-			data_dir_path: option_env!("POLARIS_DATA_DIR")
+			data_dir_path: option_env!("VOX_DATA_DIR")
 				.map(PathBuf::from)
 				.unwrap_or(defaults.data_dir_path),
-			log_file_path: option_env!("POLARIS_LOG_DIR")
+			log_file_path: option_env!("VOX_LOG_DIR")
 				.map(PathBuf::from)
 				.map(|p| p.join("vox.log"))
 				.or(defaults.log_file_path),
 			#[cfg(unix)]
-			pid_file_path: option_env!("POLARIS_PID_DIR")
+			pid_file_path: option_env!("VOX_PID_DIR")
 				.map(PathBuf::from)
 				.map(|p| p.join("vox.pid"))
 				.unwrap_or(defaults.pid_file_path),
-			web_dir_path: option_env!("POLARIS_WEB_DIR")
+			web_dir_path: option_env!("VOX_WEB_DIR")
 				.map(PathBuf::from)
 				.unwrap_or(defaults.web_dir_path),
 		}

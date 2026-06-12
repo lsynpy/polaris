@@ -57,7 +57,7 @@ deploy_container() {
         docker run -d \
             --name vox \
             --restart unless-stopped \
-            -p "${POLARIS_PORT}:${POLARIS_PORT}" \
+            -p "${VOX_PORT}:${VOX_PORT}" \
             -v "${MUSIC_DIR}:/music" \
             -v "${CONFIG_DIR}:/var/lib/vox" \
             -v "${CACHE_DIR}:/var/cache/vox" \
@@ -131,15 +131,15 @@ EOF
         echo "  Waiting for service to start..."
         sleep 3
     fi
-    verify_health "${POLARIS_PORT}"
+    verify_health "${VOX_PORT}"
 
     local ip
     ip=$(get_ip)
     echo ""
     echo "==> Deployed!"
     echo "  Image:    ${IMAGE_TAG}"
-    echo "  Web UI:   http://${ip}:${POLARIS_PORT}"
-    echo "  API docs: http://${ip}:${POLARIS_PORT}/api-docs/"
+    echo "  Web UI:   http://${ip}:${VOX_PORT}"
+    echo "  API docs: http://${ip}:${VOX_PORT}/api-docs/"
     if [[ "${IS_LOCAL}" == "true" ]]; then
         docker ps --filter "name=vox" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
     fi

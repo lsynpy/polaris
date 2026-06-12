@@ -18,7 +18,7 @@
 
 local PLAYER_DIR = "/tmp/vox-player/"
 local LOG_PATH = PLAYER_DIR .. "player.log"
-local POLARIS_URL = "http://192.168.100.1:5050"
+local VOX_URL = "http://192.168.100.1:5050"
 local LOG_SEPARATOR = string.rep("─", 40)
 
 -- Helper: append a line to player.log with consistent format
@@ -121,7 +121,7 @@ function on_load()
     -- Step 1: auth with Vox API
     local auth_cmd = 'curl -s -X POST -H "Content-Type: application/json" -d '
         .. "'" .. '{"username":"admin","password":"admin"}' .. "'"
-        .. " " .. POLARIS_URL .. "/api/auth"
+        .. " " .. VOX_URL .. "/api/auth"
     local auth_out = cmd_output(auth_cmd)
     local _, _, token = auth_out:find('"token"%s*:%s*"([^"]+)"')
     if not token then
@@ -132,7 +132,7 @@ function on_load()
     -- Step 2: download thumbnail
     local enc_path = url_encode(vox_path)
     local enc_token = url_encode(token)
-    local dl_url = POLARIS_URL .. "/api/thumbnail/" .. enc_path
+    local dl_url = VOX_URL .. "/api/thumbnail/" .. enc_path
         .. "?size=small&pad=false&auth_token=" .. enc_token
     local dl_cmd = 'curl -s -o "' .. cover_path .. '" "' .. dl_url .. '"'
     os.execute(dl_cmd)
