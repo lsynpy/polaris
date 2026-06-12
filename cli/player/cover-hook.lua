@@ -100,7 +100,7 @@ function on_load()
 
     -- Log track change
     log("INFO", LOG_SEPARATOR)
-    log("INFO", "Track path changed", url_decode(url))
+    log("INFO", "on_load hook: loading", url_decode(url))
 
     -- Cache hit: just set cover-art-files
     local f = io.open(cover_path, "r")
