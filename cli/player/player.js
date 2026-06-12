@@ -182,9 +182,8 @@ async function ensureMpv() {
   // Ensure socket dir exists
   fs.mkdirSync(SOCKET_DIR, { recursive: true });
 
-  // Start mpv as detached daemon, loading the album-art plugin
-  const pluginPath = path.join(__dirname, "mpv-album-art-plugin.dylib");
-  const cmd = `nohup mpv --no-video --no-terminal --idle --input-ipc-server='${IPC_SOCKET}' --script='${pluginPath}' > '${MPV_LOG}' 2>&1 & echo $!`;
+  // Start mpv as detached daemon, with cover-art-files support for NowPlaying
+  const cmd = `nohup mpv --no-video --no-terminal --idle --input-ipc-server='${IPC_SOCKET}' > '${MPV_LOG}' 2>&1 & echo $!`;
   try {
     const { execSync } = require("child_process");
     execSync(cmd, { shell: "/bin/bash", encoding: "utf-8", timeout: 5000 });
@@ -294,8 +293,14 @@ async function mpvNowPlaying() {
 
 // Push album art to mpv's NowPlaying via cover-art-files IPC property.
 // Extracts embedded cover art from the current audio file.
+// Uses a unique temp path per track so mpv always sees a new path and
+// actually re-reads the image (mpv caches cover by path, not by content).
 const COVER_CACHE = new Map();
-const COVER_TMP = path.join(os.tmpdir(), "mpv-player-cover.jpg");
+
+function coverTmpPath(localPath) {
+  const base = path.basename(localPath).replace(/[^a-zA-Z0-9_\-]/g, "_");
+  return path.join(os.tmpdir(), `mpv-cover-${base}-${Date.now()}.jpg`);
+}
 
 async function pushCoverArt() {
   try {
@@ -324,28 +329,45 @@ async function pushCoverArt() {
 
     if (!fs.existsSync(localPath)) return;
 
-    // Cache: skip if already extracted for this file
+    // Cache: skip if already extracted for this file (same mtime)
     const stat = fs.statSync(localPath);
     const cacheKey = `${localPath}:${stat.mtimeMs}`;
     if (COVER_CACHE.get(cacheKey)) return;
 
-    // Extract cover art using ffmpeg
+    // Extract cover art using ffmpeg to a UNIQUE path per track
+    const coverPath = coverTmpPath(localPath);
     const { execSync } = require("child_process");
     execSync(
-      `ffmpeg -y -i '${localPath.replace(/'/g, "'\\''")}' -an -vcodec copy '${COVER_TMP}' 2>/dev/null`,
+      `ffmpeg -y -i '${localPath.replace(/'/g, "'\\''")}' -an -vcodec copy '${coverPath}' 2>/dev/null`,
       { timeout: 5000, stdio: "ignore" }
     );
 
-    if (fs.existsSync(COVER_TMP) && fs.statSync(COVER_TMP).size > 100) {
-      await sendMpvCommand(["set", "cover-art-files", COVER_TMP]);
+    if (fs.existsSync(coverPath) && fs.statSync(coverPath).size > 100) {
+      await sendMpvCommand(["set", "cover-art-files", coverPath]);
       COVER_CACHE.set(cacheKey, true);
       // Limit cache size
       if (COVER_CACHE.size > 50) {
         const firstKey = COVER_CACHE.keys().next().value;
         COVER_CACHE.delete(firstKey);
       }
+      // Clean up old cover files (keep only the last 10)
+      cleanupOldCovers(coverPath);
     }
   } catch { /* cover art is optional */ }
+}
+
+function cleanupOldCovers(currentPath) {
+  try {
+    const tmpDir = os.tmpdir();
+    const files = require("fs").readdirSync(tmpDir)
+      .filter(f => f.startsWith("mpv-cover-") && f.endsWith(".jpg"))
+      .map(f => ({ name: f, path: path.join(tmpDir, f), mtime: require("fs").statSync(path.join(tmpDir, f)).mtimeMs }))
+      .sort((a, b) => b.mtime - a.mtime);
+    // Keep the current one + 9 most recent = 10 total
+    for (let i = 10; i < files.length; i++) {
+      try { require("fs").unlinkSync(files[i].path); } catch {}
+    }
+  } catch {}
 }
 
 function getMacosVolume() {

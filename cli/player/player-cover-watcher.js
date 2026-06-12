@@ -12,13 +12,17 @@ const fs = require("fs");
 const os = require("os");
 const { execSync } = require("child_process");
 
-const SOCKET_DIR = path.join(os.tmpdir(), "mpv-player");
+const SOCKET_DIR = path.join(os.homedir(), ".polaris", "player");
 const IPC_SOCKET = path.join(SOCKET_DIR, "mpv.sock");
 const MUSIC_DIR = path.join(os.homedir(), "Music", "polaris");
-const COVER_TMP = path.join(os.tmpdir(), "mpv-player-cover.jpg");
 const COVER_CACHE = new Map();
 const POLL_INTERVAL = 2000; // fallback poll (ms), used only if IPC event fails
 const CACHE_MAX = 50;
+
+function coverTmpPath(localPath) {
+  const base = path.basename(localPath).replace(/[^a-zA-Z0-9_\-]/g, "_");
+  return path.join(os.tmpdir(), `mpv-cover-${base}-${Date.now()}.jpg`);
+}
 
 let lastPath = "";
 
@@ -83,23 +87,39 @@ function extractAndPushCover() {
     const cacheKey = `${localPath}:${stat.mtimeMs}`;
     if (COVER_CACHE.get(cacheKey)) return;
 
-    // Extract cover via ffmpeg
+    // Extract cover via ffmpeg to a unique path per track
+    const coverPath = coverTmpPath(localPath);
     try {
       execSync(
-        `ffmpeg -y -i '${localPath.replace(/'/g, "'\\''")}' -an -vcodec copy '${COVER_TMP}' 2>/dev/null`,
+        `ffmpeg -y -i '${localPath.replace(/'/g, "'\\''")}' -an -vcodec copy '${coverPath}' 2>/dev/null`,
         { timeout: 5000, stdio: "ignore" }
       );
     } catch { return; }
 
-    if (fs.existsSync(COVER_TMP) && fs.statSync(COVER_TMP).size > 100) {
-      await sendMpvCommand(["set", "cover-art-files", COVER_TMP]);
+    if (fs.existsSync(coverPath) && fs.statSync(coverPath).size > 100) {
+      await sendMpvCommand(["set", "cover-art-files", coverPath]);
       COVER_CACHE.set(cacheKey, true);
       if (COVER_CACHE.size > CACHE_MAX) {
         const firstKey = COVER_CACHE.keys().next().value;
         COVER_CACHE.delete(firstKey);
       }
+      // Clean up old cover files (keep last 10)
+      cleanupOldCovers(coverPath);
     }
   }).catch(() => { /* mpv not running */ });
+}
+
+function cleanupOldCovers(currentPath) {
+  try {
+    const tmpDir = os.tmpdir();
+    const files = fs.readdirSync(tmpDir)
+      .filter(f => f.startsWith("mpv-cover-") && f.endsWith(".jpg"))
+      .map(f => ({ path: path.join(tmpDir, f), mtime: fs.statSync(path.join(tmpDir, f)).mtimeMs }))
+      .sort((a, b) => b.mtime - a.mtime);
+    for (let i = 10; i < files.length; i++) {
+      try { fs.unlinkSync(files[i].path); } catch {}
+    }
+  } catch {}
 }
 
 async function main() {
