@@ -12,7 +12,6 @@ const net = require("net");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const { execSync } = require("child_process");
 const { PLAYER_DIR, info, warn, error } = require("./player-logger");
 
 const SOCKET_DIR = path.join(os.homedir(), ".polaris", "player");
@@ -21,7 +20,8 @@ const COVER_CACHE = new Map();
 const CACHE_MAX = 50;
 
 let pendingPath = null;
-let pendingTimer = null;
+let pendingPolarisPath = null;
+let pendingCoverPromise = null; // Promise that resolves to coverPath | null
 
 function coverTmpPath(localPath) {
   const base = path.basename(localPath, path.extname(localPath));
@@ -79,30 +79,26 @@ function onIpcData(data) {
       if (msg.event === "property-change" && msg.name === "path") {
         onPathChanged(msg.data);
       }
+      if (msg.event === "file-loaded") {
+        onFileLoaded();
+      }
     } catch {
       /* skip malformed lines */
     }
   }
 }
 
-// ─── Cover download from Polaris API ────────────────────────
+// ─── Cover download (separate from push) ───────────────────
 
-function downloadAndPushCover(polarisPath) {
-  if (!polarisPath) {
-    warn("downloadAndPushCover called with empty path");
-    return;
-  }
-
+function downloadCover(polarisPath) {
   const cacheKey = `polaris:${polarisPath}`;
   if (COVER_CACHE.get(cacheKey)) {
-    info("Cover cache hit, skipping", { polarisPath });
-    return;
+    return Promise.resolve(null); // already done
   }
-
   info("Cover download initiated from Polaris API", { polarisPath });
   const coverPath = coverTmpPath(polarisPath);
 
-  getPolarisToken()
+  return getPolarisToken()
     .then((token) => {
       const http = require("http");
       const urlStr = `http://192.168.100.1:5050/api/thumbnail/${encodeURIComponent(polarisPath)}?size=small&pad=false&auth_token=${encodeURIComponent(token)}`;
@@ -123,24 +119,22 @@ function downloadAndPushCover(polarisPath) {
     .then((data) => {
       if (!data || data.length <= 100) {
         warn("Cover download too small or empty", { bytes: data?.length || 0 });
-        return;
+        return null;
       }
       info("Cover downloaded from Polaris API", { bytes: data.length });
       fs.writeFileSync(coverPath, data);
       info("Cover written to disk", { path: coverPath, bytes: data.length });
-      return sendCommand(["set", "cover-art-files", coverPath]);
-    })
-    .then(() => {
-      info("cover-art-files set via IPC", { coverPath });
       COVER_CACHE.set(cacheKey, true);
       if (COVER_CACHE.size > CACHE_MAX) {
         const firstKey = COVER_CACHE.keys().next().value;
         COVER_CACHE.delete(firstKey);
       }
       cleanupOldCovers();
+      return coverPath;
     })
     .catch((err) => {
-      error("Cover download/push failed", { error: err.message, polarisPath });
+      error("Cover download failed", { error: err.message, polarisPath });
+      return null;
     });
 }
 
@@ -208,21 +202,43 @@ function onPathChanged(rawUrl) {
   pendingPath = rawUrl;
   info("mpv path changed", { path: rawUrl });
 
-  if (pendingTimer) clearTimeout(pendingTimer);
-  pendingTimer = setTimeout(() => {
-    pendingTimer = null;
-    resolvePathAndPush(rawUrl);
-  }, 1500);
+  // Start download immediately, no delay — macOS NowPlaying will
+  // settle as soon as the file loads, so the cover must be ready.
+  const polarisPath = extractPolarisPath(rawUrl);
+  if (!polarisPath) {
+    warn("Could not extract Polaris path, skipping cover", { rawUrl });
+    pendingCoverPromise = null;
+    pendingPolarisPath = null;
+    return;
+  }
+
+  // Ignore if same polaris path (e.g. different auth_token in raw URL)
+  if (polarisPath === pendingPolarisPath) return;
+  pendingPolarisPath = polarisPath;
+
+  pendingCoverPromise = downloadCover(polarisPath);
+  // Push as soon as download finishes (don't wait for file-loaded)
+  pendingCoverPromise.then((coverPath) => {
+    if (coverPath && polarisPath === pendingPolarisPath) {
+      sendCommand(["set", "cover-art-files", coverPath])
+        .then(() => info("cover-art-files set via IPC", { coverPath }))
+        .catch(() => warn("Failed to set cover-art-files via IPC"));
+    }
+  });
 }
 
-function resolvePathAndPush(rawUrl) {
-  info("Resolving path for cover push", { rawUrl });
-  const polarisPath = extractPolarisPath(rawUrl);
-  if (polarisPath) {
-    downloadAndPushCover(polarisPath);
-  } else {
-    warn("Could not extract Polaris path, skipping cover", { rawUrl });
-  }
+function onFileLoaded() {
+  info("File loaded event, waiting for cover download");
+  // If a download is in progress, wait for it so we push the cover
+  // right when mpv announces NowPlaying to macOS.
+  const waitPromise = pendingCoverPromise || Promise.resolve(null);
+  waitPromise.then((coverPath) => {
+    if (coverPath && pendingPolarisPath) {
+      sendCommand(["set", "cover-art-files", coverPath])
+        .then(() => info("cover-art-files set via IPC (file-loaded)", { coverPath }))
+        .catch(() => warn("Failed to set cover-art-files (file-loaded)"));
+    }
+  });
 }
 
 // ─── Connection management ──────────────────────────────────
