@@ -17,11 +17,11 @@ const { PLAYER_DIR, info, warn, error } = require("./player-logger");
 const SOCKET_DIR = path.join(os.homedir(), ".polaris", "player");
 const IPC_SOCKET = path.join(SOCKET_DIR, "mpv.sock");
 const COVER_CACHE = new Map();
+const downloading = new Set();
 const CACHE_MAX = 50;
 
 let pendingPath = null;
-let pendingPolarisPath = null;
-let pendingCoverPromise = null; // Promise that resolves to coverPath | null
+let initialized = false; // true once initial get_property has been handled
 
 function coverTmpPath(localPath) {
   const base = path.basename(localPath, path.extname(localPath));
@@ -95,6 +95,20 @@ function downloadCover(polarisPath) {
   if (COVER_CACHE.get(cacheKey)) {
     return Promise.resolve(null); // already done
   }
+  if (downloading.has(cacheKey)) {
+    return new Promise((resolve) => {
+      // Wait for the in-flight download to finish, then return cached result
+      const check = setInterval(() => {
+        if (COVER_CACHE.get(cacheKey)) {
+          clearInterval(check);
+          resolve(coverTmpPath(polarisPath));
+        }
+      }, 50);
+      // Timeout safety
+      setTimeout(() => { clearInterval(check); resolve(null); }, 10000);
+    });
+  }
+  downloading.add(cacheKey);
   info("Cover download initiated from Polaris API", { polarisPath });
   const coverPath = coverTmpPath(polarisPath);
 
@@ -119,12 +133,14 @@ function downloadCover(polarisPath) {
     .then((data) => {
       if (!data || data.length <= 100) {
         warn("Cover download too small or empty", { bytes: data?.length || 0 });
+        downloading.delete(cacheKey);
         return null;
       }
       info("Cover downloaded from Polaris API", { bytes: data.length });
       fs.writeFileSync(coverPath, data);
       info("Cover written to disk", { path: coverPath, bytes: data.length });
       COVER_CACHE.set(cacheKey, true);
+      downloading.delete(cacheKey);
       if (COVER_CACHE.size > CACHE_MAX) {
         const firstKey = COVER_CACHE.keys().next().value;
         COVER_CACHE.delete(firstKey);
@@ -134,6 +150,7 @@ function downloadCover(polarisPath) {
     })
     .catch((err) => {
       error("Cover download failed", { error: err.message, polarisPath });
+      downloading.delete(cacheKey);
       return null;
     });
 }
@@ -194,51 +211,65 @@ function cleanupOldCovers() {
   } catch {}
 }
 
-// ─── Path change handler ────────────────────────────────────
+// ─── Cover push helper ──────────────────────────────────────
+
+function pushCoverForPath(rawUrl) {
+  const polarisPath = extractPolarisPath(rawUrl);
+  if (!polarisPath) return;
+  const cacheKey = `polaris:${polarisPath}`;
+  const doPush = (coverPath) => {
+    if (!coverPath) return;
+    // Verify cover matches current track RIGHT BEFORE pushing
+    sendCommand(["get_property", "path"]).then((r) => {
+      const current = extractPolarisPath(r?.data || "");
+      if (current !== polarisPath) {
+        info("Cover mismatch — skipping (stale)", { coverPath, expected: polarisPath, actual: current });
+        return;
+      }
+      sendCommand(["set", "cover-art-files", coverPath])
+        .then(() => info("cover-art-files set via IPC", { coverPath }))
+        .catch(() => warn("Failed to set cover-art-files via IPC"));
+    });
+  };
+  if (COVER_CACHE.get(cacheKey)) {
+    doPush(coverTmpPath(polarisPath));
+  } else {
+    downloadCover(polarisPath).then(doPush);
+  }
+}
+
+// ─── Path change / file-loaded handlers ─────────────────────
+//
+// Flow:
+//   1. property-change: path  → pre-download cover (cache warm)
+//   2. file-loaded            → query mpv for CURRENT path,
+//                                push cover (from cache or fresh download)
+// This avoids closure/race bugs from rapid song changes.
 
 function onPathChanged(rawUrl) {
   if (!rawUrl) return;
+  if (!initialized) {
+    info("Skipping pre-init path change (initial observation)", { path: rawUrl });
+    return;
+  }
   if (rawUrl === pendingPath) return;
   pendingPath = rawUrl;
   info("mpv path changed", { path: rawUrl });
 
-  // Start download immediately, no delay — macOS NowPlaying will
-  // settle as soon as the file loads, so the cover must be ready.
+  // Pre-download cover into cache so file-loaded can push instantly.
+  // Do NOT push here — file-loaded is the authoritative trigger.
   const polarisPath = extractPolarisPath(rawUrl);
-  if (!polarisPath) {
-    warn("Could not extract Polaris path, skipping cover", { rawUrl });
-    pendingCoverPromise = null;
-    pendingPolarisPath = null;
-    return;
+  if (polarisPath) {
+    downloadCover(polarisPath); // fire & forget — cache warming
   }
-
-  // Ignore if same polaris path (e.g. different auth_token in raw URL)
-  if (polarisPath === pendingPolarisPath) return;
-  pendingPolarisPath = polarisPath;
-
-  pendingCoverPromise = downloadCover(polarisPath);
-  // Push as soon as download finishes (don't wait for file-loaded)
-  pendingCoverPromise.then((coverPath) => {
-    if (coverPath && polarisPath === pendingPolarisPath) {
-      sendCommand(["set", "cover-art-files", coverPath])
-        .then(() => info("cover-art-files set via IPC", { coverPath }))
-        .catch(() => warn("Failed to set cover-art-files via IPC"));
-    }
-  });
 }
 
 function onFileLoaded() {
-  info("File loaded event, waiting for cover download");
-  // If a download is in progress, wait for it so we push the cover
-  // right when mpv announces NowPlaying to macOS.
-  const waitPromise = pendingCoverPromise || Promise.resolve(null);
-  waitPromise.then((coverPath) => {
-    if (coverPath && pendingPolarisPath) {
-      sendCommand(["set", "cover-art-files", coverPath])
-        .then(() => info("cover-art-files set via IPC (file-loaded)", { coverPath }))
-        .catch(() => warn("Failed to set cover-art-files (file-loaded)"));
-    }
-  });
+  info("File loaded event, pushing cover for current track");
+  // Query mpv for the ACTUAL current path (no closure dependency)
+  sendCommand(["get_property", "path"])
+    .then((r) => { if (r?.data) pushCoverForPath(r.data); })
+    .catch(() => {});
 }
 
 // ─── Connection management ──────────────────────────────────
@@ -267,11 +298,16 @@ function connect() {
   sock.connect(IPC_SOCKET, () => {
     info("Connected to mpv IPC", { socket: IPC_SOCKET });
     sendCommand(["observe_property", 1, "path"]).catch(() => {});
+    // Get current path: set pendingPath + push cover immediately.
+    // After this, onPathChanged will handle future path changes normally.
     sendCommand(["get_property", "path"])
       .then((r) => {
-        if (r?.data) onPathChanged(r.data);
+        if (!r?.data) return;
+        pendingPath = r.data;
+        initialized = true;
+        pushCoverForPath(r.data);
       })
-      .catch(() => {});
+      .catch(() => { initialized = true; }); // still mark initialized on error
   });
 }
 
