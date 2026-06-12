@@ -13,7 +13,7 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 const { execSync } = require("child_process");
-const { PLAYER_DIR, info, action, warn, error } = require("./player-logger");
+const { PLAYER_DIR, info, warn, error } = require("./player-logger");
 
 const SOCKET_DIR = path.join(os.homedir(), ".polaris", "player");
 const IPC_SOCKET = path.join(SOCKET_DIR, "mpv.sock");
@@ -127,11 +127,11 @@ function downloadAndPushCover(polarisPath) {
       }
       info("Cover downloaded from Polaris API", { bytes: data.length });
       fs.writeFileSync(coverPath, data);
-      action("Cover written to disk", { path: coverPath, bytes: data.length });
+      info("Cover written to disk", { path: coverPath, bytes: data.length });
       return sendCommand(["set", "cover-art-files", coverPath]);
     })
     .then(() => {
-      action("cover-art-files set via IPC", { coverPath });
+      info("cover-art-files set via IPC", { coverPath });
       COVER_CACHE.set(cacheKey, true);
       if (COVER_CACHE.size > CACHE_MAX) {
         const firstKey = COVER_CACHE.keys().next().value;

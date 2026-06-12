@@ -6,7 +6,7 @@
  * Log rotation at 5 MB.
  *
  * Usage:
- *   const { PLAYER_DIR, info, action, warn, error } = require('./player-logger');
+ *   const { PLAYER_DIR, info, warn, error } = require('./player-logger');
  *   info('Component', 'Something happened', { optional: 'data' });
  */
 
@@ -56,7 +56,6 @@ function write(level, msg, data) {
 module.exports = {
   PLAYER_DIR,
   info: (msg, data) => write("INFO", msg, data),
-  action: (msg, data) => write("ACTION", msg, data),
   warn: (msg, data) => write("WARN", msg, data),
   error: (msg, data) => write("ERROR", msg, data),
 };
