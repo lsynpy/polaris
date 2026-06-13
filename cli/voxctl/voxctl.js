@@ -264,7 +264,12 @@ async function mpvNowPlaying() {
     const pathResp = await sendMpvCommand(["get_property", "path"]);
     const titleResp = await sendMpvCommand(["get_property", "media-title"]);
     const url = pathResp?.data || "";
-    const mediaTitle = titleResp?.data || "";
+    let mediaTitle = titleResp?.data || "";
+    // Strip query string from mediaTitle (may contain auth_token etc.)
+    const qIdx = mediaTitle.indexOf("?");
+    if (qIdx >= 0) mediaTitle = mediaTitle.substring(0, qIdx);
+    // Strip file extension if present (mpv may use the URL filename)
+    mediaTitle = mediaTitle.replace(/\.[^.]+$/, "");
 
     const info = parseTrackInfo(url);
     if (info) {
