@@ -671,6 +671,7 @@ Queue (mpv's playlist):
 
 Playlist (via Vox API):
   playlist [name]     Load a Vox playlist (default: fav)
+  playlist -s [name]  Load, shuffle and start from a random track
   pl-add <query>      Add search result to the current playlist
   pl-remove <query>   Remove track from current playlist
 
@@ -773,31 +774,42 @@ async function voxPut(path, body) {
 
 // ─── Playlist commands ───────────────────────────────────────
 
-async function cmdPlaylist(name) {
-  const playlistName = name || "fav";
-  info("cmd_playlist", { name: playlistName });
+async function cmdPlaylist(args) {
+  // Parse flags: -s or --shuffle for shuffle + random start
+  const shuffle = args.includes("-s") || args.includes("--shuffle");
+  const name = args.replace(/-s|--shuffle/g, "").trim() || "fav";
+
+  info("cmd_playlist", { name, shuffle });
   try {
-    const data = await voxGet(`/api/playlist/${encodeURIComponent(playlistName)}`);
+    const data = await voxGet(`/api/playlist/${encodeURIComponent(name)}`);
     const plPaths = (data.songs || {}).paths || [];
 
-    if (plPaths.length === 0) { console.log(`Playlist "${playlistName}" is empty`); return; }
+    if (plPaths.length === 0) { console.log(`Playlist "${name}" is empty`); return; }
 
     await ensureMpv();
     await sendMpvCommand(["playlist-clear"]);
 
-    // Load all tracks into mpv's playlist (batch)
+    // Load all tracks (append mode — don't auto-play)
     let loaded = 0;
     for (let i = 0; i < plPaths.length; i++) {
       try {
         const p = plPaths[i];
         const url = await resolveTrackUrl(p);
-        const mode = i === 0 ? "replace" : "append";
-        await sendMpvCommand(["loadfile", url, mode]);
+        await sendMpvCommand(["loadfile", url, "append"]);
         loaded++;
       } catch { /* skip failed tracks */ }
     }
 
-    console.log(`Loaded playlist "${playlistName}" (${loaded}/${plPaths.length} tracks)`);
+    if (shuffle) {
+      await sendMpvCommand(["playlist-shuffle"]);
+      const randomIdx = Math.floor(Math.random() * loaded);
+      await sendMpvCommand(["playlist-play-index", randomIdx]);
+      console.log(`Loaded & shuffled playlist "${name}" (${loaded}/${plPaths.length} tracks)`);
+    } else {
+      await sendMpvCommand(["playlist-play-index", 0]);
+      console.log(`Loaded playlist "${name}" (${loaded}/${plPaths.length} tracks)`);
+    }
+
     setTimeout(() => pushCoverArt(), 500);
 
     const np = await mpvNowPlaying();

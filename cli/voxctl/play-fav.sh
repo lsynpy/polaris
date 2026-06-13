@@ -3,5 +3,4 @@
 # Called by cover-hook.lua when the Play media key is pressed while idle.
 
 cd /Users/kt/code/vox/cli/voxctl || exit 1
-/usr/local/bin/node voxctl.js playlist
-/usr/local/bin/node voxctl.js shuffle
+/usr/local/bin/node voxctl.js playlist -s
